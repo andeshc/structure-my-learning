@@ -19,8 +19,16 @@ export function TopicDetailPage() {
   }, [topicId]);
 
   async function toggleComplete() {
-    const data = await updateTopicProgress(topic.id, !topic.isCompleted);
-    setTopic((current) => ({ ...current, isCompleted: data.topic.isCompleted }));
+    try {
+      const data = await updateTopicProgress(topic.id, !topic.isCompleted);
+      setTopic((current) => ({
+        ...current,
+        isCompleted: data.topic.isCompleted,
+        completedAt: data.topic.completedAt
+      }));
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   if (loading) {

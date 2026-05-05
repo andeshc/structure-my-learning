@@ -43,7 +43,7 @@ export function GuideDetailPage() {
       </div>
 
       <div className="mt-8 grid gap-3">
-        {guide.topics.map((topic) => (
+        {guide.topics.map((topic, index) => (
           <Link
             key={topic.id}
             to={`/guides/${guide.id}/topics/${topic.id}`}
@@ -52,7 +52,7 @@ export function GuideDetailPage() {
             <div className={`flex h-10 w-10 items-center justify-center rounded-lg font-black ${
               topic.isCompleted ? 'bg-green-50 text-progress' : 'bg-blue-50 text-primary'
             }`}>
-              {topic.position}
+              {topic.position || index + 1}
             </div>
             <div>
               <h2 className="font-black text-ink">{topic.title}</h2>

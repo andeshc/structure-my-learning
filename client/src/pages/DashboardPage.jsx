@@ -1,15 +1,18 @@
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { listGuides } from '../api/guides';
+import { deleteGuide, listGuides } from '../api/guides';
 import { LoadingPanel } from '../components/LoadingPanel';
 
 function progressWidthClass(progress) {
-  if (progress >= 100) return 'w-full';
-  if (progress >= 75) return 'w-3/4';
-  if (progress >= 50) return 'w-1/2';
-  if (progress >= 25) return 'w-1/4';
-  if (progress > 0) return 'w-[12%]';
+  if (progress >= 95) return 'w-full';
+  if (progress >= 80) return 'w-10/12';
+  if (progress >= 70) return 'w-8/12';
+  if (progress >= 55) return 'w-7/12';
+  if (progress >= 45) return 'w-1/2';
+  if (progress >= 30) return 'w-4/12';
+  if (progress >= 15) return 'w-2/12';
+  if (progress > 0) return 'w-1/12';
   return 'w-0';
 }
 
@@ -17,6 +20,7 @@ export function DashboardPage() {
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   useEffect(() => {
     listGuides()
@@ -24,6 +28,14 @@ export function DashboardPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+
+    await deleteGuide(pendingDelete.id);
+    setGuides((current) => current.filter((guide) => guide.id !== pendingDelete.id));
+    setPendingDelete(null);
+  }
 
   if (loading) {
     return <LoadingPanel title="Loading dashboard" detail="Finding your learning guides." />;
@@ -54,21 +66,57 @@ export function DashboardPage() {
       ) : (
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {guides.map((guide) => (
-            <Link key={guide.id} to={`/guides/${guide.id}`} className="rounded-lg border border-line bg-paper p-5 transition hover:border-primary">
+            <div key={guide.id} className="rounded-lg border border-line bg-paper p-5 transition hover:border-primary">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-primary">{guide.topicCount} topics</span>
-                <Sparkles size={18} className="text-amber" />
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(guide)}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  aria-label={`Delete ${guide.title}`}
+                >
+                  <Trash2 size={18} />
+                </button>
               </div>
-              <h2 className="mt-8 text-xl font-black">{guide.title}</h2>
-              <p className="mt-2 line-clamp-2 text-sm text-slate-600">{guide.prompt}</p>
-              <div className="mt-8 flex items-center gap-3">
-                <div className="h-2 flex-1 rounded-full bg-slate-100">
-                  <div className={`h-2 rounded-full bg-progress ${progressWidthClass(guide.progressPercentage)}`} />
+              <Link to={`/guides/${guide.id}`} className="block">
+                <Sparkles size={18} className="mt-8 text-amber" />
+                <h2 className="mt-3 text-xl font-black">{guide.title}</h2>
+                <p className="mt-2 line-clamp-2 text-sm text-slate-600">{guide.prompt}</p>
+                <div className="mt-8 flex items-center gap-3">
+                  <div className="h-2 flex-1 rounded-full bg-slate-100">
+                    <div className={`h-2 rounded-full bg-progress ${progressWidthClass(guide.progressPercentage)}`} />
+                  </div>
+                  <span className="text-sm font-black">{guide.progressPercentage}%</span>
                 </div>
-                <span className="text-sm font-black">{guide.progressPercentage}%</span>
-              </div>
-            </Link>
+              </Link>
+            </div>
           ))}
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-ink/40 px-4">
+          <div className="w-full max-w-md rounded-lg border border-line bg-white p-6 shadow-soft">
+            <p className="text-sm font-black uppercase text-red-600">Delete guide</p>
+            <h2 className="mt-2 text-2xl font-black">{pendingDelete.title}</h2>
+            <p className="mt-3 text-slate-600">This removes the outline, generated lessons, and progress.</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="h-10 rounded-lg border border-line px-4 font-black"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="h-10 rounded-lg bg-red-600 px-4 font-black text-white"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>
