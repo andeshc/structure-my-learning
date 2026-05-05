@@ -4,12 +4,14 @@ import ReactMarkdown from 'react-markdown';
 import { Link, useParams } from 'react-router';
 import { getTopic, updateTopicProgress } from '../api/guides';
 import { LoadingPanel } from '../components/LoadingPanel';
+import { useToast } from '../context/ToastContext';
 
 export function TopicDetailPage() {
   const { guideId, topicId } = useParams();
   const [topic, setTopic] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     getTopic(topicId)
@@ -26,8 +28,10 @@ export function TopicDetailPage() {
         isCompleted: data.topic.isCompleted,
         completedAt: data.topic.completedAt
       }));
+      showToast(data.topic.isCompleted ? 'Topic completed.' : 'Topic reopened.');
     } catch (err) {
       setError(err.message);
+      showToast(err.message, 'error');
     }
   }
 

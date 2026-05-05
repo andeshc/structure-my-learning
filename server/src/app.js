@@ -6,6 +6,7 @@ import { config } from './config.js';
 import { initializeDatabase } from './db/index.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
+import { aiRateLimit, authRateLimit } from './middleware/rateLimit.js';
 import { passport } from './passport.js';
 import { accountRouter } from './routes/account.routes.js';
 import { authRouter } from './routes/auth.routes.js';
@@ -37,10 +38,10 @@ export function createApp() {
   app.use(passport.initialize());
 
   app.use('/api', healthRouter);
-  app.use('/api/auth', authRouter);
+  app.use('/api/auth', authRateLimit, authRouter);
   app.use('/api/account', requireAuth, accountRouter);
-  app.use('/api/guides', requireAuth, guidesRouter);
-  app.use('/api/topics', requireAuth, topicsRouter);
+  app.use('/api/guides', requireAuth, aiRateLimit, guidesRouter);
+  app.use('/api/topics', requireAuth, aiRateLimit, topicsRouter);
   app.use('/api', notFoundHandler);
   app.use(errorHandler);
 

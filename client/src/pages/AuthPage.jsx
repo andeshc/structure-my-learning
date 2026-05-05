@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router';
 import { oauthUrl } from '../api/auth';
 import { BrandMark } from '../components/BrandMark';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export function AuthPage({ mode }) {
   const isRegister = mode === 'register';
   const navigate = useNavigate();
   const auth = useAuth();
+  const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -32,9 +34,11 @@ export function AuthPage({ mode }) {
       } else {
         await auth.login({ email: form.email, password: form.password });
       }
+      showToast(isRegister ? 'Account created.' : 'Logged in.');
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setSubmitting(false);
     }

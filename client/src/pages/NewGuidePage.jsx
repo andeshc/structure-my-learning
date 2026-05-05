@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { createGuide } from '../api/guides';
 import { LoadingPanel } from '../components/LoadingPanel';
+import { useToast } from '../context/ToastContext';
 
 export function NewGuidePage() {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { showToast } = useToast();
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -16,9 +18,11 @@ export function NewGuidePage() {
 
     try {
       const data = await createGuide(prompt);
+      showToast('Guide outline created.');
       navigate(`/guides/${data.guide.id}`);
     } catch (err) {
       setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }

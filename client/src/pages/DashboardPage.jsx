@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { deleteGuide, listGuides } from '../api/guides';
 import { LoadingPanel } from '../components/LoadingPanel';
+import { useToast } from '../context/ToastContext';
 
 function progressWidthClass(progress) {
   if (progress >= 95) return 'w-full';
@@ -21,6 +22,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     listGuides()
@@ -32,9 +34,14 @@ export function DashboardPage() {
   async function confirmDelete() {
     if (!pendingDelete) return;
 
-    await deleteGuide(pendingDelete.id);
-    setGuides((current) => current.filter((guide) => guide.id !== pendingDelete.id));
-    setPendingDelete(null);
+    try {
+      await deleteGuide(pendingDelete.id);
+      setGuides((current) => current.filter((guide) => guide.id !== pendingDelete.id));
+      showToast('Guide deleted.');
+      setPendingDelete(null);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   if (loading) {
