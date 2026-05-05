@@ -9,7 +9,9 @@ import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { passport } from './passport.js';
 import { accountRouter } from './routes/account.routes.js';
 import { authRouter } from './routes/auth.routes.js';
+import { guidesRouter } from './routes/guides.routes.js';
 import { healthRouter } from './routes/health.routes.js';
+import { topicsRouter } from './routes/topics.routes.js';
 
 export function createApp() {
   initializeDatabase();
@@ -37,6 +39,8 @@ export function createApp() {
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/account', requireAuth, accountRouter);
+  app.use('/api/guides', requireAuth, guidesRouter);
+  app.use('/api/topics', requireAuth, topicsRouter);
   app.use('/api', notFoundHandler);
   app.use(errorHandler);
 

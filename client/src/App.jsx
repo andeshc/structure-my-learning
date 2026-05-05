@@ -5,8 +5,10 @@ import { AccountPage } from './pages/AccountPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { GuideDetailPage } from './pages/GuideDetailPage';
 import { NewGuidePage } from './pages/NewGuidePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { TopicDetailPage } from './pages/TopicDetailPage';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/guides/new" element={<NewGuidePage />} />
+          <Route path="/guides/:guideId" element={<GuideDetailPage />} />
+          <Route path="/guides/:guideId/topics/:topicId" element={<TopicDetailPage />} />
           <Route path="/account" element={<AccountPage />} />
         </Route>
       </Route>
