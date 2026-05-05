@@ -50,5 +50,8 @@ export const config = {
   ...parsed,
   corsOrigins,
   jwtSecret: parsed.JWT_SECRET || 'dev-access-secret-change-me',
-  jwtRefreshSecret: parsed.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me'
+  jwtRefreshSecret: parsed.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me',
+  accessTokenTtl: '15m',
+  refreshTokenDays: 30,
+  isProduction: parsed.NODE_ENV === 'production'
 };
