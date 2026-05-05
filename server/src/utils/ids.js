@@ -1,5 +1,13 @@
-import { randomUUID } from 'node:crypto';
+const { randomBytes } = require('crypto');
 
-export function createId(prefix) {
-  return `${prefix}_${randomUUID().replaceAll('-', '')}`;
+function makeId(prefix) {
+  return `${prefix}_${randomBytes(8).toString('hex')}`;
 }
+
+module.exports = {
+  userId: () => makeId('usr'),
+  guideId: () => makeId('gde'),
+  topicId: () => makeId('top'),
+  tokenId: () => makeId('tok'),
+  oauthId: () => makeId('oau'),
+};

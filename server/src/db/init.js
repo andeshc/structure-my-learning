@@ -1,4 +1,8 @@
-import { initializeDatabase } from './index.js';
+const db = require('./index');
+const schema = require('./schema');
 
-initializeDatabase();
-console.log('Database initialized.');
+function initDb() {
+  db.exec(schema);
+}
+
+module.exports = { initDb };

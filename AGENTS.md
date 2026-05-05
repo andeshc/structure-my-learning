@@ -55,7 +55,7 @@ After committing the PRD, **stop and wait**. Do not proceed to Phase 1 until the
 
 ## Phase 2 — Scaffold & Foundation
 
-Once the PRD and UX screens are approved, begin building. Start with:
+Once the PRD and UX screens are approved, begin building (Make sure the UI matches with the generated UI mock screens). Start with:
 
 1.  Project skeleton: `client/` (Vite + React + Tailwind), `server/` (Express + SQLite).
 2.  Root-level `package.json` with scripts to run both (`dev`, `build`, `start`).
@@ -71,7 +71,7 @@ Once the PRD and UX screens are approved, begin building. Start with:
 
 ## Phase 3 — Authentication
 
-Build auth in this exact order:
+Build auth in this exact order (Make sure the UI matches with the generated UI mock screens):
 
 1.  **Email/password registration and login.** Hash passwords with `bcrypt`. Issue JWTs. Store refresh tokens in the DB.
 2.  **Auth middleware** that protects all `/api/*` routes except `/api/auth/*` and `/api/health`.
@@ -86,7 +86,7 @@ Build auth in this exact order:
 
 ## Phase 4 — Core Learning Guide Generation
 
-This is the heart of the product. Build:
+This is the heart of the product (Make sure the UI matches with the generated UI mock screens). Build:
 
 1.  **"New Guide" page** — A single input field + submit button. The user types what they want to learn.
 2.  **Server endpoint** that receives the query, calls OpenAI to generate a structured outline (list of topics with titles and short descriptions), stores the guide and its topics in the DB, and returns the result.

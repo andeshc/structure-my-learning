@@ -1,49 +1,35 @@
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import express from 'express';
-import morgan from 'morgan';
-import { config } from './config.js';
-import { initializeDatabase } from './db/index.js';
-import { requireAuth } from './middleware/auth.js';
-import { errorHandler, notFoundHandler } from './middleware/error.js';
-import { aiRateLimit, authRateLimit } from './middleware/rateLimit.js';
-import { passport } from './passport.js';
-import { accountRouter } from './routes/account.routes.js';
-import { authRouter } from './routes/auth.routes.js';
-import { guidesRouter } from './routes/guides.routes.js';
-import { healthRouter } from './routes/health.routes.js';
-import { topicsRouter } from './routes/topics.routes.js';
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+const path = require('path');
+const fs = require('fs');
+const config = require('./config');
+const errorHandler = require('./middleware/error');
+const healthRouter = require('./routes/health.routes');
 
-export function createApp() {
-  initializeDatabase();
+const app = express();
 
-  const app = express();
+app.use(cors({
+  origin: config.clientUrl.split(',').map(u => u.trim()),
+  credentials: true,
+}));
 
-  app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
-  app.use(express.json({ limit: '1mb' }));
-  app.use(cookieParser());
-  app.use(
-    cors({
-      origin(origin, callback) {
-        if (!origin || config.corsOrigins.includes(origin)) {
-          callback(null, true);
-          return;
-        }
+app.use(cookieParser());
+app.use(express.json());
+app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-        callback(new Error('Not allowed by CORS'));
-      },
-      credentials: true
-    })
-  );
-  app.use(passport.initialize());
+app.use('/api', healthRouter);
 
-  app.use('/api', healthRouter);
-  app.use('/api/auth', authRateLimit, authRouter);
-  app.use('/api/account', requireAuth, accountRouter);
-  app.use('/api/guides', requireAuth, aiRateLimit, guidesRouter);
-  app.use('/api/topics', requireAuth, aiRateLimit, topicsRouter);
-  app.use('/api', notFoundHandler);
-  app.use(errorHandler);
-
-  return app;
+// Serve built client in production
+const distPath = path.join(__dirname, '../../client/dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
 }
+
+app.use(errorHandler);
+
+module.exports = app;

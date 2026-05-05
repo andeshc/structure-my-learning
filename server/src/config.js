@@ -1,65 +1,29 @@
-import dotenv from 'dotenv';
-import { z } from 'zod';
+require('dotenv').config();
 
-dotenv.config();
+const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_PATH'];
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3001),
-  HOST: z.string().default('0.0.0.0'),
-  DATABASE_PATH: z.string().default('./data/StructureMyLearning.db'),
-  CLIENT_URL: z.string().url().default('http://localhost:5173'),
-  CORS_ORIGINS: z.string().optional(),
-  JWT_SECRET: z.string().optional(),
-  JWT_REFRESH_SECRET: z.string().optional(),
-  OPENAI_API_KEY: z.string().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CALLBACK_URL: z.string().url().optional(),
-  GITHUB_CLIENT_ID: z.string().optional(),
-  GITHUB_CLIENT_SECRET: z.string().optional(),
-  GITHUB_CALLBACK_URL: z.string().url().optional()
-});
-
-const parsed = envSchema.parse(process.env);
-
-if (parsed.NODE_ENV === 'production') {
-  const requiredInProduction = [
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-    'OPENAI_API_KEY'
-  ];
-  const googleConfigured = Boolean(parsed.GOOGLE_CLIENT_ID || parsed.GOOGLE_CLIENT_SECRET || parsed.GOOGLE_CALLBACK_URL);
-  const githubConfigured = Boolean(parsed.GITHUB_CLIENT_ID || parsed.GITHUB_CLIENT_SECRET || parsed.GITHUB_CALLBACK_URL);
-
-  if (googleConfigured) {
-    requiredInProduction.push('GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL');
-  }
-
-  if (githubConfigured) {
-    requiredInProduction.push('GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'GITHUB_CALLBACK_URL');
-  }
-
-  const missing = requiredInProduction.filter((key) => !parsed[key]);
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required production environment variables: ${missing.join(', ')}. ` +
-      'Set them in your hosting provider variables. OAuth variables are required only when any variable for that provider is configured.'
-    );
+for (const key of required) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
   }
 }
 
-const corsOrigins = parsed.CORS_ORIGINS
-  ? parsed.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : [parsed.CLIENT_URL];
-
-export const config = {
-  ...parsed,
-  corsOrigins,
-  jwtSecret: parsed.JWT_SECRET || 'dev-access-secret-change-me',
-  jwtRefreshSecret: parsed.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me',
-  accessTokenTtl: '15m',
-  refreshTokenDays: 30,
-  isProduction: parsed.NODE_ENV === 'production'
+module.exports = {
+  port: parseInt(process.env.PORT || '3001', 10),
+  databasePath: process.env.DATABASE_PATH,
+  jwtSecret: process.env.JWT_SECRET,
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback',
+  },
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID || '',
+    clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+    callbackUrl: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/auth/github/callback',
+  },
+  nodeEnv: process.env.NODE_ENV || 'development',
 };
