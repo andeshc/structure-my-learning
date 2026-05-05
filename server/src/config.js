@@ -27,18 +27,26 @@ if (parsed.NODE_ENV === 'production') {
   const requiredInProduction = [
     'JWT_SECRET',
     'JWT_REFRESH_SECRET',
-    'OPENAI_API_KEY',
-    'GOOGLE_CLIENT_ID',
-    'GOOGLE_CLIENT_SECRET',
-    'GOOGLE_CALLBACK_URL',
-    'GITHUB_CLIENT_ID',
-    'GITHUB_CLIENT_SECRET',
-    'GITHUB_CALLBACK_URL'
+    'OPENAI_API_KEY'
   ];
+  const googleConfigured = Boolean(parsed.GOOGLE_CLIENT_ID || parsed.GOOGLE_CLIENT_SECRET || parsed.GOOGLE_CALLBACK_URL);
+  const githubConfigured = Boolean(parsed.GITHUB_CLIENT_ID || parsed.GITHUB_CLIENT_SECRET || parsed.GITHUB_CALLBACK_URL);
+
+  if (googleConfigured) {
+    requiredInProduction.push('GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL');
+  }
+
+  if (githubConfigured) {
+    requiredInProduction.push('GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'GITHUB_CALLBACK_URL');
+  }
+
   const missing = requiredInProduction.filter((key) => !parsed[key]);
 
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(
+      `Missing required production environment variables: ${missing.join(', ')}. ` +
+      'Set them in your hosting provider variables. OAuth variables are required only when any variable for that provider is configured.'
+    );
   }
 }
 

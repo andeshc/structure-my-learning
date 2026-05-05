@@ -15,6 +15,13 @@ const contentSchema = z.object({
 });
 
 const openai = config.OPENAI_API_KEY ? new OpenAI({ apiKey: config.OPENAI_API_KEY }) : null;
+let mockOutlineGenerator = null;
+let mockTopicContentGenerator = null;
+
+export function setAiMocks({ outlineGenerator = null, topicContentGenerator = null }) {
+  mockOutlineGenerator = outlineGenerator;
+  mockTopicContentGenerator = topicContentGenerator;
+}
 
 async function completeJson({ systemPrompt, userPrompt }) {
   if (!openai) {
@@ -49,6 +56,10 @@ async function completeJson({ systemPrompt, userPrompt }) {
 }
 
 export async function generateOutline(prompt) {
+  if (mockOutlineGenerator) {
+    return outlineSchema.parse(await mockOutlineGenerator(prompt));
+  }
+
   const systemPrompt = `You are StructureMyLearning's expert curriculum designer. Create concise, accurate, learner-friendly course outlines from plain-language learning goals.
 
 Rules:
@@ -81,6 +92,10 @@ Return JSON matching this schema:
 }
 
 export async function generateTopicContent({ guide, outline, topic }) {
+  if (mockTopicContentGenerator) {
+    return contentSchema.parse(await mockTopicContentGenerator({ guide, outline, topic }));
+  }
+
   const systemPrompt = `You are StructureMyLearning's expert educator. Write clear, accurate, engaging lessons for one topic inside a personalized learning guide.
 
 Rules:

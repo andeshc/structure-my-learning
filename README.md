@@ -110,6 +110,39 @@ Set this variable for the client build:
 VITE_API_BASE_URL=https://api.example.com/api
 ```
 
+OAuth provider variables are all-or-nothing per provider. If you set any Google OAuth variable, also set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`. If you set any GitHub OAuth variable, also set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `GITHUB_CALLBACK_URL`.
+
+### Railway Notes
+
+For Railway, add the API variables in the service **Variables** tab. Railway often sets `NODE_ENV=production`, so the server validates required variables at boot.
+
+Minimum variables for the API service:
+
+```bash
+NODE_ENV=production
+PORT=${{PORT}}
+HOST=0.0.0.0
+DATABASE_PATH=/data/StructureMyLearning.db
+JWT_SECRET=<long-random-secret>
+JWT_REFRESH_SECRET=<different-long-random-secret>
+OPENAI_API_KEY=<production-openai-key>
+CLIENT_URL=https://your-frontend-domain
+CORS_ORIGINS=https://your-frontend-domain
+```
+
+If using Railway persistent storage, mount a volume at `/data` so `DATABASE_PATH=/data/StructureMyLearning.db` survives restarts. If you do not mount a persistent volume, the database can be lost on redeploy.
+
+Add OAuth variables only after creating the provider apps and callback URLs:
+
+```bash
+GOOGLE_CLIENT_ID=<google-client-id>
+GOOGLE_CLIENT_SECRET=<google-client-secret>
+GOOGLE_CALLBACK_URL=https://your-railway-api-domain/api/auth/google/callback
+GITHUB_CLIENT_ID=<github-client-id>
+GITHUB_CLIENT_SECRET=<github-client-secret>
+GITHUB_CALLBACK_URL=https://your-railway-api-domain/api/auth/github/callback
+```
+
 ### 3. Build and Start
 
 1. Provision a persistent directory for the database.
