@@ -1,0 +1,30 @@
+{
+  "name": "structure-my-learning",
+  "version": "1.0.0",
+  "description": "AI-powered structured learning guide generator.",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andeshc/structure-my-learning.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andeshc/structure-my-learning/issues"
+  },
+  "homepage": "https://github.com/andeshc/structure-my-learning#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
