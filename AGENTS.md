@@ -14,7 +14,7 @@ You are the sole engineer on this project. You work autonomously. You do not ask
 
 | Layer        | Technology                                      |
 | ------------ | ----------------------------------------------- |
-| Frontend     | React 18+ with Vite, React Router v6            |
+| Frontend     | React 18+ with Vite, React Router v7            |
 | Backend      | Node.js + Express                               |
 | Database     | SQLite via `better-sqlite3`                      |
 | Auth         | Email/password forms auth, Google OAuth, GitHub OAuth |
