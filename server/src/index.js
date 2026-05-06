@@ -1,9 +1,8 @@
-const { initDb } = require('./db/init');
-const config = require('./config');
-const app = require('./app');
+import { createApp } from './app.js';
+import { config } from './config.js';
 
-initDb();
+const app = createApp();
 
-app.listen(config.port, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${config.port}`);
+app.listen(config.PORT, config.HOST, () => {
+  console.log(`Server listening on http://${config.HOST}:${config.PORT}`);
 });

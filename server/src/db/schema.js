@@ -1,4 +1,4 @@
-const schema = `
+export const schemaSql = `
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS guides (
   user_id TEXT NOT NULL,
   title TEXT NOT NULL,
   prompt TEXT NOT NULL,
-  age_level TEXT NOT NULL CHECK (age_level IN ('ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -64,5 +63,3 @@ CREATE INDEX IF NOT EXISTS idx_guides_user_updated ON guides(user_id, updated_at
 CREATE INDEX IF NOT EXISTS idx_topics_guide_position ON topics(guide_id, position);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 `;
-
-module.exports = schema;

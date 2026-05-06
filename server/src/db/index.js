@@ -1,15 +1,15 @@
-const Database = require('better-sqlite3');
-const config = require('../config');
-const path = require('path');
-const fs = require('fs');
+import Database from 'better-sqlite3';
+import fs from 'node:fs';
+import path from 'node:path';
+import { config } from '../config.js';
+import { schemaSql } from './schema.js';
 
-const dbDir = path.dirname(config.databasePath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-}
+const databasePath = path.resolve(process.cwd(), config.DATABASE_PATH);
+fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 
-const db = new Database(config.databasePath);
-db.pragma('journal_mode = WAL');
+export const db = new Database(databasePath);
 db.pragma('foreign_keys = ON');
 
-module.exports = db;
+export function initializeDatabase() {
+  db.exec(schemaSql);
+}

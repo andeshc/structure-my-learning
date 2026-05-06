@@ -2,7 +2,7 @@
 
 ## 1. Problem Statement
 
-StructureMyLearning helps people turn an open-ended learning goal into a structured, personalized mini-course. A user can describe what they want to learn in plain language, choose the learner's age level, and the product generates a guided outline, detailed topic lessons, and progress tracking so the user can move through the subject with clarity.
+StructureMyLearning helps people turn an open-ended learning goal into a structured, personalized mini-course. A user can describe what they want to learn in plain language, and the product generates a guided outline, detailed topic lessons, and progress tracking so the user can move through the subject with clarity.
 
 The product is for learners who know what they want to understand but do not want to spend time designing a syllabus, finding the right sequence of topics, or collecting scattered explanations from multiple sources.
 
@@ -20,10 +20,6 @@ Priya is a working professional learning new technical or business skills. Priya
 
 Casey is a self-directed lifelong learner exploring unfamiliar topics for personal interest. Casey values approachable analogies, practical examples, and the ability to revisit generated guides later.
 
-### Educator Erin
-
-Erin is a parent, tutor, or teacher preparing age-appropriate explanations for another learner. Erin needs the same subject to become simpler, deeper, or more mature depending on the learner's age level.
-
 ## 3. User Stories
 
 1. As a student, I want to create an account with email and password so that my learning guides are saved privately.
@@ -31,16 +27,15 @@ Erin is a parent, tutor, or teacher preparing age-appropriate explanations for a
 3. As a developer learner, I want to sign in with GitHub so that I can use an identity I already trust.
 4. As a learner, I want to log out so that other people using my device cannot access my guides.
 5. As a learner, I want to enter a plain-language learning goal so that the app can generate a structured guide for me.
-6. As an educator, I want to choose the learner's age level so that the generated tutorial matches the right vocabulary, difficulty, examples, and depth.
-7. As a student, I want the generated guide to break the subject into ordered topics so that I know what to study first, next, and last.
-8. As a professional, I want to open a guide from my dashboard so that I can continue learning where I left off.
-9. As a learner, I want to click a topic and generate a full lesson so that I can study the topic without searching elsewhere.
-10. As a learner, I want already generated topic content to be reused so that I get fast access when I return.
-11. As a student, I want lessons to include explanations, analogies, examples, and summaries so that I can understand and remember the material.
-12. As a learner, I want to mark topics complete so that I can track progress through each guide.
-13. As a professional, I want guide cards to show progress percentage so that I can decide what to continue next.
-14. As a learner, I want to delete a guide with confirmation so that I can manage old or irrelevant guides.
-15. As an account holder, I want to view my account information so that I know which email and auth method are attached to my account.
+6. As a student, I want the generated guide to break the subject into ordered topics so that I know what to study first, next, and last.
+7. As a professional, I want to open a guide from my dashboard so that I can continue learning where I left off.
+8. As a learner, I want to click a topic and generate a full lesson so that I can study the topic without searching elsewhere.
+9. As a learner, I want already generated topic content to be reused so that I get fast access when I return.
+10. As a student, I want lessons to include explanations, analogies, examples, and summaries so that I can understand and remember the material.
+11. As a learner, I want to mark topics complete so that I can track progress through each guide.
+12. As a professional, I want guide cards to show progress percentage so that I can decide what to continue next.
+13. As a learner, I want to delete a guide with confirmation so that I can manage old or irrelevant guides.
+14. As an account holder, I want to view my account information so that I know which email and auth method are attached to my account.
 
 ## 4. Feature Scope for MVP
 
@@ -51,9 +46,8 @@ Erin is a parent, tutor, or teacher preparing age-appropriate explanations for a
 - GitHub OAuth login.
 - JWT access tokens with refresh token rotation stored in SQLite.
 - Authenticated dashboard listing the user's guides.
-- New Guide page with one learning-goal input and one required age-level selector.
+- New Guide page with one learning-goal input.
 - AI-generated guide outline containing 5-12 ordered topics.
-- Age-appropriate guide and lesson generation for ages 8-10, ages 11-13, ages 14-17, adult beginner, and adult advanced/professional learners.
 - Persisted guides and topics in SQLite.
 - Lazy topic content generation when a topic is first opened.
 - Markdown topic rendering with code block support.
@@ -123,14 +117,13 @@ Erin is a parent, tutor, or teacher preparing age-appropriate explanations for a
 - Current user menu.
 - Button to create a new guide.
 - List of guide cards sorted by most recent.
-- Each card shows guide title, original prompt, selected age level, topic count, progress bar, progress percentage, and last updated date.
+- Each card shows guide title, original prompt, topic count, progress bar, progress percentage, and last updated date.
 - Empty state that links to New Guide.
 - Delete action with confirmation modal.
 
 #### `/guides/new`
 
 - Single prominent input for the learning goal.
-- Required age-level selector with clear options: ages 8-10, ages 11-13, ages 14-17, adult beginner, and adult advanced/professional.
 - Submit button.
 - Loading state while outline is generated.
 - Error state for AI or validation failures.
@@ -138,7 +131,7 @@ Erin is a parent, tutor, or teacher preparing age-appropriate explanations for a
 
 #### `/guides/:guideId`
 
-- Guide title, original prompt, and selected age level.
+- Guide title and original prompt.
 - Ordered topic outline.
 - Topic cards with title, one-sentence description, completed state, and generated-content indicator.
 - Progress bar.
@@ -147,7 +140,7 @@ Erin is a parent, tutor, or teacher preparing age-appropriate explanations for a
 
 #### `/guides/:guideId/topics/:topicId`
 
-- Guide context header with selected age level.
+- Guide context header.
 - Topic title.
 - Completion toggle.
 - Generated markdown content.
@@ -313,8 +306,6 @@ Response: sets refresh cookie and redirects to `${CLIENT_URL}/auth/callback?stat
 
 ### Guides
 
-Valid `ageLevel` values for guide creation are `ages_8_10`, `ages_11_13`, `ages_14_17`, `adult_beginner`, and `adult_advanced`.
-
 #### `GET /api/guides`
 
 Auth required: Yes
@@ -328,7 +319,6 @@ Response `200`:
       "id": "gde_123",
       "title": "Understanding the Water Cycle",
       "prompt": "teach me about the water cycle",
-      "ageLevel": "ages_11_13",
       "topicCount": 7,
       "completedTopicCount": 2,
       "progressPercentage": 29,
@@ -347,8 +337,7 @@ Request:
 
 ```json
 {
-  "prompt": "teach me about transformer architecture",
-  "ageLevel": "adult_advanced"
+  "prompt": "teach me about transformer architecture"
 }
 ```
 
@@ -360,7 +349,6 @@ Response `201`:
     "id": "gde_123",
     "title": "Transformer Architecture",
     "prompt": "teach me about transformer architecture",
-    "ageLevel": "adult_advanced",
     "createdAt": "2026-05-05T10:00:00.000Z",
     "updatedAt": "2026-05-05T10:00:00.000Z",
     "topics": [
@@ -389,7 +377,6 @@ Response `200`:
     "id": "gde_123",
     "title": "Transformer Architecture",
     "prompt": "teach me about transformer architecture",
-    "ageLevel": "adult_advanced",
     "progressPercentage": 0,
     "createdAt": "2026-05-05T10:00:00.000Z",
     "updatedAt": "2026-05-05T10:00:00.000Z",
@@ -431,11 +418,6 @@ Response `200`:
 
 ```json
 {
-  "guide": {
-    "id": "gde_123",
-    "title": "Transformer Architecture",
-    "ageLevel": "adult_advanced"
-  },
   "topic": {
     "id": "top_123",
     "guideId": "gde_123",
@@ -542,7 +524,6 @@ CREATE TABLE guides (
   user_id TEXT NOT NULL,
   title TEXT NOT NULL,
   prompt TEXT NOT NULL,
-  age_level TEXT NOT NULL CHECK (age_level IN ('ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -572,14 +553,6 @@ CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
 
 The server uses OpenAI `gpt-4o` for generation. AI output is never streamed directly to the client. The server generates, validates JSON, stores records in SQLite, and then returns stored data. If the model returns malformed output or the API call fails, retry once with the same prompt. If the retry fails, return a user-friendly error.
 
-Age-level values are stored on the guide and passed into every AI generation call:
-
-- `ages_8_10`: elementary learner; simple vocabulary, concrete examples, gentle pacing, no assumed background knowledge.
-- `ages_11_13`: middle-grade learner; clear vocabulary, light technical terms with definitions, relatable examples.
-- `ages_14_17`: teen learner; stronger conceptual depth, school-level terminology, examples that connect to real applications.
-- `adult_beginner`: adult learner new to the subject; respectful tone, practical examples, no childish framing.
-- `adult_advanced`: adult or professional learner; deeper explanations, precise terminology, more nuance, and efficient pacing.
-
 ### Outline Generation
 
 System prompt:
@@ -591,7 +564,6 @@ Rules:
 - Return only valid JSON.
 - Generate 5 to 12 topics.
 - Arrange topics from foundational to advanced.
-- Match the topic sequence, vocabulary, assumed background knowledge, and depth to the provided age level.
 - Keep titles specific and short.
 - Make each description exactly one sentence.
 - Do not include markdown.
@@ -606,9 +578,6 @@ Create a structured learning guide for this user goal:
 
 "{{USER_PROMPT}}"
 
-Learner age level: {{AGE_LEVEL}}
-Age-level guidance: {{AGE_LEVEL_GUIDANCE}}
-
 Return JSON matching this schema:
 {
   "title": "Short guide title",
@@ -622,7 +591,6 @@ Return JSON matching this schema:
 
 Example:
 Input: "teach me about the water cycle"
-Age level: ages_11_13
 Output:
 {
   "title": "Understanding the Water Cycle",
@@ -687,9 +655,6 @@ Rules:
 - Return only valid JSON.
 - The lesson must be markdown inside the "contentMarkdown" string.
 - Target 800 to 1500 words.
-- Match vocabulary, depth, examples, pacing, and assumed background knowledge to the provided age level.
-- For younger learners, use concrete examples and define technical terms simply.
-- For adult learners, keep the tone respectful and avoid childish framing.
 - Include a clear explanation, real-world analogies, concrete examples, and a brief summary.
 - Use headings, short paragraphs, and lists where helpful.
 - Include code blocks only when the subject benefits from code.
@@ -704,8 +669,6 @@ User prompt template:
 ```text
 Guide title: {{GUIDE_TITLE}}
 Original user goal: "{{USER_PROMPT}}"
-Learner age level: {{AGE_LEVEL}}
-Age-level guidance: {{AGE_LEVEL_GUIDANCE}}
 
 Full outline:
 {{OUTLINE_JSON}}
@@ -746,7 +709,6 @@ Expected JSON schema:
 - Non-AI authenticated reads respond in under 300 ms for a typical user account.
 - Guide outline generation completes in 5-15 seconds under normal OpenAI latency.
 - Topic generation completes in 5-15 seconds under normal OpenAI latency.
-- Age-level personalization must not add additional AI calls beyond the outline or topic generation call already being made.
 - Dashboard remains responsive with at least 100 guides per user.
 - Client production build should load the authenticated shell in under 2 seconds on a typical broadband connection.
 
@@ -819,11 +781,10 @@ Working increment: A user can sign up, log in, refresh auth, use OAuth, and reac
 ### Milestone 5: Core Learning Generation
 
 - Add New Guide page.
-- Add age-level selector to New Guide.
-- Add outline generation endpoint using OpenAI `gpt-4o` with the selected age level.
+- Add outline generation endpoint using OpenAI `gpt-4o`.
 - Store guides and topics.
 - Add guide detail page.
-- Add lazy topic content generation using the guide's stored age level.
+- Add lazy topic content generation.
 - Render markdown topic lessons.
 - Add loading and AI error states.
 

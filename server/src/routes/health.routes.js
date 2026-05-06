@@ -1,9 +1,10 @@
-const { Router } = require('express');
+import { Router } from 'express';
 
-const router = Router();
+export const healthRouter = Router();
 
-router.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'structure-my-learning' });
+healthRouter.get('/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'structure-my-learning'
+  });
 });
-
-module.exports = router;
