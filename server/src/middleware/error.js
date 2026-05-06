@@ -1,23 +1,15 @@
-import { ZodError } from 'zod';
+const config = require('../config');
 
-export function notFoundHandler(_req, _res, next) {
-  const error = new Error('Route not found');
-  error.status = 404;
-  next(error);
-}
-
-export function errorHandler(error, _req, res, _next) {
-  if (error instanceof ZodError) {
-    res.status(400).json({ error: 'Invalid request data.' });
-    return;
+// eslint-disable-next-line no-unused-vars
+function errorHandler(err, req, res, next) {
+  if (config.nodeEnv === 'development') {
+    console.error(err);
   }
 
-  const status = error.status || 500;
-  const message = status === 500 ? 'Something went wrong.' : error.message;
-
-  if (process.env.NODE_ENV !== 'test') {
-    console.error(error);
-  }
+  const status = err.status || err.statusCode || 500;
+  const message = err.expose || status < 500 ? err.message : 'Internal server error';
 
   res.status(status).json({ error: message });
 }
+
+module.exports = errorHandler;
