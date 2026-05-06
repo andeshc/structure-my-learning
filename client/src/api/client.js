@@ -49,7 +49,15 @@ export async function apiRequest(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed.');
+    const message = data.error || 'Request failed.';
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { type: 'error', message },
+      }));
+    }
+
+    throw new Error(message);
   }
 
   return data;

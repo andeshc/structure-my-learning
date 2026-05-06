@@ -12,6 +12,7 @@ const accountRouter = require('./routes/account.routes');
 const guidesRouter = require('./routes/guides.routes');
 const topicsRouter = require('./routes/topics.routes');
 const { requireAuth } = require('./middleware/auth');
+const { aiRateLimit, authRateLimit } = require('./middleware/rateLimit');
 const passport = require('./passport');
 
 const app = express();
@@ -27,10 +28,13 @@ app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(passport.initialize());
 
 app.use('/api', healthRouter);
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authRateLimit, authRouter);
 app.use('/api/account', requireAuth, accountRouter);
-app.use('/api/guides', requireAuth, guidesRouter);
-app.use('/api/topics', requireAuth, topicsRouter);
+app.use('/api/guides', requireAuth, aiRateLimit, guidesRouter);
+app.use('/api/topics', requireAuth, aiRateLimit, topicsRouter);
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Route not found.' });
+});
 
 // Serve built client in production
 const distPath = path.join(__dirname, '../../client/dist');
