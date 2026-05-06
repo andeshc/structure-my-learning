@@ -3,7 +3,7 @@ const { ZodError } = require('zod');
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  if (config.nodeEnv === 'development') {
+  if (config.nodeEnv !== 'production') {
     console.error(err);
   }
 

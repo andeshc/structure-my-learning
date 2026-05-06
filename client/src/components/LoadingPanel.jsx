@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function LoadingPanel({ title = 'Loading...', detail = 'This usually takes a few seconds.' }) {
   return (
     <div className="rounded-lg border border-charcoal/10 bg-white p-6">
