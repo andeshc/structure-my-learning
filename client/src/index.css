@@ -33,4 +33,20 @@
   .prose pre {
     @apply overflow-x-auto rounded-md bg-charcoal p-4 text-white;
   }
+
+  progress {
+    @apply appearance-none bg-charcoal/10;
+  }
+
+  progress::-webkit-progress-bar {
+    @apply rounded-full bg-charcoal/10;
+  }
+
+  progress::-webkit-progress-value {
+    @apply rounded-full bg-teal-700;
+  }
+
+  progress::-moz-progress-bar {
+    @apply rounded-full bg-teal-700;
+  }
 }
