@@ -9,6 +9,8 @@ const errorHandler = require('./middleware/error');
 const healthRouter = require('./routes/health.routes');
 const authRouter = require('./routes/auth.routes');
 const accountRouter = require('./routes/account.routes');
+const guidesRouter = require('./routes/guides.routes');
+const topicsRouter = require('./routes/topics.routes');
 const { requireAuth } = require('./middleware/auth');
 const passport = require('./passport');
 
@@ -27,6 +29,8 @@ app.use(passport.initialize());
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/account', requireAuth, accountRouter);
+app.use('/api/guides', requireAuth, guidesRouter);
+app.use('/api/topics', requireAuth, topicsRouter);
 
 // Serve built client in production
 const distPath = path.join(__dirname, '../../client/dist');
