@@ -6,4 +6,15 @@
   html {
     @apply bg-canvas text-charcoal font-sans;
   }
+
+  body {
+    @apply min-h-screen;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }

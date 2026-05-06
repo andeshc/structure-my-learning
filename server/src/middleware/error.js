@@ -1,9 +1,15 @@
 const config = require('../config');
+const { ZodError } = require('zod');
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   if (config.nodeEnv === 'development') {
     console.error(err);
+  }
+
+  if (err instanceof ZodError) {
+    res.status(400).json({ error: 'Invalid request data.' });
+    return;
   }
 
   const status = err.status || err.statusCode || 500;
