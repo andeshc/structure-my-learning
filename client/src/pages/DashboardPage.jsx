@@ -45,7 +45,7 @@ function guideTags(guide) {
 function EmptyIllustration() {
   return (
     <svg className="h-48 w-full" viewBox="0 0 420 220" role="img" aria-label="New learning guide illustration">
-      <rect width="420" height="220" rx="14" className="fill-blue-50" />
+      <rect width="420" height="220" className="fill-blue-50" />
       <circle cx="88" cy="72" r="32" className="fill-blue-200" />
       <circle cx="320" cy="74" r="42" className="fill-amber-200" />
       <rect x="125" y="50" width="170" height="122" rx="18" className="fill-white stroke-blue-200" strokeWidth="4" />
@@ -58,7 +58,7 @@ function EmptyIllustration() {
 function TransformerIllustration() {
   return (
     <svg className="h-48 w-full" viewBox="0 0 420 220" role="img" aria-label="Transformer architecture illustration">
-      <rect width="420" height="220" rx="14" className="fill-[#fbf4e8]" />
+      <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <g className="stroke-slate-700" strokeWidth="3" fill="none" strokeLinecap="round">
         <path d="M98 92h56M98 144h56M268 92h56M268 144h56" />
         <path d="M154 92h28M238 92h30M154 144h28M238 144h30" />
@@ -85,7 +85,7 @@ function TransformerIllustration() {
 function WaterIllustration() {
   return (
     <svg className="h-48 w-full" viewBox="0 0 420 220" role="img" aria-label="Water cycle illustration">
-      <rect width="420" height="220" rx="14" className="fill-sky-50" />
+      <rect width="420" height="220" className="fill-sky-50" />
       <path d="M0 168c70-42 118-42 180-12 62 30 120 22 240-10v74H0z" className="fill-cyan-300" />
       <path d="M0 178c70-22 120-12 180 8 72 24 132 8 240-16v50H0z" className="fill-teal-500" opacity=".75" />
       <path d="M38 168l62-88 42 72 36-48 58 64z" className="fill-sky-300" />
@@ -109,7 +109,7 @@ function WaterIllustration() {
 function StrategyIllustration() {
   return (
     <svg className="h-48 w-full" viewBox="0 0 420 220" role="img" aria-label="Strategy illustration">
-      <rect width="420" height="220" rx="14" className="fill-[#fbf4e8]" />
+      <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <circle cx="105" cy="112" r="67" className="fill-red-100 stroke-slate-800" strokeWidth="3" />
       <circle cx="105" cy="112" r="48" className="fill-white stroke-red-300" strokeWidth="12" />
       <circle cx="105" cy="112" r="24" className="fill-red-100 stroke-red-300" strokeWidth="10" />
@@ -147,52 +147,56 @@ function GuideIllustration({ index, title }) {
 function GuideCard({ guide, index, onDelete }) {
   const tags = guideTags(guide);
   const lessons = guide.topicCount || 0;
-  const activities = lessons + Math.max(guide.completedTopicCount || 0, 0);
+  const completed = Math.max(guide.completedTopicCount || 0, 0);
   const studyMinutes = minutesForGuide(guide);
+  const progressLabel = guide.progressPercentage === 0 ? 'Not started' : guide.progressPercentage === 100 ? 'Complete' : 'In progress';
 
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-blue-200">
-      <div className="relative border-b border-slate-100">
+    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-blue-200">
+      <div className="relative border-b border-slate-100 bg-slate-50">
         <GuideIllustration index={index} title={guide.title} />
-        <button className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-950 hover:text-red-700" aria-label={`Delete ${guide.title}`} onClick={() => onDelete(guide)}>
-          <MoreHorizontal size={22} />
+        <button className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white/95 text-slate-800 transition-colors hover:border-red-200 hover:text-red-700" aria-label={`Delete ${guide.title}`} onClick={() => onDelete(guide)}>
+          <MoreHorizontal size={18} />
         </button>
       </div>
 
-      <div className="p-5">
-        <Link to={`/guides/${guide.id}`} className="block text-2xl font-extrabold tracking-tight hover:text-blue-700">
+      <div className="p-5 sm:p-6">
+        <Link to={`/guides/${guide.id}`} className="block text-xl font-bold leading-tight tracking-normal text-slate-950 transition-colors hover:text-blue-700">
           {guide.title}
         </Link>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-2">
           {tags.map((tag, tagIndex) => (
-            <span key={tag} className={`rounded-lg px-3 py-2 text-sm font-semibold ${tagThemes[(index + tagIndex) % tagThemes.length]}`}>
+            <span key={tag} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${tagThemes[(index + tagIndex) % tagThemes.length]}`}>
               {tag}
             </span>
           ))}
         </div>
 
-        <div className="mt-7 grid grid-cols-[1fr_auto] items-center gap-3">
-          <progress className="h-3 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
+        <div className="mt-7">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-slate-600">{progressLabel}</span>
+            <span className="text-sm font-bold text-slate-950">{guide.progressPercentage}%</span>
+          </div>
+          <progress className="h-2 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
             {guide.progressPercentage}%
           </progress>
-          <span className="text-xl font-bold">{guide.progressPercentage}%</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 border-t border-slate-200 bg-[#fffdfa] text-center">
-        <div className="px-3 py-5">
-          <FileText className="mx-auto text-slate-500" size={24} />
-          <p className="mt-2 text-lg font-extrabold">{lessons}</p>
+      <div className="grid grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 text-center">
+        <div className="bg-[#fffdfa] px-3 py-5">
+          <FileText className="mx-auto text-slate-500" size={22} />
+          <p className="mt-2 text-lg font-bold">{lessons}</p>
           <p className="text-xs text-slate-600">Lessons</p>
         </div>
-        <div className="border-x border-slate-200 px-3 py-5">
-          <CheckCircle2 className="mx-auto text-slate-500" size={24} />
-          <p className="mt-2 text-lg font-extrabold">{activities}</p>
-          <p className="text-xs text-slate-600">Activities</p>
+        <div className="bg-[#fffdfa] px-3 py-5">
+          <CheckCircle2 className="mx-auto text-slate-500" size={22} />
+          <p className="mt-2 text-lg font-bold">{completed}</p>
+          <p className="text-xs text-slate-600">Completed</p>
         </div>
-        <div className="px-3 py-5">
-          <Clock3 className="mx-auto text-slate-500" size={24} />
-          <p className="mt-2 text-lg font-extrabold">{formatDuration(studyMinutes)}</p>
+        <div className="bg-[#fffdfa] px-3 py-5">
+          <Clock3 className="mx-auto text-slate-500" size={22} />
+          <p className="mt-2 text-lg font-bold">{formatDuration(studyMinutes)}</p>
           <p className="text-xs text-slate-600">Study time</p>
         </div>
       </div>
