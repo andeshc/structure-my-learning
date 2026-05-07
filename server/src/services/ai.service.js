@@ -79,7 +79,6 @@ async function generateOutline({ prompt, ageLevel }) {
 
 Rules:
 - Return only valid JSON.
-- Generate 5 to 12 topics.
 - Arrange topics from foundational to advanced.
 - Match the topic sequence, vocabulary, assumed background knowledge, and depth to the provided age level.
 - Keep titles specific and short.
