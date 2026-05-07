@@ -1,5 +1,7 @@
 import { apiRequest } from './client';
 
+let refreshSessionPromise = null;
+
 export function register(payload) {
   return apiRequest('/api/auth/register', {
     method: 'POST',
@@ -15,7 +17,14 @@ export function login(payload) {
 }
 
 export function refreshSession() {
-  return apiRequest('/api/auth/refresh', { method: 'POST' });
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = apiRequest('/api/auth/refresh', { method: 'POST' })
+      .finally(() => {
+        refreshSessionPromise = null;
+      });
+  }
+
+  return refreshSessionPromise;
 }
 
 export function logout() {

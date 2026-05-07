@@ -2,5 +2,5 @@ node_modules/
 .env
 data/
 client/dist/
-server/src/public/generated/
+server/public/generated/
 *.db
