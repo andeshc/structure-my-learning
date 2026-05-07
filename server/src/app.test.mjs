@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const app = require('./app');
-const fs = require('fs');
 const db = require('./db');
 const { initDb } = require('./db/init');
 const aiService = require('./services/ai.service');
@@ -71,7 +70,7 @@ describe('API', () => {
       generateTopicContent: async ({ topic }) => ({
         contentMarkdown: `# ${topic.title}\n\nThis lesson explains the concept with examples, analogies, and a summary. `.repeat(14),
       }),
-      generateGuideSvg: () => '<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024"><title>Mocked guide illustration</title><rect width="1536" height="1024" fill="#fbf4e8"/><text x="120" y="160">Mocked Learning</text></svg>',
+      generateGuideIllustration: async ({ guideId }) => `/generated/guide-illustrations/${guideId}.png`,
     });
   });
 
@@ -107,7 +106,7 @@ describe('API', () => {
 
     expect(guideResponse.status).toBe(201);
     expect(guideResponse.body.guide.topics).toHaveLength(5);
-    expect(guideResponse.body.guide.illustrationUrl).toMatch(/^\/generated\/guide-illustrations\/.+\.svg$/);
+    expect(guideResponse.body.guide.illustrationUrl).toMatch(/^\/generated\/guide-illustrations\/.+\.png$/);
     expect(guideResponse.body.guide.outline.tags).toEqual(['Learning', 'Mocked']);
     expect(guideResponse.body.guide.outline.sections[0].items[0].importance).toBe('Required');
 
@@ -155,7 +154,7 @@ describe('API', () => {
     expect(response.body.guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
   });
 
-  it('generates a semantic SVG illustration without an OpenAI image model', async () => {
+  it('returns the static fallback when image generation is unavailable', async () => {
     const originalApiKey = config.openaiApiKey;
     config.openaiApiKey = '';
     setAiMocks({});
@@ -175,7 +174,6 @@ describe('API', () => {
       config.openaiApiKey = originalApiKey;
     }
 
-    expect(illustrationUrl).toBe('/generated/guide-illustrations/guide_test.svg');
-    expect(fs.readFileSync('./public/generated/guide-illustrations/guide_test.svg', 'utf8')).toContain('A</text>');
+    expect(illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
   });
 });
