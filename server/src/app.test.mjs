@@ -33,12 +33,35 @@ describe('API', () => {
     setAiMocks({
       generateOutline: async () => ({
         title: 'Mocked Guide',
-        topics: [
-          { title: 'Foundations', description: 'Learn the basic ideas that support the rest of the subject.' },
-          { title: 'Key Vocabulary', description: 'Understand the core terms used when discussing this topic.' },
-          { title: 'Main Process', description: 'Explore how the central process works step by step.' },
-          { title: 'Examples', description: 'See concrete examples that make the ideas easier to apply.' },
-          { title: 'Review', description: 'Summarize the topic and connect it to future learning.' },
+        sections: [
+          {
+            title: 'Foundations',
+            description: 'Learn the basic ideas that support the rest of the subject.',
+            items: [
+              { importance: 'Required', title: 'Core idea' },
+              { importance: 'Optional but recommended', title: 'Helpful context', details: ['A useful example'] },
+            ],
+          },
+          {
+            title: 'Key Vocabulary',
+            description: 'Understand the core terms used when discussing this topic.',
+            items: [{ importance: 'Required', title: 'Important terms' }],
+          },
+          {
+            title: 'Main Process',
+            description: 'Explore how the central process works step by step.',
+            items: [{ importance: 'Required', title: 'Step-by-step flow' }],
+          },
+          {
+            title: 'Examples',
+            description: 'See concrete examples that make the ideas easier to apply.',
+            items: [{ importance: 'Optional and can be skipped', title: 'Extra worked example' }],
+          },
+          {
+            title: 'Review',
+            description: 'Summarize the topic and connect it to future learning.',
+            items: [{ importance: 'Required', title: 'Final synthesis' }],
+          },
         ],
       }),
       generateTopicContent: async ({ topic }) => ({
@@ -79,6 +102,7 @@ describe('API', () => {
 
     expect(guideResponse.status).toBe(201);
     expect(guideResponse.body.guide.topics).toHaveLength(5);
+    expect(guideResponse.body.guide.outline.sections[0].items[0].importance).toBe('Required');
 
     const topicId = guideResponse.body.guide.topics[0].id;
     const topicResponse = await request(app)

@@ -24,11 +24,18 @@ router.get('/:topicId', asyncHandler(async (req, res, next) => {
   let { topic } = found;
 
   if (!topic.contentMarkdown) {
-    const outline = topicsDb.listTopicsForGuide(found.guide.id).map(({ title, description, position }) => ({
-      title,
-      description,
-      position,
-    }));
+    const outline = found.guide.outline || {
+      title: found.guide.title,
+      sections: topicsDb.listTopicsForGuide(found.guide.id).map(({ title, description, position }) => ({
+        title,
+        description,
+        position,
+      })),
+    };
+    const outlineSection = outline.sections && outline.sections[topic.position - 1]
+      ? outline.sections[topic.position - 1]
+      : null;
+    topic = { ...topic, outlineSection };
     const generated = await ai.generateTopicContent({ guide: found.guide, outline, topic });
     topicsDb.saveTopicContent(topic.id, generated.contentMarkdown);
     topic = topicsDb.findTopicForUser(topic.id, req.user.id).topic;

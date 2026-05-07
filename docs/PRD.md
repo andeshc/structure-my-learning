@@ -52,7 +52,7 @@ Erin is a parent, tutor, or teacher preparing age-appropriate explanations for a
 - JWT access tokens with refresh token rotation stored in SQLite.
 - Authenticated dashboard listing the user's guides.
 - New Guide page with one learning-goal input and one required age-level selector.
-- AI-generated guide outline containing 5-12 ordered topics.
+- Detailed AI-generated guide outline containing ordered sections, optional subsections, and Required/Optional learning items.
 - Age-appropriate guide and lesson generation for ages 8-10, ages 11-13, ages 14-17, adult beginner, and adult advanced/professional learners.
 - Persisted guides and topics in SQLite.
 - Lazy topic content generation when a topic is first opened.
@@ -361,6 +361,30 @@ Response `201`:
     "title": "Transformer Architecture",
     "prompt": "teach me about transformer architecture",
     "ageLevel": "adult_advanced",
+    "outline": {
+      "title": "Transformer Architecture",
+      "sections": [
+        {
+          "title": "Prerequisites",
+          "description": "Build the machine learning, math, and NLP foundations needed before studying Transformers.",
+          "subsections": [
+            {
+              "title": "Basic ML / Deep Learning",
+              "items": [
+                {
+                  "importance": "Required",
+                  "title": "What is machine learning?"
+                },
+                {
+                  "importance": "Optional but recommended",
+                  "title": "Overfitting and regularization"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
     "createdAt": "2026-05-05T10:00:00.000Z",
     "updatedAt": "2026-05-05T10:00:00.000Z",
     "topics": [
@@ -391,6 +415,25 @@ Response `200`:
     "prompt": "teach me about transformer architecture",
     "ageLevel": "adult_advanced",
     "progressPercentage": 0,
+    "outline": {
+      "title": "Transformer Architecture",
+      "sections": [
+        {
+          "title": "Attention Fundamentals",
+          "description": "Understand queries, keys, values, attention scores, and weighted value lookup.",
+          "items": [
+            {
+              "importance": "Required",
+              "title": "Query, Key, Value intuition"
+            },
+            {
+              "importance": "Optional but recommended",
+              "title": "Common attention visualizations"
+            }
+          ]
+        }
+      ]
+    },
     "createdAt": "2026-05-05T10:00:00.000Z",
     "updatedAt": "2026-05-05T10:00:00.000Z",
     "topics": [
@@ -543,6 +586,7 @@ CREATE TABLE guides (
   title TEXT NOT NULL,
   prompt TEXT NOT NULL,
   age_level TEXT NOT NULL CHECK (age_level IN ('ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced')),
+  outline_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -590,6 +634,11 @@ You are StructureMyLearning's expert curriculum designer. Create concise, accura
 Rules:
 - Return only valid JSON.
 - Arrange topics from foundational to advanced.
+- Create a detailed curriculum roadmap, not a short summary.
+- Use top-level sections for major learning stages.
+- Use subsections when a stage has multiple prerequisite areas or architecture families.
+- Every learning item must be labeled as "Required", "Optional but recommended", or "Optional and can be skipped".
+- Add "details" arrays for items that naturally have sub-bullets, examples, variants, or common failure modes.
 - Match the topic sequence, vocabulary, assumed background knowledge, and depth to the provided age level.
 - Keep titles specific and short.
 - Make each description exactly one sentence.
@@ -611,10 +660,29 @@ Age-level guidance: {{AGE_LEVEL_GUIDANCE}}
 Return JSON matching this schema:
 {
   "title": "Short guide title",
-  "topics": [
+  "sections": [
     {
-      "title": "Topic title",
-      "description": "One sentence explaining what the learner will understand."
+      "title": "Major section title",
+      "description": "One sentence explaining what this section covers.",
+      "items": [
+        {
+          "importance": "Required",
+          "title": "Specific concept to learn",
+          "details": ["Optional sub-point", "Optional variant or example"]
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Subsection title",
+          "items": [
+            {
+              "importance": "Optional but recommended",
+              "title": "Specific concept to learn",
+              "details": ["Optional sub-point"]
+            }
+          ]
+        }
+      ]
     }
   ]
 }
@@ -625,14 +693,30 @@ Age level: ages_11_13
 Output:
 {
   "title": "Understanding the Water Cycle",
-  "topics": [
+  "sections": [
     {
       "title": "What the Water Cycle Is",
-      "description": "Understand the water cycle as the continuous movement of water through Earth and the atmosphere."
+      "description": "Understand the water cycle as the continuous movement of water through Earth and the atmosphere.",
+      "items": [
+        {
+          "importance": "Required",
+          "title": "Water moving through Earth systems"
+        }
+      ]
     },
     {
       "title": "Evaporation and Transpiration",
-      "description": "Learn how liquid water becomes vapor through heat and plant activity."
+      "description": "Learn how liquid water becomes vapor through heat and plant activity.",
+      "items": [
+        {
+          "importance": "Required",
+          "title": "Evaporation"
+        },
+        {
+          "importance": "Optional but recommended",
+          "title": "Transpiration"
+        }
+      ]
     }
   ]
 }
@@ -643,17 +727,15 @@ Expected JSON schema:
 ```json
 {
   "type": "object",
-  "required": ["title", "topics"],
+  "required": ["title", "sections"],
   "properties": {
     "title": {
       "type": "string",
       "minLength": 3,
       "maxLength": 90
     },
-    "topics": {
+    "sections": {
       "type": "array",
-      "minItems": 5,
-      "maxItems": 12,
       "items": {
         "type": "object",
         "required": ["title", "description"],
@@ -661,12 +743,48 @@ Expected JSON schema:
           "title": {
             "type": "string",
             "minLength": 3,
-            "maxLength": 90
+            "maxLength": 120
           },
           "description": {
             "type": "string",
             "minLength": 20,
-            "maxLength": 240
+            "maxLength": 280
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["importance", "title"],
+              "properties": {
+                "importance": {
+                  "enum": ["Required", "Optional but recommended", "Optional and can be skipped"]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "details": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "subsections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["title", "items"],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "items": {
+                  "type": "array"
+                }
+              }
+            }
           }
         }
       }

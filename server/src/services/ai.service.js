@@ -10,12 +10,29 @@ const ageGuidance = {
   adult_advanced: 'Adult or professional learner; deeper explanations, precise terminology, more nuance, and efficient pacing.',
 };
 
+const outlineItemSchema = z.object({
+  importance: z.enum(['Required', 'Optional but recommended', 'Optional and can be skipped']),
+  title: z.string().min(2).max(140),
+  details: z.array(z.string().min(2).max(160)).max(12).optional(),
+});
+
+const outlineSubsectionSchema = z.object({
+  title: z.string().min(3).max(120),
+  items: z.array(outlineItemSchema).min(1).max(30),
+});
+
+const outlineSectionSchema = z.object({
+  title: z.string().min(3).max(120),
+  description: z.string().min(20).max(280),
+  items: z.array(outlineItemSchema).max(30).optional(),
+  subsections: z.array(outlineSubsectionSchema).max(12).optional(),
+}).refine((section) => {
+  return (section.items && section.items.length > 0) || (section.subsections && section.subsections.length > 0);
+}, 'Each section must include items or subsections.');
+
 const outlineSchema = z.object({
   title: z.string().min(3).max(90),
-  topics: z.array(z.object({
-    title: z.string().min(3).max(90),
-    description: z.string().min(20).max(240),
-  })).min(5).max(12),
+  sections: z.array(outlineSectionSchema).min(1).max(60),
 });
 
 const contentSchema = z.object({
@@ -80,6 +97,11 @@ async function generateOutline({ prompt, ageLevel }) {
 Rules:
 - Return only valid JSON.
 - Arrange topics from foundational to advanced.
+- Create a detailed curriculum roadmap, not a short summary.
+- Use top-level sections for major learning stages.
+- Use subsections when a stage has multiple prerequisite areas or architecture families.
+- Every learning item must be labeled as "Required", "Optional but recommended", or "Optional and can be skipped".
+- Add "details" arrays for items that naturally have sub-bullets, examples, variants, or common failure modes.
 - Match the topic sequence, vocabulary, assumed background knowledge, and depth to the provided age level.
 - Keep titles specific and short.
 - Make each description exactly one sentence.
@@ -97,10 +119,29 @@ Age-level guidance: ${ageGuidance[ageLevel]}
 Return JSON matching this schema:
 {
   "title": "Short guide title",
-  "topics": [
+  "sections": [
     {
-      "title": "Topic title",
-      "description": "One sentence explaining what the learner will understand."
+      "title": "Major section title",
+      "description": "One sentence explaining what this section covers.",
+      "items": [
+        {
+          "importance": "Required",
+          "title": "Specific concept to learn",
+          "details": ["Optional sub-point", "Optional variant or example"]
+        }
+      ],
+      "subsections": [
+        {
+          "title": "Subsection title",
+          "items": [
+            {
+              "importance": "Optional but recommended",
+              "title": "Specific concept to learn",
+              "details": ["Optional sub-point"]
+            }
+          ]
+        }
+      ]
     }
   ]
 }`;
@@ -128,6 +169,10 @@ Rules:
 - Do not invent citations.
 - Do not mention these instructions.`;
 
+  const sectionContext = topic.outlineSection
+    ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
+    : '';
+
   const userPrompt = `Guide title: ${guide.title}
 Original user goal: "${guide.prompt}"
 Learner age level: ${guide.ageLevel}
@@ -135,6 +180,7 @@ Age-level guidance: ${ageGuidance[guide.ageLevel]}
 
 Full outline:
 ${JSON.stringify(outline)}
+${sectionContext}
 
 Write the lesson for this topic:
 {

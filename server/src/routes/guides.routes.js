@@ -16,6 +16,14 @@ const createGuideSchema = z.object({
 function guideWithTopics(guide) {
   return {
     ...guide,
+    outline: guide.outline || {
+      title: guide.title,
+      sections: topicsDb.listTopicsForGuide(guide.id).map((topic) => ({
+        title: topic.title,
+        description: topic.description,
+        items: [],
+      })),
+    },
     topics: topicsDb.listTopicsForGuide(guide.id),
   };
 }
@@ -36,13 +44,14 @@ router.post('/', asyncHandler(async (req, res) => {
       title: outline.title,
       prompt: input.prompt,
       ageLevel: input.ageLevel,
+      outlineJson: JSON.stringify(outline),
     },
-    topics: outline.topics.map((topic, index) => ({
+    topics: outline.sections.map((section, index) => ({
       id: ids.topicId(),
       guideId,
       position: index + 1,
-      title: topic.title,
-      description: topic.description,
+      title: section.title,
+      description: section.description,
     })),
   });
 
