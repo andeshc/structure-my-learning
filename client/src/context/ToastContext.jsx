@@ -29,7 +29,7 @@ export function ToastProvider({ children }) {
       {children}
       <div className="fixed right-4 top-4 z-[60] grid w-[min(24rem,calc(100vw-2rem))] gap-2">
         {toasts.map((toast) => (
-          <div key={toast.id} className={`rounded-lg border bg-white px-4 py-3 text-sm shadow-lg ${toast.type === 'error' ? 'border-red-200 text-red-700' : 'border-charcoal/10 text-charcoal'}`}>
+          <div key={toast.id} className={`rounded-lg border bg-white px-4 py-3 text-sm ${toast.type === 'error' ? 'border-red-200 text-red-700' : 'border-charcoal/10 text-charcoal'}`}>
             {toast.message}
           </div>
         ))}

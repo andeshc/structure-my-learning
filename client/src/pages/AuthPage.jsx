@@ -48,7 +48,7 @@ export default function AuthPage({ mode }) {
           </p>
         </section>
 
-        <section className="rounded-lg border border-charcoal/10 bg-white p-6 shadow-sm">
+        <section className="rounded-lg border border-charcoal/10 bg-white p-6">
           <h2 className="text-2xl font-semibold">{isRegister ? 'Create account' : 'Welcome back'}</h2>
           <p className="mt-2 text-sm text-charcoal-400">
             {isRegister ? 'Start building your learning library.' : 'Sign in to continue learning.'}

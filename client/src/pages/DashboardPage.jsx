@@ -151,10 +151,10 @@ function GuideCard({ guide, index, onDelete }) {
   const studyMinutes = minutesForGuide(guide);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)]">
+    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-blue-200">
       <div className="relative border-b border-slate-100">
         <GuideIllustration index={index} title={guide.title} />
-        <button className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-950 shadow-[0_6px_18px_rgba(15,23,42,0.12)] hover:text-red-700" aria-label={`Delete ${guide.title}`} onClick={() => onDelete(guide)}>
+        <button className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-950 hover:text-red-700" aria-label={`Delete ${guide.title}`} onClick={() => onDelete(guide)}>
           <MoreHorizontal size={22} />
         </button>
       </div>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
     <section>
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="text-5xl font-extrabold tracking-tight text-slate-950">Dashboard</h1>
-        <Link className="relative inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-blue-600 px-6 text-lg font-bold text-white shadow-[0_12px_28px_rgba(37,99,235,0.28)] hover:bg-blue-700" to="/guides/new">
+        <Link className="relative inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-blue-600 px-6 text-lg font-bold text-white hover:bg-blue-700" to="/guides/new">
           <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-white/70">
             <Plus size={21} />
           </span>
@@ -290,14 +290,14 @@ export default function DashboardPage() {
 
         {guides.length === 0 ? (
           <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_360px]">
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <EmptyIllustration />
               <div className="p-6">
                 <h3 className="text-2xl font-extrabold">Create your first learning guide</h3>
                 <p className="mt-3 max-w-2xl text-slate-600">
                   Turn any topic into a structured roadmap with detailed sections, required concepts, optional depth, and generated lessons.
                 </p>
-                <Link className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-bold text-white shadow-[0_12px_28px_rgba(37,99,235,0.22)]" to="/guides/new">
+                <Link className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-bold text-white" to="/guides/new">
                   New guide
                 </Link>
               </div>
@@ -312,7 +312,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="mt-10 rounded-xl border border-slate-200 bg-white p-7 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+      <div className="mt-10 rounded-xl border border-slate-200 bg-white p-7">
         <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-slate-200">
           <StatPill icon={<BookOpen className="text-emerald-600" size={34} />} value={totals.completed} label="Lessons completed" color="bg-emerald-100" />
           <div className="xl:pl-9">
@@ -329,7 +329,7 @@ export default function DashboardPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6">
             <div className="flex items-start gap-4">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-red-50 text-red-700">
                 <BarChart3 size={24} />

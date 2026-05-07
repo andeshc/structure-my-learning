@@ -16,7 +16,7 @@ function navClass({ isActive }) {
   return [
     'flex h-14 items-center gap-4 rounded-lg px-5 text-[15px] font-semibold transition',
     isActive
-      ? 'border border-blue-200 bg-blue-50 text-blue-700 shadow-[0_8px_22px_rgba(37,99,235,0.08)]'
+      ? 'border border-blue-200 bg-blue-50 text-blue-700'
       : 'text-slate-700 hover:bg-slate-50 hover:text-blue-700',
   ].join(' ');
 }
@@ -32,7 +32,7 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-slate-950">
-      <div className="mx-auto min-h-screen max-w-[1540px] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)] lg:grid lg:grid-cols-[340px_1fr]">
+      <div className="min-h-screen w-full bg-white lg:grid lg:grid-cols-[340px_1fr]">
         <aside className="hidden border-r border-slate-200 bg-[#fffdfa] px-7 py-8 lg:flex lg:flex-col">
           <Link to="/" className="flex items-center gap-4">
             <span className="grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-700">
@@ -60,7 +60,7 @@ export default function AppShell() {
           </nav>
 
           <div className="mt-auto">
-            <div className="rounded-xl border border-amber-200 bg-[#fffaf0] p-5 shadow-[0_12px_35px_rgba(245,158,11,0.10)]">
+            <div className="rounded-xl border border-amber-200 bg-[#fffaf0] p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-lg font-extrabold">Your AI tutor</p>
@@ -73,7 +73,7 @@ export default function AppShell() {
               <div className="mt-2 flex justify-center">
                 <div className="relative">
                   <div className="absolute left-1/2 top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-emerald-400" />
-                  <div className="relative mt-5 grid h-20 w-24 place-items-center rounded-[28px] border-4 border-blue-100 bg-white shadow-inner">
+                  <div className="relative mt-5 grid h-20 w-24 place-items-center rounded-[28px] border-4 border-blue-100 bg-white">
                     <Bot className="text-blue-700" size={46} />
                   </div>
                 </div>
