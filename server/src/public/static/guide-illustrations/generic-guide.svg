@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024" role="img" aria-label="Generic learning guide illustration">
+  <rect width="1536" height="1024" fill="#fbf4e8"/>
+  <g fill="#fde68a">
+    <circle cx="118" cy="102" r="12"/>
+    <circle cx="174" cy="102" r="12"/>
+    <circle cx="230" cy="102" r="12"/>
+    <circle cx="118" cy="158" r="12"/>
+    <circle cx="174" cy="158" r="12"/>
+    <circle cx="230" cy="158" r="12"/>
+    <circle cx="1286" cy="426" r="12"/>
+    <circle cx="1342" cy="426" r="12"/>
+    <circle cx="1398" cy="426" r="12"/>
+  </g>
+  <g fill="none" stroke="#334155" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M336 448h190M1010 448h190M758 228v152M758 646v152" stroke-width="18"/>
+    <path d="M526 448h76M914 448h96M526 576h76M914 576h96" stroke-width="14"/>
+    <path d="M336 576h190M1010 576h190" stroke-width="18"/>
+  </g>
+  <rect x="602" y="304" width="312" height="348" rx="56" fill="#dbeafe" stroke="#334155" stroke-width="18"/>
+  <rect x="664" y="360" width="188" height="62" rx="18" fill="#bfdbfe" stroke="#334155" stroke-width="10"/>
+  <rect x="664" y="458" width="188" height="62" rx="18" fill="#bbf7d0" stroke="#334155" stroke-width="10"/>
+  <rect x="664" y="556" width="188" height="62" rx="18" fill="#fde68a" stroke="#334155" stroke-width="10"/>
+  <rect x="286" y="484" width="152" height="152" rx="24" fill="#dbeafe" stroke="#93c5fd" stroke-width="12"/>
+  <g stroke="#93c5fd" stroke-width="8">
+    <path d="M336 484v152M388 484v152M286 536h152M286 588h152"/>
+  </g>
+  <rect x="1098" y="402" width="188" height="220" rx="28" fill="#ede9fe" stroke="#334155" stroke-width="12"/>
+  <g stroke="#8b5cf6" stroke-linecap="round" stroke-width="14">
+    <path d="M1154 474h76"/>
+    <path d="M1154 540h54"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-width="10">
+    <path d="M121 842h62" stroke="#bfdbfe"/>
+    <path d="M1302 190l88-66" stroke="#fed7aa"/>
+    <path d="M1338 244l116-74" stroke="#fed7aa"/>
+    <path d="M1228 828l44-44m20 0l44 44" stroke="#c4b5fd"/>
+  </g>
+</svg>

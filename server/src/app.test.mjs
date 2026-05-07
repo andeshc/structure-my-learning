@@ -6,7 +6,9 @@ const require = createRequire(import.meta.url);
 const app = require('./app');
 const db = require('./db');
 const { initDb } = require('./db/init');
-const { setAiMocks } = require('./services/ai.service');
+const aiService = require('./services/ai.service');
+const config = require('./config');
+const { setAiMocks } = aiService;
 
 function resetDatabase() {
   initDb();
@@ -124,5 +126,54 @@ describe('API', () => {
     expect(progressResponse.status).toBe(200);
     expect(progressResponse.body.topic.isCompleted).toBe(true);
     expect(progressResponse.body.guide.progressPercentage).toBe(20);
+  });
+
+  it('stores the static fallback illustration URL on guide creation', async () => {
+    setAiMocks({
+      generateOutline: async () => ({
+        title: 'Fallback Illustration Guide',
+        tags: ['General', 'Learning'],
+        sections: [
+          {
+            title: 'Foundations',
+            description: 'Learn the basic ideas that support the rest of the subject.',
+            items: [{ importance: 'Required', title: 'Core idea' }],
+          },
+        ],
+      }),
+      generateGuideIllustration: async () => '/static/guide-illustrations/generic-guide.svg',
+    });
+
+    const token = await registerUser('fallback@example.com');
+    const response = await request(app)
+      .post('/api/guides')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ prompt: 'teach me fallback illustration behavior', ageLevel: 'adult_beginner' });
+
+    expect(response.status).toBe(201);
+    expect(response.body.guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
+  });
+
+  it('returns the static illustration fallback when image generation is unavailable', async () => {
+    const originalApiKey = config.openaiApiKey;
+    config.openaiApiKey = '';
+    setAiMocks({});
+
+    let illustrationUrl;
+    try {
+      illustrationUrl = await aiService.generateGuideIllustration({
+        guideId: 'guide_test',
+        outline: {
+          title: 'Unavailable Image Guide',
+          tags: ['General', 'Learning'],
+          sections: [{ title: 'Foundations' }],
+        },
+        prompt: 'teach me graceful fallback behavior',
+      });
+    } finally {
+      config.openaiApiKey = originalApiKey;
+    }
+
+    expect(illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
   });
 });

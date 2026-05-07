@@ -14,6 +14,10 @@ export default defineConfig({
         target: 'http://0.0.0.0:3001',
         changeOrigin: true,
       },
+      '/static': {
+        target: 'http://0.0.0.0:3001',
+        changeOrigin: true,
+      },
     },
   },
 });

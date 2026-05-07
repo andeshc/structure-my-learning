@@ -42,6 +42,8 @@ const contentSchema = z.object({
   contentMarkdown: z.string().min(500).max(12000),
 });
 
+const fallbackIllustrationPath = '/static/guide-illustrations/generic-guide.svg';
+
 let testMocks = {};
 
 function setAiMocks(mocks) {
@@ -179,7 +181,7 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
   }
 
   if (!config.openaiApiKey) {
-    openAiClient();
+    return fallbackIllustrationPath;
   }
 
   let lastError;
@@ -224,11 +226,11 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
     }
   }
 
-  const error = new Error("We couldn't generate your guide illustration right now. Please try again in a moment.");
-  error.status = 502;
-  error.expose = true;
-  error.cause = lastError;
-  throw error;
+  if (lastError && config.nodeEnv !== 'test') {
+    console.warn('Guide illustration generation failed; using fallback illustration.', lastError.message);
+  }
+
+  return fallbackIllustrationPath;
 }
 
 async function generateTopicContent({ guide, outline, topic }) {
