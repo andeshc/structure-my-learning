@@ -16,7 +16,6 @@ module.exports = {
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
-  openaiImageModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2',
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',

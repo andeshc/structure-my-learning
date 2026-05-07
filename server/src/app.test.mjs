@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const app = require('./app');
+const fs = require('fs');
 const db = require('./db');
 const { initDb } = require('./db/init');
 const aiService = require('./services/ai.service');
@@ -70,7 +71,6 @@ describe('API', () => {
       generateTopicContent: async ({ topic }) => ({
         contentMarkdown: `# ${topic.title}\n\nThis lesson explains the concept with examples, analogies, and a summary. `.repeat(14),
       }),
-      generateGuideIllustration: async ({ guideId }) => `/generated/guide-illustrations/${guideId}.png`,
     });
   });
 
@@ -106,7 +106,7 @@ describe('API', () => {
 
     expect(guideResponse.status).toBe(201);
     expect(guideResponse.body.guide.topics).toHaveLength(5);
-    expect(guideResponse.body.guide.illustrationUrl).toContain('/generated/guide-illustrations/');
+    expect(guideResponse.body.guide.illustrationUrl).toMatch(/^\/generated\/guide-illustrations\/.+\.svg$/);
     expect(guideResponse.body.guide.outline.tags).toEqual(['Learning', 'Mocked']);
     expect(guideResponse.body.guide.outline.sections[0].items[0].importance).toBe('Required');
 
@@ -154,7 +154,7 @@ describe('API', () => {
     expect(response.body.guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
   });
 
-  it('returns the static illustration fallback when image generation is unavailable', async () => {
+  it('generates a semantic SVG illustration without an OpenAI image model', async () => {
     const originalApiKey = config.openaiApiKey;
     config.openaiApiKey = '';
     setAiMocks({});
@@ -164,16 +164,17 @@ describe('API', () => {
       illustrationUrl = await aiService.generateGuideIllustration({
         guideId: 'guide_test',
         outline: {
-          title: 'Unavailable Image Guide',
-          tags: ['General', 'Learning'],
-          sections: [{ title: 'Foundations' }],
+          title: 'Matrix Multiplication',
+          tags: ['Math', 'Linear Algebra'],
+          sections: [{ title: 'Rows and columns' }],
         },
-        prompt: 'teach me graceful fallback behavior',
+        prompt: 'teach me matrix multiplication',
       });
     } finally {
       config.openaiApiKey = originalApiKey;
     }
 
-    expect(illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
+    expect(illustrationUrl).toBe('/generated/guide-illustrations/guide_test.svg');
+    expect(fs.readFileSync('./public/generated/guide-illustrations/guide_test.svg', 'utf8')).toContain('A</text>');
   });
 });

@@ -156,23 +156,185 @@ Return JSON matching this schema:
   return outlineSchema.parse(await completeJson({ systemPrompt, userPrompt }));
 }
 
-function illustrationPrompt({ outline, userPrompt }) {
-  const sectionTitles = outline.sections.slice(0, 6).map((section) => section.title).join(', ');
-  const tags = outline.tags && outline.tags.length > 0 ? outline.tags.join(', ') : 'learning, education';
+function escapeXml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
 
-  return `Use case: scientific-educational
-Asset type: dashboard guide card illustration, 1536x1024 landscape bitmap
-Primary request: Create a clean educational illustration for a learning guide card.
-Guide title: ${outline.title}
-Guide tags: ${tags}
-Original learner request: ${userPrompt}
-Major guide sections: ${sectionTitles}
-Scene/backdrop: warm off-white classroom-paper background, flat modern app illustration style, no shadows, no 3D, no photorealism.
-Subject: a clear domain-specific visual metaphor for this exact guide. For math topics, use mathematical objects such as matrices, grids, graphs, vectors, equations, or highlighted rows and columns. For science topics, use simple scientific processes or diagrams. For business topics, use plans, targets, workflows, and charts.
-Style: polished learning dashboard card illustration; dark slate outlines; soft blue, green, amber, and violet accents; lots of whitespace; crisp vector-like shapes rendered as a bitmap.
-Text constraints: Avoid long readable text. Use only tiny labels, symbols, or single letters when they are essential to the concept.
-Composition: centered diagram, generous padding, suitable for being cropped slightly in a card header.
-Avoid: generic server diagrams unless the guide is about computing infrastructure, dense paragraphs, people, realistic paper texture, shadows, watermarks, logos.`;
+function illustrationKind({ outline, prompt }) {
+  const haystack = [
+    outline.title,
+    prompt,
+    ...(outline.tags || []),
+    ...outline.sections.flatMap((section) => [
+      section.title,
+      section.description,
+      ...(section.items || []).map((item) => item.title),
+      ...(section.subsections || []).map((subsection) => subsection.title),
+    ]),
+  ].join(' ').toLowerCase();
+
+  if (/(matrix|linear algebra|vector|tensor|calculus|probability|statistics|geometry|algebra|multiplication|dot product)/.test(haystack)) {
+    return 'math';
+  }
+
+  if (/(transformer|attention|token|embedding|neural|deep learning|language model|llm|machine learning|ai\b)/.test(haystack)) {
+    return 'ai';
+  }
+
+  if (/(water|cycle|earth|weather|climate|biology|chemistry|physics|ecosystem|science)/.test(haystack)) {
+    return 'science';
+  }
+
+  if (/(strategy|product|business|marketing|startup|roadmap|customer|market|sales)/.test(haystack)) {
+    return 'business';
+  }
+
+  if (/(code|programming|javascript|python|react|node|software|database|api|web)/.test(haystack)) {
+    return 'code';
+  }
+
+  return 'generic';
+}
+
+function svgFrame({ title, body }) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024" role="img" aria-label="${escapeXml(title)} illustration">
+  <title>${escapeXml(title)} illustration</title>
+  <rect width="1536" height="1024" fill="#fbf4e8"/>
+  <g fill="#fde68a">
+    <circle cx="118" cy="102" r="12"/><circle cx="174" cy="102" r="12"/><circle cx="230" cy="102" r="12"/>
+    <circle cx="118" cy="158" r="12"/><circle cx="174" cy="158" r="12"/><circle cx="230" cy="158" r="12"/>
+    <circle cx="1286" cy="426" r="12"/><circle cx="1342" cy="426" r="12"/><circle cx="1398" cy="426" r="12"/>
+  </g>
+  ${body}
+</svg>
+`;
+}
+
+function mathSvg(title) {
+  return svgFrame({
+    title,
+    body: `<g fill="none" stroke="#334155" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M468 512h110M866 512h110" stroke-width="12"/>
+    <path d="M579 474l38 38-38 38M977 474l38 38-38 38" stroke-width="10"/>
+  </g>
+  <g font-family="Inter, Arial, sans-serif" font-size="56" font-weight="700" fill="#334155">
+    <text x="324" y="320">A</text><text x="718" y="320">B</text><text x="1110" y="320">C</text>
+  </g>
+  <g stroke="#334155" stroke-width="10" fill="#f8fafc">
+    <rect x="258" y="356" width="250" height="220" rx="22"/>
+    <rect x="650" y="324" width="220" height="300" rx="22"/>
+    <rect x="1050" y="356" width="250" height="220" rx="22"/>
+  </g>
+  <g stroke="#93c5fd" stroke-width="6">
+    <path d="M258 430h250M258 502h250M320 356v220M382 356v220M444 356v220"/>
+    <path d="M650 384h220M650 444h220M650 504h220M650 564h220M705 324v300M760 324v300M815 324v300"/>
+    <path d="M1050 430h250M1050 502h250M1112 356v220M1174 356v220M1236 356v220"/>
+  </g>
+  <rect x="258" y="430" width="250" height="72" fill="#bfdbfe" opacity=".65"/>
+  <rect x="705" y="324" width="55" height="300" fill="#bbf7d0" opacity=".75"/>
+  <rect x="1112" y="430" width="62" height="72" fill="#ede9fe" opacity=".9"/>
+  <path d="M383 502C486 705 803 704 1143 502" fill="none" stroke="#86efac" stroke-width="8" stroke-linecap="round"/>`,
+  });
+}
+
+function aiSvg(title) {
+  return svgFrame({
+    title,
+    body: `<g fill="none" stroke="#334155" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M336 448h190M1010 448h190M758 228v152M758 646v152" stroke-width="18"/>
+    <path d="M526 448h76M914 448h96M526 576h76M914 576h96" stroke-width="14"/>
+    <path d="M336 576h190M1010 576h190" stroke-width="18"/>
+  </g>
+  <rect x="602" y="304" width="312" height="348" rx="56" fill="#dbeafe" stroke="#334155" stroke-width="18"/>
+  <rect x="664" y="360" width="188" height="62" rx="18" fill="#bfdbfe" stroke="#334155" stroke-width="10"/>
+  <rect x="664" y="458" width="188" height="62" rx="18" fill="#bbf7d0" stroke="#334155" stroke-width="10"/>
+  <rect x="664" y="556" width="188" height="62" rx="18" fill="#fde68a" stroke="#334155" stroke-width="10"/>
+  <rect x="286" y="484" width="152" height="152" rx="24" fill="#dbeafe" stroke="#93c5fd" stroke-width="12"/>
+  <g stroke="#93c5fd" stroke-width="8"><path d="M336 484v152M388 484v152M286 536h152M286 588h152"/></g>
+  <rect x="1098" y="402" width="188" height="220" rx="28" fill="#ede9fe" stroke="#334155" stroke-width="12"/>
+  <g stroke="#8b5cf6" stroke-linecap="round" stroke-width="14"><path d="M1154 474h76"/><path d="M1154 540h54"/></g>`,
+  });
+}
+
+function scienceSvg(title) {
+  return svgFrame({
+    title,
+    body: `<path d="M0 720c230-120 420-126 620-36 226 102 456 78 916-44v384H0z" fill="#38bdf8"/>
+  <path d="M0 790c250-72 440-40 650 26 270 86 500 34 886-50v258H0z" fill="#14b8a6" opacity=".8"/>
+  <path d="M196 704l230-360 160 296 132-190 234 254z" fill="#7dd3fc"/>
+  <path d="M330 704l132-204 104 204z" fill="#bfdbfe"/>
+  <circle cx="1120" cy="252" r="86" fill="#fbbf24"/>
+  <path d="M770 214c148-106 322-94 450 34M1220 248l-42-86M1220 248l-100-4M1140 565c144-44 224-130 248-282M1388 283l48 90M1388 283l-94 40" fill="none" stroke="#2563eb" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#7dd3fc"><ellipse cx="292" cy="250" rx="100" ry="58"/><ellipse cx="410" cy="234" rx="88" ry="70"/><ellipse cx="518" cy="276" rx="118" ry="56"/><ellipse cx="924" cy="414" rx="100" ry="54"/><ellipse cx="1038" cy="390" rx="86" ry="66"/></g>
+  <g stroke="#0ea5e9" stroke-width="18" stroke-linecap="round"><path d="M270 380l-30 64M390 374l-30 64M512 382l-30 64M938 514l-30 64M1048 504l-30 64"/></g>`,
+  });
+}
+
+function businessSvg(title) {
+  return svgFrame({
+    title,
+    body: `<circle cx="452" cy="510" r="244" fill="#fee2e2" stroke="#334155" stroke-width="14"/>
+  <circle cx="452" cy="510" r="174" fill="#fff7ed" stroke="#fca5a5" stroke-width="42"/>
+  <circle cx="452" cy="510" r="88" fill="#fee2e2" stroke="#fca5a5" stroke-width="34"/>
+  <circle cx="452" cy="510" r="28" fill="#ef4444"/>
+  <path d="M462 502l398-252" stroke="#1d4ed8" stroke-width="24" stroke-linecap="round"/>
+  <path d="M836 268l138-54-46 126z" fill="#3b82f6" stroke="#334155" stroke-width="14"/>
+  <g transform="translate(930 312) rotate(7)">
+    <rect x="0" y="0" width="356" height="390" rx="34" fill="#ffffff" stroke="#334155" stroke-width="14"/>
+    <path d="M82 106l42 42M124 106l-42 42M236 126l-118 132M118 258l-12-74M118 258l74-8M82 316l42 42M124 316l-42 42" stroke="#1d4ed8" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M72 0v-46M144 0v-46M216 0v-46M288 0v-46" stroke="#64748b" stroke-width="12" stroke-linecap="round"/>
+  </g>`,
+  });
+}
+
+function codeSvg(title) {
+  return svgFrame({
+    title,
+    body: `<rect x="328" y="270" width="880" height="540" rx="42" fill="#f8fafc" stroke="#334155" stroke-width="16"/>
+  <rect x="328" y="270" width="880" height="92" rx="42" fill="#dbeafe"/>
+  <circle cx="402" cy="316" r="16" fill="#f87171"/><circle cx="462" cy="316" r="16" fill="#fbbf24"/><circle cx="522" cy="316" r="16" fill="#34d399"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M520 514l-102 94 102 94M1016 514l102 94-102 94" stroke="#2563eb" stroke-width="26"/>
+    <path d="M844 464l-152 306" stroke="#8b5cf6" stroke-width="24"/>
+    <path d="M610 452h252M610 548h162M610 748h286" stroke="#94a3b8" stroke-width="18"/>
+  </g>`,
+  });
+}
+
+function genericSvg(title) {
+  return aiSvg(title);
+}
+
+function semanticIllustrationSvg({ outline, prompt }) {
+  const title = outline.title || prompt || 'Learning guide';
+  const kind = illustrationKind({ outline, prompt });
+
+  if (kind === 'math') {
+    return mathSvg(title);
+  }
+
+  if (kind === 'ai') {
+    return aiSvg(title);
+  }
+
+  if (kind === 'science') {
+    return scienceSvg(title);
+  }
+
+  if (kind === 'business') {
+    return businessSvg(title);
+  }
+
+  if (kind === 'code') {
+    return codeSvg(title);
+  }
+
+  return genericSvg(title);
 }
 
 async function generateGuideIllustration({ guideId, outline, prompt }) {
@@ -180,57 +342,22 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
     return testMocks.generateGuideIllustration({ guideId, outline, prompt });
   }
 
-  if (!config.openaiApiKey) {
+  try {
+    const relativeDir = '/generated/guide-illustrations';
+    const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    const fileName = `${guideId}.svg`;
+    fs.writeFileSync(path.join(outputDir, fileName), semanticIllustrationSvg({ outline, prompt }), 'utf8');
+
+    return `${relativeDir}/${fileName}`;
+  } catch (error) {
+    if (config.nodeEnv !== 'test') {
+      console.warn('Semantic guide illustration generation failed; using fallback illustration.', error.message);
+    }
+
     return fallbackIllustrationPath;
   }
-
-  let lastError;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const response = await openAiClient().images.generate({
-        model: config.openaiImageModel,
-        prompt: illustrationPrompt({ outline, userPrompt: prompt }),
-        n: 1,
-        size: '1536x1024',
-        quality: 'medium',
-      });
-
-      const image = response.data && response.data[0];
-      const imageData = image && image.b64_json;
-
-      if (!imageData && !image?.url) {
-        throw new Error('Image generation did not return image data.');
-      }
-
-      const relativeDir = '/generated/guide-illustrations';
-      const outputDir = path.join(__dirname, '../public', relativeDir.replace(/^\//, ''));
-      fs.mkdirSync(outputDir, { recursive: true });
-
-      const fileName = `${guideId}.png`;
-      const outputPath = path.join(outputDir, fileName);
-
-      if (imageData) {
-        fs.writeFileSync(outputPath, Buffer.from(imageData, 'base64'));
-      } else {
-        const imageResponse = await fetch(image.url);
-        if (!imageResponse.ok) {
-          throw new Error('Image generation URL could not be downloaded.');
-        }
-        fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
-      }
-
-      return `${relativeDir}/${fileName}`;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  if (lastError && config.nodeEnv !== 'test') {
-    console.warn('Guide illustration generation failed; using fallback illustration.', lastError.message);
-  }
-
-  return fallbackIllustrationPath;
 }
 
 async function generateTopicContent({ guide, outline, topic }) {

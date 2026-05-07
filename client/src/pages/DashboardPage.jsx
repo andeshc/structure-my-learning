@@ -12,7 +12,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { deleteGuide, listGuides } from '../api/guides';
-import matrixIllustration from '../assets/guide-illustrations/matrix-multiplication.png';
 import LoadingPanel from '../components/LoadingPanel';
 
 const tagThemes = [
@@ -106,6 +105,41 @@ function TransformerIllustration() {
   );
 }
 
+function MatrixIllustration() {
+  return (
+    <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Matrix multiplication illustration">
+      <rect width="420" height="220" className="fill-[#fbf4e8]" />
+      <g className="fill-amber-200">
+        <circle cx="26" cy="32" r="3" /><circle cx="42" cy="32" r="3" /><circle cx="58" cy="32" r="3" />
+        <circle cx="26" cy="48" r="3" /><circle cx="42" cy="48" r="3" /><circle cx="58" cy="48" r="3" />
+        <circle cx="362" cy="142" r="3" /><circle cx="378" cy="142" r="3" /><circle cx="394" cy="142" r="3" />
+      </g>
+      <g className="fill-slate-700 text-[14px] font-bold">
+        <text x="102" y="58">A</text>
+        <text x="205" y="58">B</text>
+        <text x="312" y="58">C</text>
+      </g>
+      <g className="fill-white stroke-slate-700" strokeWidth="2.5">
+        <rect x="72" y="72" width="76" height="64" rx="6" />
+        <rect x="180" y="60" width="64" height="88" rx="6" />
+        <rect x="286" y="72" width="76" height="64" rx="6" />
+      </g>
+      <g className="stroke-blue-300" strokeWidth="1.7">
+        <path d="M72 93h76M72 115h76M97 72v64M123 72v64" />
+        <path d="M180 82h64M180 104h64M180 126h64M201 60v88M222 60v88" />
+        <path d="M286 93h76M286 115h76M311 72v64M337 72v64" />
+      </g>
+      <rect x="72" y="93" width="76" height="22" className="fill-blue-200" opacity=".7" />
+      <rect x="201" y="60" width="21" height="88" className="fill-emerald-200" opacity=".8" />
+      <rect x="311" y="93" width="26" height="22" className="fill-violet-100" opacity=".95" />
+      <g className="fill-none stroke-slate-700" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M156 104h16M166 96l8 8-8 8M252 104h18M264 96l8 8-8 8" />
+      </g>
+      <path d="M110 115c45 58 142 58 214 0" className="fill-none stroke-emerald-400" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function WaterIllustration() {
   return (
     <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Water cycle illustration">
@@ -158,7 +192,7 @@ function GuideIllustration({ guide, index, title }) {
   const lower = title.toLowerCase();
 
   if (lower.includes('matrix') || lower.includes('linear algebra') || lower.includes('multiplication')) {
-    return <img className="h-48 w-full object-cover" src={matrixIllustration} alt={`${title} illustration`} />;
+    return <MatrixIllustration />;
   }
 
   if (lower.includes('water') || lower.includes('cycle') || lower.includes('earth')) {
