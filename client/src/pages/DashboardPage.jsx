@@ -7,8 +7,9 @@ import {
   MoreHorizontal,
   Plus,
   TrendingUp,
+  Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { deleteGuide, listGuides } from '../api/guides';
 import LoadingPanel from '../components/LoadingPanel';
@@ -163,19 +164,58 @@ function GuideIllustration({ index, title }) {
 }
 
 function GuideCard({ guide, index, onDelete }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   const tags = guideTags(guide);
   const title = displayGuideTitle(guide.title);
   const lessons = guide.topicCount || 0;
   const activities = lessons + Math.max(guide.completedTopicCount || 0, 0);
   const studyMinutes = minutesForGuide(guide);
 
+  useEffect(() => {
+    function closeMenu(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', closeMenu);
+    return () => document.removeEventListener('pointerdown', closeMenu);
+  }, []);
+
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-blue-200">
       <div className="relative border-b border-slate-100">
         <GuideIllustration index={index} title={title} />
-        <button className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-red-200 hover:text-red-700" aria-label={`Delete ${title}`} onClick={() => onDelete(guide)}>
-          <MoreHorizontal size={21} />
-        </button>
+        <div ref={menuRef} className="absolute right-3 top-3">
+          <button
+            className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-700"
+            type="button"
+            aria-label={`Open menu for ${title}`}
+            aria-expanded={isMenuOpen}
+            aria-haspopup="menu"
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            <MoreHorizontal size={21} />
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 top-11 z-20 w-40 rounded-lg border border-slate-200 bg-white p-1" role="menu">
+              <button
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onDelete(guide);
+                }}
+              >
+                <Trash2 size={16} />
+                Delete guide
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="p-5">
@@ -198,21 +238,27 @@ function GuideCard({ guide, index, onDelete }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 border-t border-slate-200 bg-[#fffdfa] text-center">
-        <div className="px-3 py-5">
-          <FileText className="mx-auto text-slate-500" size={24} />
-          <p className="mt-2 text-lg font-extrabold">{lessons}</p>
-          <p className="text-xs text-slate-600">Lessons</p>
+      <div className="grid grid-cols-3 border-t border-slate-200 bg-white">
+        <div className="flex items-center justify-center gap-2.5 px-3 py-4">
+          <FileText className="shrink-0 text-slate-500" size={22} />
+          <div className="min-w-0 text-center">
+            <p className="text-lg font-extrabold leading-none text-slate-950">{lessons}</p>
+            <p className="mt-1 text-xs text-slate-600">Lessons</p>
+          </div>
         </div>
-        <div className="border-x border-slate-200 px-3 py-5">
-          <CheckCircle2 className="mx-auto text-slate-500" size={24} />
-          <p className="mt-2 text-lg font-extrabold">{activities}</p>
-          <p className="text-xs text-slate-600">Activities</p>
+        <div className="flex items-center justify-center gap-2.5 border-x border-slate-200 px-3 py-4">
+          <CheckCircle2 className="shrink-0 text-slate-500" size={22} />
+          <div className="min-w-0 text-center">
+            <p className="text-lg font-extrabold leading-none text-slate-950">{activities}</p>
+            <p className="mt-1 text-xs text-slate-600">Activities</p>
+          </div>
         </div>
-        <div className="px-3 py-5">
-          <Clock3 className="mx-auto text-slate-500" size={24} />
-          <p className="mt-2 text-lg font-extrabold">{formatDuration(studyMinutes)}</p>
-          <p className="text-xs text-slate-600">Study time</p>
+        <div className="flex items-center justify-center gap-2.5 px-3 py-4">
+          <Clock3 className="shrink-0 text-slate-500" size={22} />
+          <div className="min-w-0 text-center">
+            <p className="whitespace-nowrap text-lg font-extrabold leading-none text-slate-950">{formatDuration(studyMinutes)}</p>
+            <p className="mt-1 text-xs text-slate-600">Study time</p>
+          </div>
         </div>
       </div>
     </article>
@@ -323,7 +369,7 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="mt-10 grid gap-8 xl:grid-cols-3">
+          <div className="mt-10 grid justify-start gap-8 sm:grid-cols-[repeat(auto-fill,minmax(280px,360px))]">
             {guides.map((guide, index) => (
               <GuideCard key={guide.id} guide={guide} index={index} onDelete={setDeleteTarget} />
             ))}
