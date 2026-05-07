@@ -6,7 +6,9 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   const showToast = useCallback((toast) => {
-    const id = crypto.randomUUID();
+    const id = typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setToasts((current) => current.concat({ id, type: toast.type || 'info', message: toast.message }));
     window.setTimeout(() => {
       setToasts((current) => current.filter((item) => item.id !== id));

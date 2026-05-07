@@ -29,3 +29,10 @@ export function updateTopicProgress(topicId, isCompleted) {
     body: JSON.stringify({ isCompleted }),
   });
 }
+
+export function chatWithTutor(topicId, messages) {
+  return apiRequest(`/api/topics/${topicId}/chat`, {
+    method: 'POST',
+    body: JSON.stringify({ messages }),
+  });
+}

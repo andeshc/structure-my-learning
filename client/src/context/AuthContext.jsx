@@ -15,10 +15,12 @@ export function AuthProvider({ children }) {
         setUser(data.user);
         setStatus('authenticated');
       })
-      .catch(() => {
+      .catch((err) => {
         setAccessToken(null);
         setUser(null);
-        setStatus('guest');
+        // 401 = no valid session, send to login.
+        // 429 / 5xx / network error = transient — don't boot the user out.
+        setStatus((!err.status || err.status === 401) ? 'guest' : 'error');
       });
   }, []);
 

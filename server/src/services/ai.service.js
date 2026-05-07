@@ -4,6 +4,33 @@ const path = require('path');
 const { z } = require('zod');
 const config = require('../config');
 
+const guidePromptTemplate = fs.readFileSync(
+  path.join(__dirname, '../prompts/guide-generation-prompt.md'),
+  'utf8'
+);
+
+function parsePromptSections(markdown) {
+  const sections = {};
+  const lines = markdown.split('\n');
+  let currentKey = null;
+  let buffer = [];
+
+  for (const line of lines) {
+    const heading = line.match(/^## (.+)/);
+    if (heading) {
+      if (currentKey) sections[currentKey] = buffer.join('\n').trim();
+      currentKey = heading[1].trim();
+      buffer = [];
+    } else if (currentKey) {
+      buffer.push(line);
+    }
+  }
+  if (currentKey) sections[currentKey] = buffer.join('\n').trim();
+  return sections;
+}
+
+const guidePromptSections = parsePromptSections(guidePromptTemplate);
+
 const ageGuidance = {
   ages_8_10: 'Elementary learner; simple vocabulary, concrete examples, gentle pacing, no assumed background knowledge.',
   ages_11_13: 'Middle-grade learner; clear vocabulary, light technical terms with definitions, relatable examples.',
@@ -15,7 +42,7 @@ const ageGuidance = {
 const outlineItemSchema = z.object({
   importance: z.enum(['Required', 'Optional but recommended', 'Optional and can be skipped']),
   title: z.string().min(2).max(140),
-  details: z.array(z.string().min(2).max(160)).max(12).optional(),
+  details: z.array(z.string().min(2).max(300)).max(12).optional(),
 });
 
 const outlineSubsectionSchema = z.object({
@@ -34,6 +61,8 @@ const outlineSectionSchema = z.object({
 
 const outlineSchema = z.object({
   title: z.string().min(3).max(90),
+  overview: z.string().min(20).max(800).optional(),
+  learningOutcomes: z.array(z.string().min(5).max(200)).max(5).optional(),
   tags: z.array(z.string().min(2).max(28)).min(1).max(3).optional(),
   sections: z.array(outlineSectionSchema).min(1).max(60),
 });
@@ -97,34 +126,32 @@ async function generateOutline({ prompt, ageLevel }) {
     return outlineSchema.parse(await testMocks.generateOutline({ prompt, ageLevel }));
   }
 
-  const systemPrompt = `You are StructureMyLearning's expert curriculum designer. Create concise, accurate, learner-friendly course outlines from plain-language learning goals.
+  const systemPrompt = `${guidePromptSections['System Prompt']}
 
-Rules:
-- Return only valid JSON.
-- Arrange topics from foundational to advanced.
-- Create a detailed curriculum roadmap, not a short summary.
-- Use top-level sections for major learning stages.
-- Use subsections when a stage has multiple prerequisite areas or architecture families.
+${guidePromptSections['Instructions']}
+
+Additional output rules:
+- Return only valid JSON. Do not include markdown fences.
+- Arrange sections from foundational to advanced.
 - Every learning item must be labeled as "Required", "Optional but recommended", or "Optional and can be skipped".
 - Add "details" arrays for items that naturally have sub-bullets, examples, variants, or common failure modes.
-- Match the topic sequence, vocabulary, assumed background knowledge, and depth to the provided age level.
-- Keep titles specific and short.
+- Keep section titles specific and short.
 - Generate exactly two short category tags based on the completed guide, not by splitting the title.
-- Make each description exactly one sentence.
-- Do not include markdown.
+- Make each section description exactly one sentence.
 - Do not include content lessons yet.
 - Avoid unsupported claims, hype, and filler.`;
 
-  const userPrompt = `Create a structured learning guide for this user goal:
+  const filledUserPrompt = guidePromptSections['User Prompt']
+    .replace('`{{SUBJECT}}`', `"${prompt}"`)
+    .replace('`{{DEPTH_LEVEL}}`', ageLevel);
 
-"${prompt}"
+  const userPrompt = `${filledUserPrompt}
 
-Learner age level: ${ageLevel}
-Age-level guidance: ${ageGuidance[ageLevel]}
-
-Return JSON matching this schema:
+Return JSON matching this schema exactly:
 {
   "title": "Short guide title",
+  "overview": "2-3 sentence course overview: purpose, audience, and what they'll be able to do.",
+  "learningOutcomes": ["Concrete measurable skill 1", "Concrete measurable skill 2"],
   "tags": ["Broad category", "Specific subdomain"],
   "sections": [
     {
@@ -133,7 +160,7 @@ Return JSON matching this schema:
       "items": [
         {
           "importance": "Required",
-          "title": "Specific concept to learn",
+          "title": "Specific concept or subtopic",
           "details": ["Optional sub-point", "Optional variant or example"]
         }
       ],
@@ -143,7 +170,7 @@ Return JSON matching this schema:
           "items": [
             {
               "importance": "Optional but recommended",
-              "title": "Specific concept to learn",
+              "title": "Specific concept or subtopic",
               "details": ["Optional sub-point"]
             }
           ]
@@ -282,8 +309,35 @@ Return JSON matching this schema:
   return contentSchema.parse(await completeJson({ systemPrompt, userPrompt }));
 }
 
+async function chatWithTutor({ guide, topic, messages }) {
+  if (testMocks.chatWithTutor) {
+    return testMocks.chatWithTutor({ guide, topic, messages });
+  }
+
+  try {
+    const response = await openAiClient().chat.completions.create({
+      model: config.openaiModel,
+      max_tokens: 300,
+      messages: [
+        {
+          role: 'system',
+          content: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
+        },
+        ...messages,
+      ],
+    });
+    return { reply: response.choices[0].message.content };
+  } catch (error) {
+    const err = new Error('The AI tutor is unavailable right now. Please try again.');
+    err.status = 502;
+    err.expose = true;
+    throw err;
+  }
+}
+
 module.exports = {
   ageGuidance,
+  chatWithTutor,
   generateGuideIllustration,
   generateOutline,
   generateTopicContent,

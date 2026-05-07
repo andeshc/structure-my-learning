@@ -28,4 +28,6 @@ module.exports = {
     callbackUrl: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/auth/github/callback',
   },
   nodeEnv: process.env.NODE_ENV || 'development',
+  aiRateLimitPerHour: parseInt(process.env.AI_RATE_LIMIT_PER_HOUR || '200', 10),
+  authRateLimitPer15Min: parseInt(process.env.AUTH_RATE_LIMIT_PER_15_MIN || '300', 10),
 };
