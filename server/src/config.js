@@ -15,6 +15,7 @@ module.exports = {
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',

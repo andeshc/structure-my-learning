@@ -8,7 +8,7 @@ StructureMyLearning is an AI-powered learning platform that turns a plain-langua
 - Backend: Node.js, Express
 - Database: SQLite with `better-sqlite3`
 - Auth: Email/password, Google OAuth, GitHub OAuth
-- AI: OpenAI `gpt-4o`
+- AI: OpenAI, default model `gpt-4o`
 
 ## Setup
 
@@ -29,6 +29,7 @@ DATABASE_PATH=./data/StructureMyLearning.db
 JWT_SECRET=change_me
 JWT_REFRESH_SECRET=change_me
 OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback

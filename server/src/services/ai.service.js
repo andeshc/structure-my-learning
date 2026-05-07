@@ -49,7 +49,7 @@ async function completeJson({ systemPrompt, userPrompt }) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const response = await openAiClient().chat.completions.create({
-        model: 'gpt-4o',
+        model: config.openaiModel,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },

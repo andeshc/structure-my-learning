@@ -570,7 +570,7 @@ CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
 
 ## 8. AI Prompt Strategy
 
-The server uses OpenAI `gpt-4o` for generation. AI output is never streamed directly to the client. The server generates, validates JSON, stores records in SQLite, and then returns stored data. If the model returns malformed output or the API call fails, retry once with the same prompt. If the retry fails, return a user-friendly error.
+The server uses the OpenAI model configured by `OPENAI_MODEL`, defaulting to `gpt-4o`, for generation. AI output is never streamed directly to the client. The server generates, validates JSON, stores records in SQLite, and then returns stored data. If the model returns malformed output or the API call fails, retry once with the same prompt. If the retry fails, return a user-friendly error.
 
 Age-level values are stored on the guide and passed into every AI generation call:
 
@@ -820,7 +820,7 @@ Working increment: A user can sign up, log in, refresh auth, use OAuth, and reac
 
 - Add New Guide page.
 - Add age-level selector to New Guide.
-- Add outline generation endpoint using OpenAI `gpt-4o` with the selected age level.
+- Add outline generation endpoint using the configured OpenAI model with the selected age level.
 - Store guides and topics.
 - Add guide detail page.
 - Add lazy topic content generation using the guide's stored age level.
