@@ -42,6 +42,10 @@ const contentSchema = z.object({
   contentMarkdown: z.string().min(500).max(12000),
 });
 
+const illustrationSchema = z.object({
+  svg: z.string().min(500).max(30000),
+});
+
 const fallbackIllustrationPath = '/static/guide-illustrations/generic-guide.svg';
 
 let testMocks = {};
@@ -337,6 +341,58 @@ function semanticIllustrationSvg({ outline, prompt }) {
   return genericSvg(title);
 }
 
+function validateSvg(svg) {
+  const trimmed = svg.trim();
+  const forbidden = /<\s*(script|foreignObject|iframe|object|embed|link|style)\b|on[a-z]+\s*=|javascript:/i;
+
+  if (!trimmed.startsWith('<svg') || !trimmed.endsWith('</svg>') || forbidden.test(trimmed)) {
+    throw new Error('Generated illustration SVG did not pass validation.');
+  }
+
+  return trimmed;
+}
+
+async function generateGuideSvgWithTextModel({ outline, prompt }) {
+  if (testMocks.generateGuideSvg) {
+    return validateSvg(testMocks.generateGuideSvg({ outline, prompt }));
+  }
+
+  if (!config.openaiApiKey) {
+    return semanticIllustrationSvg({ outline, prompt });
+  }
+
+  const sectionTitles = outline.sections.slice(0, 8).map((section) => section.title).join(', ');
+  const tags = outline.tags && outline.tags.length > 0 ? outline.tags.join(', ') : 'learning, education';
+  const systemPrompt = `You create safe SVG illustrations for StructureMyLearning guide cards.
+
+Rules:
+- Return only valid JSON.
+- The JSON must contain one key: "svg".
+- The SVG must be a complete inline SVG string.
+- Use width="1536", height="1024", and viewBox="0 0 1536 1024".
+- Create a semantic illustration specifically for the guide, not a generic education icon.
+- Use flat vector shapes only: rect, circle, ellipse, path, line, polyline, polygon, g, text, title.
+- Do not use external images, external fonts, CSS, style tags, scripts, animation, filters, foreignObject, or event handlers.
+- Keep text inside the SVG minimal: short labels, symbols, or single words only.
+- Use a warm off-white background, dark slate outlines, and soft blue, green, amber, violet, and rose accents.
+- The composition must work when center-cropped into a dashboard card header.`;
+
+  const userPrompt = `Create the SVG for this generated learning guide.
+
+Guide title: ${outline.title}
+Guide tags: ${tags}
+Original learner request: ${prompt}
+Major guide sections: ${sectionTitles}
+
+Return JSON matching:
+{
+  "svg": "<svg ...>...</svg>"
+}`;
+
+  const result = illustrationSchema.parse(await completeJson({ systemPrompt, userPrompt }));
+  return validateSvg(result.svg);
+}
+
 async function generateGuideIllustration({ guideId, outline, prompt }) {
   if (testMocks.generateGuideIllustration) {
     return testMocks.generateGuideIllustration({ guideId, outline, prompt });
@@ -348,7 +404,18 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
     fs.mkdirSync(outputDir, { recursive: true });
 
     const fileName = `${guideId}.svg`;
-    fs.writeFileSync(path.join(outputDir, fileName), semanticIllustrationSvg({ outline, prompt }), 'utf8');
+    let svg;
+
+    try {
+      svg = await generateGuideSvgWithTextModel({ outline, prompt });
+    } catch (error) {
+      if (config.nodeEnv !== 'test') {
+        console.warn('Text-model SVG generation failed; using local semantic SVG.', error.message);
+      }
+      svg = semanticIllustrationSvg({ outline, prompt });
+    }
+
+    fs.writeFileSync(path.join(outputDir, fileName), svg, 'utf8');
 
     return `${relativeDir}/${fileName}`;
   } catch (error) {

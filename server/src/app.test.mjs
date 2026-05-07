@@ -71,6 +71,7 @@ describe('API', () => {
       generateTopicContent: async ({ topic }) => ({
         contentMarkdown: `# ${topic.title}\n\nThis lesson explains the concept with examples, analogies, and a summary. `.repeat(14),
       }),
+      generateGuideSvg: () => '<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024"><title>Mocked guide illustration</title><rect width="1536" height="1024" fill="#fbf4e8"/><text x="120" y="160">Mocked Learning</text></svg>',
     });
   });
 
