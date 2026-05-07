@@ -1,4 +1,6 @@
 const OpenAI = require('openai');
+const fs = require('fs');
+const path = require('path');
 const { z } = require('zod');
 const config = require('../config');
 
@@ -32,6 +34,7 @@ const outlineSectionSchema = z.object({
 
 const outlineSchema = z.object({
   title: z.string().min(3).max(90),
+  tags: z.array(z.string().min(2).max(28)).min(1).max(3).optional(),
   sections: z.array(outlineSectionSchema).min(1).max(60),
 });
 
@@ -104,6 +107,7 @@ Rules:
 - Add "details" arrays for items that naturally have sub-bullets, examples, variants, or common failure modes.
 - Match the topic sequence, vocabulary, assumed background knowledge, and depth to the provided age level.
 - Keep titles specific and short.
+- Generate exactly two short category tags based on the completed guide, not by splitting the title.
 - Make each description exactly one sentence.
 - Do not include markdown.
 - Do not include content lessons yet.
@@ -119,6 +123,7 @@ Age-level guidance: ${ageGuidance[ageLevel]}
 Return JSON matching this schema:
 {
   "title": "Short guide title",
+  "tags": ["Broad category", "Specific subdomain"],
   "sections": [
     {
       "title": "Major section title",
@@ -147,6 +152,83 @@ Return JSON matching this schema:
 }`;
 
   return outlineSchema.parse(await completeJson({ systemPrompt, userPrompt }));
+}
+
+function illustrationPrompt({ outline, userPrompt }) {
+  const sectionTitles = outline.sections.slice(0, 6).map((section) => section.title).join(', ');
+  const tags = outline.tags && outline.tags.length > 0 ? outline.tags.join(', ') : 'learning, education';
+
+  return `Use case: scientific-educational
+Asset type: dashboard guide card illustration, 1536x1024 landscape bitmap
+Primary request: Create a clean educational illustration for a learning guide card.
+Guide title: ${outline.title}
+Guide tags: ${tags}
+Original learner request: ${userPrompt}
+Major guide sections: ${sectionTitles}
+Scene/backdrop: warm off-white classroom-paper background, flat modern app illustration style, no shadows, no 3D, no photorealism.
+Subject: a clear domain-specific visual metaphor for this exact guide. For math topics, use mathematical objects such as matrices, grids, graphs, vectors, equations, or highlighted rows and columns. For science topics, use simple scientific processes or diagrams. For business topics, use plans, targets, workflows, and charts.
+Style: polished learning dashboard card illustration; dark slate outlines; soft blue, green, amber, and violet accents; lots of whitespace; crisp vector-like shapes rendered as a bitmap.
+Text constraints: Avoid long readable text. Use only tiny labels, symbols, or single letters when they are essential to the concept.
+Composition: centered diagram, generous padding, suitable for being cropped slightly in a card header.
+Avoid: generic server diagrams unless the guide is about computing infrastructure, dense paragraphs, people, realistic paper texture, shadows, watermarks, logos.`;
+}
+
+async function generateGuideIllustration({ guideId, outline, prompt }) {
+  if (testMocks.generateGuideIllustration) {
+    return testMocks.generateGuideIllustration({ guideId, outline, prompt });
+  }
+
+  if (!config.openaiApiKey) {
+    openAiClient();
+  }
+
+  let lastError;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await openAiClient().images.generate({
+        model: config.openaiImageModel,
+        prompt: illustrationPrompt({ outline, userPrompt: prompt }),
+        n: 1,
+        size: '1536x1024',
+        quality: 'medium',
+      });
+
+      const image = response.data && response.data[0];
+      const imageData = image && image.b64_json;
+
+      if (!imageData && !image?.url) {
+        throw new Error('Image generation did not return image data.');
+      }
+
+      const relativeDir = '/generated/guide-illustrations';
+      const outputDir = path.join(__dirname, '../public', relativeDir.replace(/^\//, ''));
+      fs.mkdirSync(outputDir, { recursive: true });
+
+      const fileName = `${guideId}.png`;
+      const outputPath = path.join(outputDir, fileName);
+
+      if (imageData) {
+        fs.writeFileSync(outputPath, Buffer.from(imageData, 'base64'));
+      } else {
+        const imageResponse = await fetch(image.url);
+        if (!imageResponse.ok) {
+          throw new Error('Image generation URL could not be downloaded.');
+        }
+        fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
+      }
+
+      return `${relativeDir}/${fileName}`;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const error = new Error("We couldn't generate your guide illustration right now. Please try again in a moment.");
+  error.status = 502;
+  error.expose = true;
+  error.cause = lastError;
+  throw error;
 }
 
 async function generateTopicContent({ guide, outline, topic }) {
@@ -198,6 +280,7 @@ Return JSON matching this schema:
 
 module.exports = {
   ageGuidance,
+  generateGuideIllustration,
   generateOutline,
   generateTopicContent,
   setAiMocks,

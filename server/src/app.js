@@ -27,6 +27,8 @@ app.use(express.json());
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(passport.initialize());
 
+app.use('/generated', express.static(path.join(__dirname, '../public/generated')));
+
 app.use('/api', healthRouter);
 app.use('/api/auth', authRateLimit, authRouter);
 app.use('/api/account', requireAuth, accountRouter);

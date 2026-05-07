@@ -33,6 +33,7 @@ describe('API', () => {
     setAiMocks({
       generateOutline: async () => ({
         title: 'Mocked Guide',
+        tags: ['Learning', 'Mocked'],
         sections: [
           {
             title: 'Foundations',
@@ -67,6 +68,7 @@ describe('API', () => {
       generateTopicContent: async ({ topic }) => ({
         contentMarkdown: `# ${topic.title}\n\nThis lesson explains the concept with examples, analogies, and a summary. `.repeat(14),
       }),
+      generateGuideIllustration: async ({ guideId }) => `/generated/guide-illustrations/${guideId}.png`,
     });
   });
 
@@ -102,6 +104,8 @@ describe('API', () => {
 
     expect(guideResponse.status).toBe(201);
     expect(guideResponse.body.guide.topics).toHaveLength(5);
+    expect(guideResponse.body.guide.illustrationUrl).toContain('/generated/guide-illustrations/');
+    expect(guideResponse.body.guide.outline.tags).toEqual(['Learning', 'Mocked']);
     expect(guideResponse.body.guide.outline.sections[0].items[0].importance).toBe('Required');
 
     const topicId = guideResponse.body.guide.topics[0].id;

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS guides (
   prompt TEXT NOT NULL,
   age_level TEXT NOT NULL CHECK (age_level IN ('ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced')),
   outline_json TEXT,
+  illustration_path TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

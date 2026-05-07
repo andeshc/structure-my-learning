@@ -36,6 +36,11 @@ router.post('/', asyncHandler(async (req, res) => {
   const input = createGuideSchema.parse(req.body);
   const outline = await ai.generateOutline(input);
   const guideId = ids.guideId();
+  const illustrationPath = await ai.generateGuideIllustration({
+    guideId,
+    outline,
+    prompt: input.prompt,
+  });
 
   guides.createGuideWithTopics({
     guide: {
@@ -45,6 +50,7 @@ router.post('/', asyncHandler(async (req, res) => {
       prompt: input.prompt,
       ageLevel: input.ageLevel,
       outlineJson: JSON.stringify(outline),
+      illustrationPath,
     },
     topics: outline.sections.map((section, index) => ({
       id: ids.topicId(),

@@ -17,6 +17,10 @@ function initDb() {
   if (guideColumns.length > 0 && !guideColumns.includes('outline_json')) {
     db.exec('ALTER TABLE guides ADD COLUMN outline_json TEXT');
   }
+
+  if (guideColumns.length > 0 && !guideColumns.includes('illustration_path')) {
+    db.exec('ALTER TABLE guides ADD COLUMN illustration_path TEXT');
+  }
 }
 
 module.exports = { initDb };

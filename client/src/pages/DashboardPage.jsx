@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { deleteGuide, listGuides } from '../api/guides';
+import matrixIllustration from '../assets/guide-illustrations/matrix-multiplication.png';
 import LoadingPanel from '../components/LoadingPanel';
 
 const tagThemes = [
@@ -38,6 +39,10 @@ function formatDuration(minutes) {
 }
 
 function guideTags(guide) {
+  if (guide.outline && Array.isArray(guide.outline.tags) && guide.outline.tags.length > 0) {
+    return guide.outline.tags.slice(0, 2);
+  }
+
   const lower = guide.title.toLowerCase();
 
   if (lower.includes('transformer') || lower.includes('deep') || lower.includes('model')) {
@@ -145,8 +150,16 @@ function StrategyIllustration() {
   );
 }
 
-function GuideIllustration({ index, title }) {
+function GuideIllustration({ guide, index, title }) {
+  if (guide.illustrationUrl) {
+    return <img className="h-48 w-full object-cover" src={guide.illustrationUrl} alt={`${title} illustration`} />;
+  }
+
   const lower = title.toLowerCase();
+
+  if (lower.includes('matrix') || lower.includes('linear algebra') || lower.includes('multiplication')) {
+    return <img className="h-48 w-full object-cover" src={matrixIllustration} alt={`${title} illustration`} />;
+  }
 
   if (lower.includes('water') || lower.includes('cycle') || lower.includes('earth')) {
     return <WaterIllustration />;
@@ -186,7 +199,7 @@ function GuideCard({ guide, index, onDelete }) {
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-blue-200">
       <div className="relative border-b border-slate-100">
-        <GuideIllustration index={index} title={title} />
+        <GuideIllustration guide={guide} index={index} title={title} />
         <div ref={menuRef} className="absolute right-3 top-3">
           <button
             className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-700"
@@ -219,7 +232,7 @@ function GuideCard({ guide, index, onDelete }) {
       </div>
 
       <div className="p-5">
-        <Link to={`/guides/${guide.id}`} className="block text-2xl font-extrabold leading-tight tracking-tight text-slate-950 transition-colors hover:text-blue-700">
+        <Link to={`/guides/${guide.id}`} className="block text-xl font-bold leading-tight text-slate-950 transition-colors hover:text-blue-700">
           {title}
         </Link>
         <div className="mt-4 flex flex-wrap gap-3">
@@ -234,7 +247,7 @@ function GuideCard({ guide, index, onDelete }) {
           <progress className="h-3 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
             {guide.progressPercentage}%
           </progress>
-          <span className="text-xl font-bold text-slate-950">{guide.progressPercentage}%</span>
+          <span className="text-lg font-semibold text-slate-950">{guide.progressPercentage}%</span>
         </div>
       </div>
 
@@ -242,21 +255,21 @@ function GuideCard({ guide, index, onDelete }) {
         <div className="flex items-center justify-center gap-2.5 px-3 py-4">
           <FileText className="shrink-0 text-slate-500" size={22} />
           <div className="min-w-0 text-center">
-            <p className="text-lg font-extrabold leading-none text-slate-950">{lessons}</p>
+            <p className="text-lg font-bold leading-none text-slate-950">{lessons}</p>
             <p className="mt-1 text-xs text-slate-600">Lessons</p>
           </div>
         </div>
         <div className="flex items-center justify-center gap-2.5 border-x border-slate-200 px-3 py-4">
           <CheckCircle2 className="shrink-0 text-slate-500" size={22} />
           <div className="min-w-0 text-center">
-            <p className="text-lg font-extrabold leading-none text-slate-950">{activities}</p>
+            <p className="text-lg font-bold leading-none text-slate-950">{activities}</p>
             <p className="mt-1 text-xs text-slate-600">Activities</p>
           </div>
         </div>
         <div className="flex items-center justify-center gap-2.5 px-3 py-4">
           <Clock3 className="shrink-0 text-slate-500" size={22} />
           <div className="min-w-0 text-center">
-            <p className="whitespace-nowrap text-lg font-extrabold leading-none text-slate-950">{formatDuration(studyMinutes)}</p>
+            <p className="whitespace-nowrap text-lg font-bold leading-none text-slate-950">{formatDuration(studyMinutes)}</p>
             <p className="mt-1 text-xs text-slate-600">Study time</p>
           </div>
         </div>
@@ -272,7 +285,7 @@ function StatPill({ icon, value, label, color }) {
         {icon}
       </div>
       <div>
-        <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+        <p className="text-3xl font-bold">{value}</p>
         <p className="mt-1 text-sm text-slate-600">{label}</p>
       </div>
     </div>
@@ -328,8 +341,8 @@ export default function DashboardPage() {
   return (
     <section>
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="text-5xl font-extrabold tracking-tight text-slate-950">Dashboard</h1>
-        <Link className="relative inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-blue-600 px-6 text-lg font-bold text-white hover:bg-blue-700" to="/guides/new">
+        <h1 className="text-5xl font-bold text-slate-950">Dashboard</h1>
+        <Link className="relative inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-blue-600 px-6 text-lg font-semibold text-white hover:bg-blue-700" to="/guides/new">
           <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-white/70">
             <Plus size={21} />
           </span>
@@ -346,7 +359,7 @@ export default function DashboardPage() {
         <div className="flex items-start gap-4">
           <BookOpen className="mt-1 text-blue-700" size={34} />
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight">Your learning guides</h2>
+            <h2 className="text-3xl font-bold">Your learning guides</h2>
             <p className="mt-3 text-lg text-slate-600">Continue where you left off or build something new.</p>
           </div>
         </div>
@@ -358,11 +371,11 @@ export default function DashboardPage() {
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <EmptyIllustration />
               <div className="p-6">
-                <h3 className="text-2xl font-extrabold">Create your first learning guide</h3>
+                <h3 className="text-2xl font-bold">Create your first learning guide</h3>
                 <p className="mt-3 max-w-2xl text-slate-600">
                   Turn any topic into a structured roadmap with detailed sections, required concepts, optional depth, and generated lessons.
                 </p>
-                <Link className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-bold text-white" to="/guides/new">
+                <Link className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white" to="/guides/new">
                   New guide
                 </Link>
               </div>
@@ -400,17 +413,17 @@ export default function DashboardPage() {
                 <BarChart3 size={24} />
               </span>
               <div>
-                <h2 className="text-xl font-extrabold">Delete guide?</h2>
+                <h2 className="text-xl font-bold">Delete guide?</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   This will permanently delete "{deleteTarget.title}" and all generated topic content.
                 </p>
               </div>
             </div>
             <div className="mt-7 flex justify-end gap-3">
-              <button className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold" onClick={() => setDeleteTarget(null)}>
+              <button className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold" onClick={() => setDeleteTarget(null)}>
                 Cancel
               </button>
-              <button className="rounded-lg bg-red-700 px-4 py-2 text-sm font-bold text-white" onClick={confirmDelete}>
+              <button className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white" onClick={confirmDelete}>
                 Delete
               </button>
             </div>

@@ -12,6 +12,7 @@ function toGuide(row) {
     prompt: row.prompt,
     ageLevel: row.age_level,
     outline: row.outline_json ? JSON.parse(row.outline_json) : null,
+    illustrationUrl: row.illustration_path || null,
     topicCount: Number(row.topic_count || 0),
     completedTopicCount: Number(row.completed_topic_count || 0),
     progressPercentage: Number(row.progress_percentage || 0),
@@ -34,8 +35,8 @@ function progressSelect() {
 function createGuideWithTopics({ guide, topics }) {
   const transaction = db.transaction(() => {
     db.prepare(`
-      INSERT INTO guides (id, user_id, title, prompt, age_level, outline_json)
-      VALUES (@id, @userId, @title, @prompt, @ageLevel, @outlineJson)
+      INSERT INTO guides (id, user_id, title, prompt, age_level, outline_json, illustration_path)
+      VALUES (@id, @userId, @title, @prompt, @ageLevel, @outlineJson, @illustrationPath)
     `).run(guide);
 
     const insertTopic = db.prepare(`

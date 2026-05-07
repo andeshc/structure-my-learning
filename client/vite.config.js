@@ -10,6 +10,10 @@ export default defineConfig({
         target: 'http://0.0.0.0:3001',
         changeOrigin: true,
       },
+      '/generated': {
+        target: 'http://0.0.0.0:3001',
+        changeOrigin: true,
+      },
     },
   },
 });

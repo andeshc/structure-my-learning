@@ -14,7 +14,7 @@ import { useAuth } from '../context/AuthContext';
 
 function navClass({ isActive }) {
   return [
-    'flex h-14 items-center gap-4 rounded-lg px-5 text-[15px] font-semibold transition',
+    'flex h-14 items-center gap-4 rounded-lg px-5 text-[15px] font-medium transition',
     isActive
       ? 'border border-blue-200 bg-blue-50 text-blue-700'
       : 'text-slate-700 hover:bg-slate-50 hover:text-blue-700',
@@ -39,8 +39,8 @@ export default function AppShell() {
               <BookOpenCheck size={40} strokeWidth={2.1} />
             </span>
             <span className="leading-none">
-              <span className="block text-3xl font-extrabold tracking-tight">Structure</span>
-              <span className="block text-3xl font-extrabold tracking-tight"><span className="text-blue-700">My</span>Learning</span>
+              <span className="block text-3xl font-bold">Structure</span>
+              <span className="block text-3xl font-bold"><span className="text-blue-700">My</span>Learning</span>
             </span>
           </Link>
 
@@ -63,7 +63,7 @@ export default function AppShell() {
             <div className="rounded-xl border border-amber-200 bg-[#fffaf0] p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-lg font-extrabold">Your AI tutor</p>
+                  <p className="text-lg font-bold">Your AI tutor</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">I'm here to help you learn smarter.</p>
                 </div>
                 <span className="rounded-full bg-amber-100 p-2 text-amber-700">
@@ -85,14 +85,14 @@ export default function AppShell() {
                 <div className="flex items-center gap-3">
                   <Flame className="text-orange-500" size={28} fill="currentColor" />
                   <div>
-                    <p className="text-2xl font-extrabold text-orange-600">7</p>
+                    <p className="text-2xl font-bold text-orange-600">7</p>
                     <p className="text-xs text-slate-600">day streak</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pl-7">
                   <Medal className="text-amber-500" size={30} fill="currentColor" />
                   <div>
-                    <p className="text-2xl font-extrabold">320</p>
+                    <p className="text-2xl font-bold">320</p>
                     <p className="text-xs text-slate-600">points</p>
                   </div>
                 </div>
@@ -107,7 +107,7 @@ export default function AppShell() {
 
         <div className="min-w-0">
           <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
-            <Link to="/" className="flex items-center gap-2 font-extrabold">
+            <Link to="/" className="flex items-center gap-2 font-bold">
               <BookOpenCheck className="text-blue-700" size={28} />
               Structure<span className="text-blue-700">My</span>Learning
             </Link>
