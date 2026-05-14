@@ -29,6 +29,16 @@ async function registerUser(email = 'test@example.com') {
   return response.body.accessToken;
 }
 
+async function waitForGuideReady(guideId, token, maxMs = 3000) {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    const res = await request(app).get(`/api/guides/${guideId}`).set('Authorization', `Bearer ${token}`);
+    if (res.body.guide?.status === 'ready') return res.body.guide;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`Guide ${guideId} did not become ready within ${maxMs}ms`);
+}
+
 describe('API', () => {
   beforeEach(() => {
     resetDatabase();
@@ -105,12 +115,15 @@ describe('API', () => {
       .send({ prompt: 'teach me mocked learning', ageLevel: 'adult_beginner' });
 
     expect(guideResponse.status).toBe(201);
-    expect(guideResponse.body.guide.topics).toHaveLength(5);
-    expect(guideResponse.body.guide.illustrationUrl).toMatch(/^\/generated\/guide-illustrations\/.+\.png$/);
-    expect(guideResponse.body.guide.outline.tags).toEqual(['Learning', 'Mocked']);
-    expect(guideResponse.body.guide.outline.sections[0].items[0].importance).toBe('Required');
+    expect(guideResponse.body.guide.status).toBe('pending');
 
-    const topicId = guideResponse.body.guide.topics[0].id;
+    const guide = await waitForGuideReady(guideResponse.body.guide.id, token);
+    expect(guide.topics).toHaveLength(5);
+    expect(guide.illustrationUrl).toMatch(/^\/generated\/guide-illustrations\/.+\.png$/);
+    expect(guide.outline.tags).toEqual(['Learning', 'Mocked']);
+    expect(guide.outline.sections[0].items[0].importance).toBe('Required');
+
+    const topicId = guide.topics[0].id;
     const topicResponse = await request(app)
       .get(`/api/topics/${topicId}`)
       .set('Authorization', `Bearer ${token}`);
@@ -151,7 +164,8 @@ describe('API', () => {
       .send({ prompt: 'teach me fallback illustration behavior', ageLevel: 'adult_beginner' });
 
     expect(response.status).toBe(201);
-    expect(response.body.guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
+    const guide = await waitForGuideReady(response.body.guide.id, token);
+    expect(guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
   });
 
   it('returns the static fallback when image generation is unavailable', async () => {

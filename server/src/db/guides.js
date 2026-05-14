@@ -11,6 +11,7 @@ function toGuide(row) {
     title: row.title,
     prompt: row.prompt,
     ageLevel: row.age_level,
+    status: row.status || 'ready',
     outline: row.outline_json ? JSON.parse(row.outline_json) : null,
     illustrationUrl: row.illustration_path || null,
     topicCount: Number(row.topic_count || 0),
@@ -50,6 +51,37 @@ function createGuideWithTopics({ guide, topics }) {
   transaction();
 }
 
+function createPendingGuide({ id, userId, prompt, ageLevel }) {
+  db.prepare(`
+    INSERT INTO guides (id, user_id, title, prompt, age_level, status)
+    VALUES (@id, @userId, @title, @prompt, @ageLevel, 'pending')
+  `).run({ id, userId, title: prompt.slice(0, 90), prompt, ageLevel });
+}
+
+function completeGuide({ id, title, outlineJson, illustrationPath, topics }) {
+  const transaction = db.transaction(() => {
+    db.prepare(`
+      UPDATE guides
+      SET title = @title, outline_json = @outlineJson, illustration_path = @illustrationPath,
+          status = 'ready', updated_at = datetime('now')
+      WHERE id = @id
+    `).run({ id, title, outlineJson, illustrationPath });
+
+    const insertTopic = db.prepare(`
+      INSERT INTO topics (id, guide_id, position, title, description)
+      VALUES (@id, @guideId, @position, @title, @description)
+    `);
+
+    topics.forEach((topic) => insertTopic.run(topic));
+  });
+
+  transaction();
+}
+
+function markGuideFailed(id) {
+  db.prepare(`UPDATE guides SET status = 'failed', updated_at = datetime('now') WHERE id = ?`).run(id);
+}
+
 function listGuidesForUser(userId) {
   return db.prepare(`
     SELECT g.*, ${progressSelect()}
@@ -80,9 +112,12 @@ function touchGuide(guideId) {
 }
 
 module.exports = {
+  completeGuide,
   createGuideWithTopics,
+  createPendingGuide,
   deleteGuideForUser,
   findGuideForUser,
   listGuidesForUser,
+  markGuideFailed,
   touchGuide,
 };

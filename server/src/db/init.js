@@ -21,6 +21,10 @@ function initDb() {
   if (guideColumns.length > 0 && !guideColumns.includes('illustration_path')) {
     db.exec('ALTER TABLE guides ADD COLUMN illustration_path TEXT');
   }
+
+  if (guideColumns.length > 0 && !guideColumns.includes('status')) {
+    db.exec(`ALTER TABLE guides ADD COLUMN status TEXT NOT NULL DEFAULT 'ready' CHECK (status IN ('pending', 'ready', 'failed'))`);
+  }
 }
 
 module.exports = { initDb };

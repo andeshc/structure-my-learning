@@ -32,37 +32,49 @@ router.get('/', (req, res) => {
   res.json({ guides: guides.listGuidesForUser(req.user.id) });
 });
 
-router.post('/', asyncHandler(async (req, res) => {
-  const input = createGuideSchema.parse(req.body);
-  const outline = await ai.generateOutline(input);
-  const guideId = ids.guideId();
-  const illustrationPath = await ai.generateGuideIllustration({
-    guideId,
-    outline,
-    prompt: input.prompt,
-  });
-
-  guides.createGuideWithTopics({
-    guide: {
-      id: guideId,
-      userId: req.user.id,
-      title: outline.title,
+async function runGuideGeneration({ guideId, input, userId }) {
+  try {
+    const outline = await ai.generateOutline(input);
+    const illustrationPath = await ai.generateGuideIllustration({
+      guideId,
+      outline,
       prompt: input.prompt,
-      ageLevel: input.ageLevel,
+    });
+
+    guides.completeGuide({
+      id: guideId,
+      title: outline.title,
       outlineJson: JSON.stringify(outline),
       illustrationPath,
-    },
-    topics: outline.sections.map((section, index) => ({
-      id: ids.topicId(),
-      guideId,
-      position: index + 1,
-      title: section.title,
-      description: section.description,
-    })),
+      topics: outline.sections.map((section, index) => ({
+        id: ids.topicId(),
+        guideId,
+        position: index + 1,
+        title: section.title,
+        description: section.description,
+      })),
+    });
+  } catch (error) {
+    console.error(`Guide generation failed for ${guideId}:`, error.message);
+    guides.markGuideFailed(guideId);
+  }
+}
+
+router.post('/', asyncHandler(async (req, res) => {
+  const input = createGuideSchema.parse(req.body);
+  const guideId = ids.guideId();
+
+  guides.createPendingGuide({
+    id: guideId,
+    userId: req.user.id,
+    prompt: input.prompt,
+    ageLevel: input.ageLevel,
   });
 
   const guide = guides.findGuideForUser(guideId, req.user.id);
   res.status(201).json({ guide: guideWithTopics(guide) });
+
+  runGuideGeneration({ guideId, input, userId: req.user.id });
 }));
 
 router.get('/:guideId', (req, res, next) => {

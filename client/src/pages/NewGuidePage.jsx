@@ -15,43 +15,20 @@ export default function NewGuidePage() {
   const [prompt, setPrompt] = useState('');
   const [ageLevel, setAgeLevel] = useState('adult_beginner');
   const [error, setError] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
-    setIsGenerating(true);
+    setIsSubmitting(true);
 
     try {
       const data = await createGuide({ prompt, ageLevel });
       navigate(`/guides/${data.guide.id}`);
     } catch (submitError) {
       setError(submitError.message);
-      setIsGenerating(false);
+      setIsSubmitting(false);
     }
-  }
-
-  if (isGenerating) {
-    const truncated = prompt.length > 80 ? prompt.slice(0, 80).trimEnd() + '…' : prompt;
-    return (
-      <section className="flex min-h-[60vh] items-center justify-center">
-        <div className="w-full max-w-md">
-          <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Building your guide</p>
-          <p className="mt-2 text-2xl font-semibold leading-snug text-slate-800">"{truncated}"</p>
-
-          <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-teal-700" />
-          </div>
-
-          <div className="mt-6 flex items-center gap-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50">
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-teal-700 border-t-transparent" />
-            </span>
-            <p className="text-sm font-medium text-slate-700">Building your guide…</p>
-          </div>
-        </div>
-      </section>
-    );
   }
 
   return (
@@ -85,8 +62,8 @@ export default function NewGuidePage() {
 
           {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-          <button className="mt-5 rounded-md bg-charcoal px-4 py-2.5 font-medium text-white disabled:opacity-60" disabled={isGenerating}>
-            Generate guide
+          <button className="mt-5 rounded-md bg-charcoal px-4 py-2.5 font-medium text-white disabled:opacity-60" disabled={isSubmitting}>
+            {isSubmitting ? 'Starting…' : 'Generate guide'}
           </button>
         </form>
       </div>
