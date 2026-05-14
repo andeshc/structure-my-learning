@@ -1,4 +1,19 @@
 import DOMPurify from 'dompurify';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-tomorrow.css';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-jsx';
+import 'prismjs/components/prism-tsx';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-go';
+import 'prismjs/components/prism-rust';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-markup';
 import {
   Bot,
   CheckCircle2,
@@ -264,6 +279,7 @@ export default function SubtopicDetailPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [agentEvents, setAgentEvents] = useState([]);
   const articleRef = useRef(null);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     if (document.querySelector('script[data-tailwind-cdn]')) return;
@@ -349,6 +365,12 @@ export default function SubtopicDetailPage() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, [data]);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      Prism.highlightAllUnder(contentRef.current);
+    }
+  }, [streamedHtml, data]);
 
   async function toggleComplete() {
     if (!data) return;
@@ -496,6 +518,7 @@ export default function SubtopicDetailPage() {
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
             {displayedHtml ? (
               <div
+                ref={contentRef}
                 className="lesson-content"
                 dangerouslySetInnerHTML={{ __html: sanitize(displayedHtml) }}
               />
