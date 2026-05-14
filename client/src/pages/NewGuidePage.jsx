@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { createGuide } from '../api/guides';
-import LoadingPanel from '../components/LoadingPanel';
 
 const ageLevels = [
   ['ages_8_10', 'Ages 8-10'],
@@ -28,9 +27,31 @@ export default function NewGuidePage() {
       navigate(`/guides/${data.guide.id}`);
     } catch (submitError) {
       setError(submitError.message);
-    } finally {
       setIsGenerating(false);
     }
+  }
+
+  if (isGenerating) {
+    const truncated = prompt.length > 80 ? prompt.slice(0, 80).trimEnd() + '…' : prompt;
+    return (
+      <section className="flex min-h-[60vh] items-center justify-center">
+        <div className="w-full max-w-md">
+          <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Building your guide</p>
+          <p className="mt-2 text-2xl font-semibold leading-snug text-slate-800">"{truncated}"</p>
+
+          <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-teal-700" />
+          </div>
+
+          <div className="mt-6 flex items-center gap-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-teal-700 border-t-transparent" />
+            </span>
+            <p className="text-sm font-medium text-slate-700">Building your guide…</p>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -65,18 +86,14 @@ export default function NewGuidePage() {
           {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
           <button className="mt-5 rounded-md bg-charcoal px-4 py-2.5 font-medium text-white disabled:opacity-60" disabled={isGenerating}>
-            {isGenerating ? 'Generating outline...' : 'Generate guide'}
+            Generate guide
           </button>
         </form>
       </div>
 
-      {isGenerating ? (
-        <LoadingPanel title="Generating your outline" detail="The server is creating a stored topic sequence before showing it here." />
-      ) : (
-        <aside className="rounded-lg border border-charcoal/10 bg-white p-5 text-sm text-charcoal-400">
-          Strong prompts name the subject, your goal, and the level of depth you want.
-        </aside>
-      )}
+      <aside className="rounded-lg border border-charcoal/10 bg-white p-5 text-sm text-charcoal-400">
+        Strong prompts name the subject, your goal, and the level of depth you want.
+      </aside>
     </section>
   );
 }

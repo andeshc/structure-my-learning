@@ -75,67 +75,46 @@ function FallbackIllustration({ title }) {
   );
 }
 
-function ImportanceBadge({ importance }) {
+function ImportanceLabel({ importance }) {
   if (importance === 'Required') {
-    return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700">Required</span>;
+    return <span className="shrink-0 text-[10px] font-semibold text-emerald-600">Required</span>;
   }
   if (importance === 'Optional and can be skipped') {
-    return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-500">Optional</span>;
+    return <span className="shrink-0 text-[10px] font-semibold text-slate-400">Optional</span>;
   }
-  return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700">Recommended</span>;
+  return <span className="shrink-0 text-[10px] font-semibold text-amber-600">Recommended</span>;
 }
 
-function SubtopicList({ items, subsections }) {
+function dominantBorderClass(items) {
+  if (items.some((i) => i.importance === 'Required')) return 'border-l-emerald-400';
+  if (items.some((i) => i.importance === 'Optional but recommended')) return 'border-l-amber-300';
+  return 'border-l-slate-300';
+}
+
+
+function ItemGroup({ items, borderClass }) {
   return (
-    <div className="grid gap-4">
-      {items && items.length > 0 && (
-        <ul className="grid gap-2">
-          {items.map((item, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <ImportanceBadge importance={item.importance} />
-              <div className="min-w-0">
-                <span className="text-sm text-slate-700">{item.title}</span>
-                {item.details && item.details.length > 0 && (
-                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-slate-500">
-                    {item.details.map((d) => <li key={d}>{d}</li>)}
-                  </ul>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {subsections && subsections.length > 0 && (
-        <div className="grid gap-4">
-          {subsections.map((sub, i) => (
-            <div key={i}>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">{sub.title}</p>
-              <ul className="grid gap-2">
-                {sub.items.map((item, j) => (
-                  <li key={j} className="flex items-start gap-2">
-                    <ImportanceBadge importance={item.importance} />
-                    <div className="min-w-0">
-                      <span className="text-sm text-slate-700">{item.title}</span>
-                      {item.details && item.details.length > 0 && (
-                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-slate-500">
-                          {item.details.map((d) => <li key={d}>{d}</li>)}
-                        </ul>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+    <div className={`overflow-hidden rounded-lg border border-slate-200 border-l-4 bg-slate-50 ${borderClass}`}>
+      <ul className="divide-y divide-slate-100">
+        {items.map((item, i) => (
+          <li key={i} className="px-3 py-2.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-sm font-medium text-slate-700">{item.title}</span>
+              <ImportanceLabel importance={item.importance} />
             </div>
-          ))}
-        </div>
-      )}
+            {item.overview && (
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
 function TopicRow({ section, sectionIndex, topic, isNext }) {
   const [expanded, setExpanded] = useState(false);
-  const hasSubtopics = (section.items && section.items.length > 0) || (section.subsections && section.subsections.length > 0);
+  const hasSubtopics = section.items && section.items.length > 0;
 
   return (
     <div
@@ -196,7 +175,7 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
 
       {expanded && hasSubtopics && (
         <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-          <SubtopicList items={section.items} subsections={section.subsections} />
+          <ItemGroup items={section.items} borderClass={dominantBorderClass(section.items)} />
         </div>
       )}
     </div>

@@ -55,4 +55,4 @@ Apply the following based on the depth level:
 | `adult_advanced` | Assume solid foundational knowledge. Prioritize advanced frameworks, edge cases, critical analysis, and synthesis across domains. Subtopics should challenge assumptions, introduce competing schools of thought, and include portfolio-grade or professional-output activities. |
 
 ### 6. Dont include projects or assesments
-Dont include Capstone or any other projects or assesments. 
+Dont include Capstone or any other projects, assesments, demonstrations, activities. The user will participate only to consume the content. Nothing needs to be handson.

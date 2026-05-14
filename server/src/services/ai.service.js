@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { fal } = require('@fal-ai/client');
 const fs = require('fs');
 const path = require('path');
 const { z } = require('zod');
@@ -42,22 +43,15 @@ const ageGuidance = {
 const outlineItemSchema = z.object({
   importance: z.enum(['Required', 'Optional but recommended', 'Optional and can be skipped']),
   title: z.string().min(2).max(140),
+  overview: z.string().min(10).max(220).optional(),
   details: z.array(z.string().min(2).max(300)).max(12).optional(),
-});
-
-const outlineSubsectionSchema = z.object({
-  title: z.string().min(3).max(120),
-  items: z.array(outlineItemSchema).min(1).max(30),
 });
 
 const outlineSectionSchema = z.object({
   title: z.string().min(3).max(120),
   description: z.string().min(20).max(280),
-  items: z.array(outlineItemSchema).max(30).optional(),
-  subsections: z.array(outlineSubsectionSchema).max(12).optional(),
-}).refine((section) => {
-  return (section.items && section.items.length > 0) || (section.subsections && section.subsections.length > 0);
-}, 'Each section must include items or subsections.');
+  items: z.array(outlineItemSchema).min(1).max(30),
+});
 
 const outlineSchema = z.object({
   title: z.string().min(3).max(90),
@@ -139,6 +133,7 @@ Additional output rules:
 - Generate exactly two short category tags based on the completed guide, not by splitting the title.
 - Make each section description exactly one sentence.
 - Do not include content lessons yet.
+- Write a one-sentence "overview" for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.`;
 
   const filledUserPrompt = guidePromptSections['User Prompt']
@@ -161,19 +156,7 @@ Return JSON matching this schema exactly:
         {
           "importance": "Required",
           "title": "Specific concept or subtopic",
-          "details": ["Optional sub-point", "Optional variant or example"]
-        }
-      ],
-      "subsections": [
-        {
-          "title": "Subsection title",
-          "items": [
-            {
-              "importance": "Optional but recommended",
-              "title": "Specific concept or subtopic",
-              "details": ["Optional sub-point"]
-            }
-          ]
+          "overview": "One sentence explaining what this concept is and why it matters."
         }
       ]
     }
@@ -189,7 +172,6 @@ function guideIllustrationPrompt({ outline, prompt }) {
 
   return `Create a clean educational illustration for a learning guide card.
 Guide title: ${outline.title}
-Guide tags: ${tags}
 Original learner request: ${prompt}
 Major guide sections: ${sectionTitles}
 
@@ -220,37 +202,35 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
     const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
     fs.mkdirSync(outputDir, { recursive: true });
 
-    if (!config.openaiApiKey) {
+    if (!config.falKey) {
       return fallbackIllustrationPath;
     }
 
-    const response = await openAiClient().images.generate({
-      model: config.openaiImageModel,
-      prompt: guideIllustrationPrompt({ outline, prompt }),
-      n: 1,
-      size: '1536x1024',
-      quality: 'medium',
+    fal.config({ credentials: config.falKey });
+
+    const result = await fal.subscribe('xai/grok-imagine-image/quality/text-to-image', {
+      input: {
+        prompt: guideIllustrationPrompt({ outline, prompt }),
+        num_images: 1,
+        aspect_ratio: '3:2',
+        resolution: '1k',
+        output_format: 'png',
+      },
     });
 
-    const image = response.data && response.data[0];
-    const imageData = image && image.b64_json;
+    const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url;
+    if (!imageUrl) {
+      throw new Error('fal.ai did not return an image URL.');
+    }
 
-    if (!imageData && !image?.url) {
-      throw new Error('Image generation did not return image data.');
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error('fal.ai image URL could not be downloaded.');
     }
 
     const fileName = `${guideId}.png`;
     const outputPath = path.join(outputDir, fileName);
-
-    if (imageData) {
-      fs.writeFileSync(outputPath, Buffer.from(imageData, 'base64'));
-    } else {
-      const imageResponse = await fetch(image.url);
-      if (!imageResponse.ok) {
-        throw new Error('Image generation URL could not be downloaded.');
-      }
-      fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
-    }
+    fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
 
     return `${relativeDir}/${fileName}`;
   } catch (error) {
