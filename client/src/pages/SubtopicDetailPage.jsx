@@ -36,45 +36,90 @@ const EVENT_ICONS = {
 };
 
 function AgentActivityFeed({ events, isStreaming }) {
-  return (
-    <div className="py-2">
-      <style>{`@keyframes eventIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }`}</style>
-      {events.length === 0 ? (
+  // Group events into phases on each agent_status boundary
+  const groups = [];
+  let current = null;
+  events.forEach((event, i) => {
+    if (event.type === 'agent_status') {
+      if (current) groups.push(current);
+      const label = event.message.toLowerCase().includes('writing') ? 'Writing' : 'Planning';
+      current = { label, events: [{ event, globalIdx: i }] };
+    } else if (current) {
+      current.events.push({ event, globalIdx: i });
+    }
+  });
+  if (current) groups.push(current);
+
+  const progress = Math.min(90, Math.round((events.length / 6) * 90));
+
+  if (events.length === 0) {
+    return (
+      <div className="py-2">
         <div className="flex items-center gap-2.5 text-sm text-slate-400">
           <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-blue-400" />
           Preparing lesson…
         </div>
-      ) : (
-        <div className="space-y-2.5">
-          {events.map((event, i) => {
-            const isLast = i === events.length - 1;
-            const isPending = isStreaming && isLast && event.type !== 'agent_tool_result';
-            return (
-              <div
-                key={i}
-                className="flex items-center gap-3 text-sm"
-                style={{ animation: 'eventIn 0.2s ease forwards' }}
-              >
-                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                  isPending
-                    ? 'bg-blue-100 text-blue-500'
-                    : event.type === 'agent_tool_result'
-                    ? 'bg-emerald-100 text-emerald-600'
-                    : 'bg-slate-100 text-slate-500'
-                }`}>
-                  {isPending
-                    ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-blue-500" />
-                    : EVENT_ICONS[event.type] ?? '·'
-                  }
-                </span>
-                <span className={isPending ? 'text-slate-700' : 'text-slate-400'}>
-                  {event.message}
-                </span>
-              </div>
-            );
-          })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-2">
+      <style>{`@keyframes eventIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }`}</style>
+
+      {/* Overall progress bar */}
+      <div className="mb-5">
+        <div className="mb-1.5 flex items-center justify-between text-xs text-slate-400">
+          <span>Generating lesson</span>
+          <span>{progress}%</span>
         </div>
-      )}
+        <div className="h-1 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full bg-blue-400 transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Phase groups */}
+      <div className="space-y-4">
+        {groups.map((group, gi) => (
+          <div key={gi}>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-300">
+              {group.label}
+            </p>
+            <div className="space-y-1.5">
+              {group.events.map(({ event, globalIdx }, ei) => {
+                const isLast = globalIdx === events.length - 1;
+                const isPending = isStreaming && isLast && event.type !== 'agent_tool_result';
+                return (
+                  <div
+                    key={ei}
+                    className={`flex items-center gap-3 text-sm transition-opacity ${isPending ? '' : 'opacity-40'}`}
+                    style={{ animation: 'eventIn 0.2s ease forwards' }}
+                  >
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                      isPending
+                        ? 'bg-blue-100 text-blue-500'
+                        : event.type === 'agent_tool_result'
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {isPending
+                        ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-blue-500" />
+                        : EVENT_ICONS[event.type] ?? '·'
+                      }
+                    </span>
+                    <span className={isPending ? 'font-medium text-slate-800' : 'text-slate-500'}>
+                      {event.message}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
