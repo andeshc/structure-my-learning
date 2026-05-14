@@ -64,8 +64,21 @@ CREATE TABLE IF NOT EXISTS topics (
   FOREIGN KEY (guide_id) REFERENCES guides(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS subtopics (
+  id TEXT PRIMARY KEY,
+  topic_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  content_html TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (topic_id, position),
+  FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_guides_user_updated ON guides(user_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_topics_guide_position ON topics(guide_id, position);
+CREATE INDEX IF NOT EXISTS idx_subtopics_topic_position ON subtopics(topic_id, position);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 `;
 

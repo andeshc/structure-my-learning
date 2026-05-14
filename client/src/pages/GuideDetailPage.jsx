@@ -1,8 +1,7 @@
 import {
   ArrowLeft,
-  ArrowRight,
   ChevronDown,
-  PlayCircle,
+  Layers,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -44,12 +43,6 @@ function statusClass(topic, isNext) {
   return 'bg-slate-100 text-slate-500';
 }
 
-function topicActionLabel(topic) {
-  if (!topic) return 'Open';
-  if (topic.isCompleted) return 'Review';
-  if (topic.hasContent) return 'Continue';
-  return 'Generate';
-}
 
 function FallbackIllustration({ title }) {
   return (
@@ -92,19 +85,31 @@ function dominantBorderClass(items) {
 }
 
 
-function ItemGroup({ items, borderClass }) {
+function ItemGroup({ items, borderClass, topicId }) {
   return (
     <div className={`overflow-hidden rounded-lg border border-slate-200 border-l-4 bg-slate-50 ${borderClass}`}>
       <ul className="divide-y divide-slate-100">
         {items.map((item, i) => (
           <li key={i} className="px-3 py-2.5">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-slate-700">{item.title}</span>
-              <ImportanceLabel importance={item.importance} />
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-medium text-slate-700">{item.title}</span>
+                {item.overview && (
+                  <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                <ImportanceLabel importance={item.importance} />
+                {topicId && (
+                  <Link
+                    to={`/topics/${topicId}/subtopics/${i}`}
+                    className="rounded-md border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  >
+                    Generate →
+                  </Link>
+                )}
+              </div>
             </div>
-            {item.overview && (
-              <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
-            )}
           </li>
         ))}
       </ul>
@@ -147,35 +152,23 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
             <button
               aria-expanded={expanded}
               aria-label={expanded ? 'Collapse subtopics' : 'Expand subtopics'}
-              className={`rounded-lg border p-2 transition-colors ${
-                isNext
-                  ? 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'
-                  : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
-              }`}
-              onClick={() => setExpanded((v) => !v)}
-            >
-              <ChevronDown className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} size={14} />
-            </button>
-          )}
-          {topic && (
-            <Link
               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                 isNext
                   ? 'border-blue-200 bg-white text-blue-700 hover:bg-blue-50'
-                  : 'border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-700'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-700'
               }`}
-              to={`/topics/${topic.id}`}
+              onClick={() => setExpanded((v) => !v)}
             >
-              {topicActionLabel(topic)}
-              <ArrowRight className="ml-1 inline-block" size={11} />
-            </Link>
+              <ChevronDown className={`mr-1 inline-block transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} size={13} />
+              {expanded ? 'Hide' : 'Lessons'}
+            </button>
           )}
         </div>
       </div>
 
       {expanded && hasSubtopics && (
         <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-          <ItemGroup items={section.items} borderClass={dominantBorderClass(section.items)} />
+          <ItemGroup items={section.items} borderClass={dominantBorderClass(section.items)} topicId={topic?.id} />
         </div>
       )}
     </div>
@@ -330,13 +323,13 @@ export default function GuideDetailPage() {
             </div>
 
             {summary.nextTopic && (
-              <Link
+              <button
                 className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                to={`/topics/${summary.nextTopic.id}`}
+                onClick={() => document.getElementById(`section-${summary.nextIndex + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               >
-                <PlayCircle size={17} />
-                {summary.completed === summary.total ? 'Review guide' : `Continue: ${summary.nextTopic.title}`}
-              </Link>
+                <Layers size={17} />
+                {summary.completed === summary.total ? 'Review guide' : `Go to: ${summary.nextTopic.title}`}
+              </button>
             )}
           </div>
 

@@ -37,8 +37,8 @@ const ageGuidance = {
   ages_8_10: 'Elementary learner; simple vocabulary, concrete examples, gentle pacing, no assumed background knowledge.',
   ages_11_13: 'Middle-grade learner; clear vocabulary, light technical terms with definitions, relatable examples.',
   ages_14_17: 'Teen learner; stronger conceptual depth, school-level terminology, examples that connect to real applications.',
-  adult_beginner: 'Adult learner new to the subject; respectful tone, practical examples, no childish framing.',
-  adult_advanced: 'Adult or professional learner; deeper explanations, precise terminology, more nuance, and efficient pacing.',
+  adult_beginner: 'Adult learner new to the subject; respectful tone, practical examples, simplistic anological terminology, no childish framing.',
+  adult_advanced: 'Adult or professional learner; deeper explanations but simple terminology.',
 };
 
 const outlineItemSchema = z.object({
@@ -90,7 +90,7 @@ const generateTopicIllustrationTool = tool({
         prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. No watermarks, no text unless labeled in description.`,
         output_format: 'png',
         num_images: 1,
-        resolution: '0.5K'
+        resolution: '1K'
       },
     });
 
@@ -159,14 +159,14 @@ HTML structure and component patterns:
 - Major sections: <h2 class="text-2xl font-bold text-slate-900 mt-10 mb-4">...</h2>
 - Sub-sections: <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">...</h3>
 - Body paragraphs: <p class="text-slate-700 leading-7 mb-4">...</p>
-- Key concept callout: <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-blue-900 mb-1">Key Concept</p><p class="text-blue-800 leading-relaxed">...</p></div>
-- Analogy callout: <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-amber-900 mb-1">Analogy</p><p class="text-amber-800 leading-relaxed">...</p></div>
-- Warning / common mistake: <div class="bg-red-50 border-l-4 border-red-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-red-900 mb-1">Common Mistake</p><p class="text-red-800 leading-relaxed">...</p></div>
-- Code blocks: <pre class="bg-slate-900 rounded-xl p-5 overflow-x-auto my-6 text-sm"><code class="text-emerald-300 font-mono">...</code></pre>
+- Key concept callout (if required): <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-blue-900 mb-1">Key Concept</p><p class="text-blue-800 leading-relaxed">...</p></div>
+- Analogy callout (if required): <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-amber-900 mb-1">Analogy</p><p class="text-amber-800 leading-relaxed">...</p></div>
+- Warning / common mistake (if required): <div class="bg-red-50 border-l-4 border-red-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-red-900 mb-1">Common Mistake</p><p class="text-red-800 leading-relaxed">...</p></div>
+- Code blocks (if required): <pre class="bg-slate-900 rounded-xl p-5 overflow-x-auto my-6 text-md"><code class="text-emerald-300 font-mono">...</code></pre>
 - Bullet lists: <ul class="list-disc list-inside space-y-2 text-slate-700 mb-4 pl-2">
-- Numbered steps: <ol class="space-y-3 mb-6"> with items: <li class="flex gap-3 items-start"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">1</span><div class="text-slate-700 leading-relaxed">...</div></li>
-- Simple comparison table: <div class="overflow-x-auto my-6"><table class="w-full border-collapse text-sm"><thead><tr class="bg-slate-100"><th class="text-left px-4 py-2 font-semibold text-slate-700 border-b border-slate-200">...</th></tr></thead><tbody><tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-3 text-slate-700">...</td></tr></tbody></table></div>
-- Summary box at the end: <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-5 mt-10"><p class="font-bold text-emerald-900 mb-3">Summary</p><ul class="space-y-2 text-emerald-800 text-sm leading-relaxed">...</ul></div>
+- Numbered steps (if required): <ol class="space-y-3 mb-6"> with items: <li class="flex gap-3 items-start"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">1</span><div class="text-slate-700 leading-relaxed">...</div></li>
+- Simple comparison table (if required): <div class="overflow-x-auto my-6"><table class="w-full border-collapse text-sm"><thead><tr class="bg-slate-100"><th class="text-left px-4 py-2 font-semibold text-slate-700 border-b border-slate-200">...</th></tr></thead><tbody><tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-3 text-slate-700">...</td></tr></tbody></table></div>
+- Summary box at the end (use emojis for each point here): <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-5 mt-10"><p class="font-bold text-emerald-900 mb-3">Summary</p><ul class="space-y-2 text-emerald-800 text-sm leading-relaxed">...</ul></div>
 - If pre-generated illustration images were provided, embed each one using the provided <img> tag at the most relevant point in the lesson.`;
 
 const fallbackIllustrationPath = '/static/guide-illustrations/generic-guide.svg';
@@ -329,28 +329,7 @@ Write the lesson for topic: "${topic.title}" — ${topic.description}`;
   return object;
 }
 
-async function streamTopicContent({ guide, outline, topic, onEvent = () => {} }) {
-  if (testMocks.generateTopicContent) {
-    const result = await testMocks.generateTopicContent({ guide, outline, topic });
-    const content = result.contentHtml || result.contentMarkdown;
-    return {
-      textStream: (async function* () { yield content; })(),
-      text: Promise.resolve(content),
-    };
-  }
-
-  const sectionContext = topic.outlineSection
-    ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
-    : '';
-
-  const baseContext = `Guide: "${guide.title}"
-Goal: "${guide.prompt}"
-Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
-Full outline: ${JSON.stringify(outline)}
-${sectionContext}
-Topic: "${topic.title}" — ${topic.description}`;
-
-  // Phase 1: agent loop — verify facts and generate illustrations
+async function _streamLesson({ baseContext, onEvent }) {
   onEvent({ type: 'agent_status', message: 'Planning lesson...' });
 
   const { steps } = await generateText({
@@ -393,7 +372,6 @@ Your job is to prepare resources for the lesson writer:
     prompt: baseContext,
   });
 
-  // Collect tool results from all agent steps
   const toolResults = steps.flatMap((s) => s.toolResults ?? []);
   const illustrations = toolResults.filter((r) => r.toolName === 'generate_illustration');
   const verifications = toolResults.filter((r) => r.toolName === 'verify_content_plan');
@@ -409,13 +387,57 @@ Your job is to prepare resources for the lesson writer:
 
   onEvent({ type: 'agent_status', message: 'Writing lesson...' });
 
-  // Phase 2: stream the final HTML lesson
   return streamText({
     model: getModel(),
     maxTokens: 4000,
     system: TOPIC_HTML_SYSTEM,
     prompt: `${baseContext}${illustrationContext}${verifyContext}\n\nWrite the complete HTML lesson now.`,
   });
+}
+
+async function streamTopicContent({ guide, outline, topic, onEvent = () => {} }) {
+  if (testMocks.generateTopicContent) {
+    const result = await testMocks.generateTopicContent({ guide, outline, topic });
+    const content = result.contentHtml || result.contentMarkdown;
+    return {
+      textStream: (async function* () { yield content; })(),
+      text: Promise.resolve(content),
+    };
+  }
+
+  const sectionContext = topic.outlineSection
+    ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
+    : '';
+
+  const baseContext = `Guide: "${guide.title}"
+Goal: "${guide.prompt}"
+Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
+Full outline: ${JSON.stringify(outline)}
+${sectionContext}
+Topic: "${topic.title}" — ${topic.description}`;
+
+  return _streamLesson({ baseContext, onEvent });
+}
+
+async function streamSubtopicContent({ guide, outline, topic, item, onEvent = () => {} }) {
+  if (testMocks.generateTopicContent) {
+    const result = await testMocks.generateTopicContent({ guide, outline, topic });
+    const content = result.contentHtml || result.contentMarkdown;
+    return {
+      textStream: (async function* () { yield content; })(),
+      text: Promise.resolve(content),
+    };
+  }
+
+  const baseContext = `Guide: "${guide.title}"
+Goal: "${guide.prompt}"
+Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
+Full outline: ${JSON.stringify(outline)}
+Parent section: "${topic.title}" — ${topic.description}
+Subtopic: "${item.title}"${item.overview ? ` — ${item.overview}` : ''}
+Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey details: ${item.details.join(', ')}` : ''}`;
+
+  return _streamLesson({ baseContext, onEvent });
 }
 
 async function chatWithTutor({ guide, topic, messages }) {
@@ -440,6 +462,7 @@ module.exports = {
   generateGuideIllustration,
   generateTopicContent,
   streamOutline,
+  streamSubtopicContent,
   streamTopicContent,
   setAiMocks,
 };

@@ -30,14 +30,14 @@ Define 3-5 **Learning Outcomes** — concrete, measurable skills or knowledge th
 
 ### 3. Topics (Modules)
 
-Structure the course into modules, ordered in a logical learning progression where each topic builds on the previous one. Always include prerequisite concepts in the guide whereever appropriate. For each topic, provide:
+Structure the course into modules, ordered in a logical learning progression where each topic builds on the previous one. Always start the guide with prerequisite topics whereever appropriate. For each topic, provide:
 
 - **Topic Title**
 - **Topic Description** (2-3 sentences): What this topic covers, *why* it matters at this stage of the course, and what the learner should understand or be able to do after completing it. Write this description so a content developer could use it as a brief to create full lesson material.
 
 ### 4. Subtopics
 
-Under each topic, include Subtopics. For each subtopic, provide:
+Under each topic, include very granular subtopics. Each subtopic should only cover **one and only one** **individual concept**. For each subtopic, provide:
 
 - **Subtopic Title**
 - **Subtopic Description** (1-2 sentences): A focused summary of the specific concept, skill, or activity covered. Mention the teaching approach where relevant (e.g., hands-on exercise, case study, group discussion, visual demonstration). Write this so a content creator knows exactly what to build.

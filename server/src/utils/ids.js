@@ -10,4 +10,5 @@ module.exports = {
   topicId: () => makeId('top'),
   tokenId: () => makeId('tok'),
   oauthId: () => makeId('oau'),
+  subtopicId: () => makeId('sub'),
 };

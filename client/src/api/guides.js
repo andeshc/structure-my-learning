@@ -30,3 +30,7 @@ export function updateTopicProgress(topicId, isCompleted) {
   });
 }
 
+export function getSubtopic(topicId, position) {
+  return apiRequest(`/api/topics/${topicId}/subtopics/${position}`);
+}
+

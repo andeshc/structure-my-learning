@@ -2,6 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const guides = require('../db/guides');
 const topicsDb = require('../db/topics');
+const subtopicsDb = require('../db/subtopics');
 const ai = require('../services/ai.service');
 const asyncHandler = require('../utils/asyncHandler');
 const { aiRateLimit } = require('../middleware/rateLimit');
@@ -130,6 +131,110 @@ router.patch('/:topicId/progress', (req, res, next) => {
     },
   });
 });
+
+router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) => {
+  const position = parseInt(req.params.position, 10);
+  if (isNaN(position) || position < 0) {
+    const error = new Error('Invalid subtopic position.');
+    error.status = 400;
+    return next(error);
+  }
+
+  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  if (!found) {
+    const error = new Error('Topic not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const outline = found.guide.outline;
+  const sectionIndex = found.topic.position - 1;
+  const section = outline?.sections?.[sectionIndex];
+  const item = section?.items?.[position];
+
+  if (!item) {
+    const error = new Error('Subtopic not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const subtopic = subtopicsDb.findSubtopicForUser(req.params.topicId, position, req.user.id);
+
+  res.json({
+    subtopic: subtopic?.subtopic ?? { id: null, position, title: item.title, contentHtml: null, hasContent: false },
+    item,
+    topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
+    guide: { id: found.guide.id, title: found.guide.title },
+  });
+}));
+
+router.get('/:topicId/subtopics/:position/content', aiRateLimit, asyncHandler(async (req, res, next) => {
+  const position = parseInt(req.params.position, 10);
+  if (isNaN(position) || position < 0) {
+    const error = new Error('Invalid subtopic position.');
+    error.status = 400;
+    return next(error);
+  }
+
+  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  if (!found) {
+    const error = new Error('Topic not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const outline = found.guide.outline;
+  const sectionIndex = found.topic.position - 1;
+  const section = outline?.sections?.[sectionIndex];
+  const item = section?.items?.[position];
+
+  if (!item) {
+    const error = new Error('Subtopic not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const subtopic = subtopicsDb.findOrCreateSubtopic(req.params.topicId, position, item.title);
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
+  if (subtopic.contentHtml) {
+    res.write(JSON.stringify({ type: 'content_chunk', text: subtopic.contentHtml }) + '\n');
+    res.end();
+    return;
+  }
+
+  const onEvent = (event) => {
+    if (!res.writableEnded) res.write(JSON.stringify(event) + '\n');
+  };
+
+  try {
+    const result = await ai.streamSubtopicContent({
+      guide: found.guide,
+      outline,
+      topic: found.topic,
+      item,
+      onEvent,
+    });
+
+    result.text
+      .then((html) => subtopicsDb.saveSubtopicContentHtml(subtopic.id, html))
+      .catch((err) => console.error('Subtopic content save failed:', err.message));
+
+    for await (const chunk of result.textStream) {
+      if (res.writableEnded) break;
+      res.write(JSON.stringify({ type: 'content_chunk', text: chunk }) + '\n');
+    }
+  } catch (err) {
+    console.error('[subtopic content] generation error:', err);
+    if (!res.writableEnded) {
+      res.write(JSON.stringify({ type: 'error', message: 'Content generation failed.' }) + '\n');
+    }
+  }
+
+  if (!res.writableEnded) res.end();
+}));
 
 router.post('/:topicId/chat', aiRateLimit, asyncHandler(async (req, res, next) => {
   const { messages } = chatSchema.parse(req.body);
