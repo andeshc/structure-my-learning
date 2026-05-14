@@ -32,14 +32,12 @@ function statusLabel(topic, isNext) {
   if (!topic) return 'Unavailable';
   if (topic.isCompleted) return 'Done';
   if (isNext) return 'Next up';
-  if (topic.hasContent) return 'In progress';
   return 'Ready';
 }
 
 function statusClass(topic, isNext) {
   if (topic?.isCompleted) return 'bg-emerald-50 text-emerald-700';
   if (isNext) return 'bg-blue-600 text-white';
-  if (topic?.hasContent) return 'bg-blue-50 text-blue-700';
   return 'bg-slate-100 text-slate-500';
 }
 

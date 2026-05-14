@@ -12,7 +12,6 @@ import GuideDetailPage from './pages/GuideDetailPage';
 import NewGuidePage from './pages/NewGuidePage';
 import NotFoundPage from './pages/NotFoundPage';
 import SubtopicDetailPage from './pages/SubtopicDetailPage';
-import TopicDetailPage from './pages/TopicDetailPage';
 
 export default function App() {
   return (
@@ -29,7 +28,6 @@ export default function App() {
                   <Route index element={<DashboardPage />} />
                   <Route path="guides/new" element={<NewGuidePage />} />
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />
-                  <Route path="topics/:topicId" element={<TopicDetailPage />} />
                   <Route path="topics/:topicId/subtopics/:position" element={<SubtopicDetailPage />} />
                   <Route path="account" element={<AccountPage />} />
                   <Route path="*" element={<NotFoundPage />} />

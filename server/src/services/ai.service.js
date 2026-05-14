@@ -460,9 +460,7 @@ module.exports = {
   ageGuidance,
   chatWithTutor,
   generateGuideIllustration,
-  generateTopicContent,
   streamOutline,
   streamSubtopicContent,
-  streamTopicContent,
   setAiMocks,
 };

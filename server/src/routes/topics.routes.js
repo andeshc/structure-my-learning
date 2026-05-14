@@ -19,119 +19,6 @@ const chatSchema = z.object({
   ).min(1).max(20),
 });
 
-router.get('/:topicId', asyncHandler(async (req, res, next) => {
-  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
-
-  if (!found) {
-    const error = new Error('Topic not found.');
-    error.status = 404;
-    next(error);
-    return;
-  }
-
-  const { topic } = found;
-  const allTopics = topicsDb.listTopicsForGuide(found.guide.id);
-  const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
-  const prevItem = currentIdx > 0 ? allTopics[currentIdx - 1] : null;
-  const nextItem = currentIdx < allTopics.length - 1 ? allTopics[currentIdx + 1] : null;
-
-  res.json({
-    guide: found.guide,
-    topic,
-    allTopics: allTopics.map((t) => ({
-      id: t.id,
-      position: t.position,
-      title: t.title,
-      isCompleted: t.isCompleted,
-      hasContent: t.hasContent,
-    })),
-    prevTopic: prevItem ? { id: prevItem.id, title: prevItem.title } : null,
-    nextTopic: nextItem ? { id: nextItem.id, title: nextItem.title } : null,
-  });
-}));
-
-router.get('/:topicId/content', aiRateLimit, asyncHandler(async (req, res, next) => {
-  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
-
-  if (!found) {
-    const error = new Error('Topic not found.');
-    error.status = 404;
-    next(error);
-    return;
-  }
-
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Transfer-Encoding', 'chunked');
-
-  if (found.topic.contentHtml) {
-    res.write(JSON.stringify({ type: 'content_chunk', text: found.topic.contentHtml }) + '\n');
-    res.end();
-    return;
-  }
-
-  const outline = found.guide.outline || {
-    title: found.guide.title,
-    sections: topicsDb.listTopicsForGuide(found.guide.id).map(({ title, description, position }) => ({
-      title,
-      description,
-      position,
-    })),
-  };
-  const outlineSection = outline.sections?.[found.topic.position - 1] ?? null;
-  const topicWithSection = { ...found.topic, outlineSection };
-
-  const onEvent = (event) => {
-    if (!res.writableEnded) res.write(JSON.stringify(event) + '\n');
-  };
-
-  try {
-    const result = await ai.streamTopicContent({ guide: found.guide, outline, topic: topicWithSection, onEvent });
-
-    result.text
-      .then((html) => topicsDb.saveTopicContentHtml(found.topic.id, html))
-      .catch((err) => console.error('Content save failed:', err.message));
-
-    for await (const chunk of result.textStream) {
-      if (res.writableEnded) break;
-      res.write(JSON.stringify({ type: 'content_chunk', text: chunk }) + '\n');
-    }
-  } catch (err) {
-    console.error('[content] generation error:', err);
-    if (!res.writableEnded) {
-      res.write(JSON.stringify({ type: 'error', message: 'Content generation failed.' }) + '\n');
-    }
-  }
-
-  if (!res.writableEnded) res.end();
-}));
-
-router.patch('/:topicId/progress', (req, res, next) => {
-  const input = progressSchema.parse(req.body);
-  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
-
-  if (!found) {
-    const error = new Error('Topic not found.');
-    error.status = 404;
-    next(error);
-    return;
-  }
-
-  const topic = topicsDb.updateTopicProgress(req.params.topicId, input.isCompleted);
-  const guide = guides.findGuideForUser(topic.guideId, req.user.id);
-
-  res.json({
-    topic: {
-      id: topic.id,
-      isCompleted: topic.isCompleted,
-      completedAt: topic.completedAt,
-    },
-    guide: {
-      id: guide.id,
-      progressPercentage: guide.progressPercentage,
-    },
-  });
-});
-
 router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) => {
   const position = parseInt(req.params.position, 10);
   if (isNaN(position) || position < 0) {
@@ -158,13 +45,38 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     return next(error);
   }
 
-  const subtopic = subtopicsDb.findSubtopicForUser(req.params.topicId, position, req.user.id);
+  // Merge outline items with DB completion state
+  const dbSubtopics = subtopicsDb.listSubtopicsForTopic(req.params.topicId);
+  const dbByPosition = Object.fromEntries(dbSubtopics.map((s) => [s.position, s]));
+
+  const sectionItems = (section.items || []).map((si, i) => ({
+    position: i,
+    title: si.title,
+    importance: si.importance,
+    isCompleted: dbByPosition[i]?.isCompleted ?? false,
+    hasContent: dbByPosition[i]?.hasContent ?? false,
+  }));
+
+  const prevItem = position > 0 ? { position: position - 1, title: section.items[position - 1].title } : null;
+  const nextItem = position < section.items.length - 1
+    ? { position: position + 1, title: section.items[position + 1].title }
+    : null;
+
+  // May not exist yet (first visit before generation)
+  const dbSubtopic = dbByPosition[position] ?? null;
+
+  const guide = guides.findGuideForUser(found.guide.id, req.user.id);
 
   res.json({
-    subtopic: subtopic?.subtopic ?? { id: null, position, title: item.title, contentHtml: null, hasContent: false },
+    subtopic: dbSubtopic
+      ? dbSubtopic
+      : { id: null, position, title: item.title, contentHtml: null, hasContent: false, isCompleted: false, completedAt: null },
     item,
+    sectionItems,
+    prevItem,
+    nextItem,
     topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
-    guide: { id: found.guide.id, title: found.guide.title },
+    guide: { id: found.guide.id, title: found.guide.title, progressPercentage: guide?.progressPercentage ?? 0 },
   });
 }));
 
@@ -234,6 +146,50 @@ router.get('/:topicId/subtopics/:position/content', aiRateLimit, asyncHandler(as
   }
 
   if (!res.writableEnded) res.end();
+}));
+
+router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, res, next) => {
+  const { isCompleted } = progressSchema.parse(req.body);
+  const position = parseInt(req.params.position, 10);
+  if (isNaN(position) || position < 0) {
+    const error = new Error('Invalid subtopic position.');
+    error.status = 400;
+    return next(error);
+  }
+
+  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  if (!found) {
+    const error = new Error('Topic not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const outline = found.guide.outline;
+  const sectionIndex = found.topic.position - 1;
+  const section = outline?.sections?.[sectionIndex];
+  const item = section?.items?.[position];
+
+  if (!item) {
+    const error = new Error('Subtopic not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const subtopic = subtopicsDb.findOrCreateSubtopic(req.params.topicId, position, item.title);
+  subtopicsDb.updateSubtopicProgress(subtopic.id, isCompleted);
+
+  // Roll up: mark parent topic complete if all subtopics in section are done
+  const totalItems = section.items.length;
+  const allDbSubtopics = subtopicsDb.listSubtopicsForTopic(req.params.topicId);
+  const completedCount = allDbSubtopics.filter((s) => s.isCompleted).length;
+  topicsDb.updateTopicProgress(req.params.topicId, completedCount >= totalItems);
+
+  const guide = guides.findGuideForUser(found.guide.id, req.user.id);
+
+  res.json({
+    isCompleted,
+    guide: { id: found.guide.id, progressPercentage: guide?.progressPercentage ?? 0 },
+  });
 }));
 
 router.post('/:topicId/chat', aiRateLimit, asyncHandler(async (req, res, next) => {

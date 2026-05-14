@@ -30,6 +30,12 @@ function initDb() {
   if (topicColumns.length > 0 && !topicColumns.includes('content_html')) {
     db.exec('ALTER TABLE topics ADD COLUMN content_html TEXT');
   }
+
+  const subtopicColumns = db.prepare('PRAGMA table_info(subtopics)').all().map((c) => c.name);
+  if (subtopicColumns.length > 0 && !subtopicColumns.includes('is_completed')) {
+    db.exec('ALTER TABLE subtopics ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0');
+    db.exec('ALTER TABLE subtopics ADD COLUMN completed_at TEXT');
+  }
 }
 
 module.exports = { initDb };

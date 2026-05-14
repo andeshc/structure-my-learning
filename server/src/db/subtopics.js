@@ -1,5 +1,6 @@
 const db = require('./index');
 const { subtopicId } = require('../utils/ids');
+const { touchGuide } = require('./guides');
 
 function toSubtopic(row) {
   if (!row) return null;
@@ -10,6 +11,8 @@ function toSubtopic(row) {
     title: row.title,
     contentHtml: row.content_html,
     hasContent: Boolean(row.content_html),
+    isCompleted: Boolean(row.is_completed),
+    completedAt: row.completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -61,6 +64,26 @@ function findSubtopicForUser(topicId, position, userId) {
   };
 }
 
+function listSubtopicsForTopic(topicId) {
+  return db.prepare(
+    'SELECT * FROM subtopics WHERE topic_id = ? ORDER BY position ASC'
+  ).all(topicId).map(toSubtopic);
+}
+
+function updateSubtopicProgress(subtopicId, isCompleted) {
+  const completedAt = isCompleted ? new Date().toISOString() : null;
+  db.prepare(
+    'UPDATE subtopics SET is_completed = ?, completed_at = ?, updated_at = datetime(\'now\') WHERE id = ?'
+  ).run(isCompleted ? 1 : 0, completedAt, subtopicId);
+
+  const row = db.prepare(
+    'SELECT s.topic_id, t.guide_id FROM subtopics s JOIN topics t ON t.id = s.topic_id WHERE s.id = ?'
+  ).get(subtopicId);
+  if (row) touchGuide(row.guide_id);
+
+  return toSubtopic(db.prepare('SELECT * FROM subtopics WHERE id = ?').get(subtopicId));
+}
+
 function saveSubtopicContentHtml(subtopicId, contentHtml) {
   db.prepare(
     'UPDATE subtopics SET content_html = ?, updated_at = datetime(\'now\') WHERE id = ?'
@@ -70,5 +93,7 @@ function saveSubtopicContentHtml(subtopicId, contentHtml) {
 module.exports = {
   findOrCreateSubtopic,
   findSubtopicForUser,
+  listSubtopicsForTopic,
   saveSubtopicContentHtml,
+  updateSubtopicProgress,
 };
