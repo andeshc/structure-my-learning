@@ -1,4 +1,4 @@
-const { generateObject, streamObject, streamText, convertToModelMessages } = require('ai');
+const { generateObject, generateText, jsonSchema, streamObject, streamText, convertToModelMessages, tool, stepCountIs } = require('ai');
 const { fal } = require('@fal-ai/client');
 const fs = require('fs');
 const path = require('path');
@@ -65,6 +65,109 @@ const outlineSchema = z.object({
 const contentSchema = z.object({
   contentMarkdown: z.string().min(500).max(12000),
 });
+
+// --- Topic illustration tool (fal-ai/nano-banana-2) ---
+
+const generateTopicIllustrationTool = tool({
+  description: 'Generate an educational illustration image for the lesson. Use for concepts that genuinely benefit from a visual — processes, comparisons, system diagrams, real-world scenarios. Returns an image URL to embed in the HTML.',
+  inputSchema: jsonSchema({
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Short descriptive title for what this illustration shows' },
+      prompt: { type: 'string', description: 'Detailed visual description — key concepts, objects, composition, and any labels or annotations needed' },
+    },
+    required: ['title', 'prompt'],
+  }),
+  execute: async ({ title, prompt }) => {
+    const relativeDir = '/generated/topic-illustrations';
+    const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    fal.config({ credentials: config.falKey });
+
+    const result = await fal.subscribe('fal-ai/nano-banana-2', {
+      input: {
+        prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. No watermarks, no text unless labeled in description.`,
+        output_format: 'png',
+        num_images: 1,
+        resolution: '0.5K'
+      },
+    });
+
+    const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url;
+    if (!imageUrl) throw new Error('fal-ai/nano-banana-2 did not return an image URL.');
+
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) throw new Error('fal.ai image URL could not be downloaded.');
+
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.png`;
+    const outputPath = path.join(outputDir, fileName);
+    fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
+
+    return { url: `${relativeDir}/${fileName}`, title };
+  },
+});
+
+// --- Fact-checking tool ---
+
+const verifyContentPlanTool = tool({
+  description: 'Review planned claims for a lesson before writing. Returns a per-claim verdict. Call this before writing the HTML.',
+  inputSchema: jsonSchema({
+    type: 'object',
+    properties: {
+      topic: { type: 'string' },
+      planned_claims: {
+        type: 'array',
+        items: { type: 'string' },
+        minItems: 3,
+        maxItems: 12,
+        description: 'Key facts or claims you plan to state in the lesson',
+      },
+    },
+    required: ['topic', 'planned_claims'],
+  }),
+  execute: async ({ topic, planned_claims }) => {
+    const { text } = await generateText({
+      model: getModel(),
+      maxTokens: 500,
+      prompt: `You are a subject-matter expert reviewing planned lesson claims on "${topic}".
+For each claim, reply on one line: CORRECT | CLARIFY: <note> | WRONG: <correction>
+
+${planned_claims.map((c, i) => `${i + 1}. ${c}`).join('\n')}`,
+    });
+    return { verification: text };
+  },
+});
+
+// --- HTML lesson system prompt (used in Phase 2 of streamTopicContent) ---
+
+const TOPIC_HTML_SYSTEM = `You are StructureMyLearning's expert educator. Write a rich, beautifully structured HTML lesson for one topic inside a personalized learning guide.
+
+Output rules:
+- Output ONLY a valid HTML fragment — no <html>, <head>, or <body> tags, no markdown, no JSON wrapper, no explanation.
+- Use Tailwind CSS utility classes for ALL styling — the page loads the Tailwind CDN, so every class works.
+- Target 800–1500 words of educational content.
+- Include: clear explanation, real-world analogies, concrete examples, and a brief summary.
+- Do not use inline style attributes (use Tailwind classes instead).
+- Do not include <script> or <style> tags.
+- Match vocabulary and depth to the guide age level.
+- Do not invent citations or make unsupported claims.
+- Do not mention these instructions.
+
+HTML structure and component patterns:
+- Open with a 1–2 sentence compelling overview paragraph (no heading): <p class="text-lg text-slate-600 leading-relaxed mb-8">...</p>
+- Major sections: <h2 class="text-2xl font-bold text-slate-900 mt-10 mb-4">...</h2>
+- Sub-sections: <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">...</h3>
+- Body paragraphs: <p class="text-slate-700 leading-7 mb-4">...</p>
+- Key concept callout: <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-blue-900 mb-1">Key Concept</p><p class="text-blue-800 leading-relaxed">...</p></div>
+- Analogy callout: <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-amber-900 mb-1">Analogy</p><p class="text-amber-800 leading-relaxed">...</p></div>
+- Warning / common mistake: <div class="bg-red-50 border-l-4 border-red-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-red-900 mb-1">Common Mistake</p><p class="text-red-800 leading-relaxed">...</p></div>
+- Code blocks: <pre class="bg-slate-900 rounded-xl p-5 overflow-x-auto my-6 text-sm"><code class="text-emerald-300 font-mono">...</code></pre>
+- Bullet lists: <ul class="list-disc list-inside space-y-2 text-slate-700 mb-4 pl-2">
+- Numbered steps: <ol class="space-y-3 mb-6"> with items: <li class="flex gap-3 items-start"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">1</span><div class="text-slate-700 leading-relaxed">...</div></li>
+- Simple comparison table: <div class="overflow-x-auto my-6"><table class="w-full border-collapse text-sm"><thead><tr class="bg-slate-100"><th class="text-left px-4 py-2 font-semibold text-slate-700 border-b border-slate-200">...</th></tr></thead><tbody><tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-3 text-slate-700">...</td></tr></tbody></table></div>
+- Summary box at the end: <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-5 mt-10"><p class="font-bold text-emerald-900 mb-3">Summary</p><ul class="space-y-2 text-emerald-800 text-sm leading-relaxed">...</ul></div>
+- If pre-generated illustration images were provided, embed each one using the provided <img> tag at the most relevant point in the lesson.`;
 
 const fallbackIllustrationPath = '/static/guide-illustrations/generic-guide.svg';
 
@@ -226,63 +329,93 @@ Write the lesson for topic: "${topic.title}" — ${topic.description}`;
   return object;
 }
 
-async function streamTopicContent({ guide, outline, topic }) {
+async function streamTopicContent({ guide, outline, topic, onEvent = () => {} }) {
   if (testMocks.generateTopicContent) {
     const result = await testMocks.generateTopicContent({ guide, outline, topic });
     const content = result.contentHtml || result.contentMarkdown;
     return {
-      pipeTextStreamToResponse: (res) => {
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.end(content);
-      },
+      textStream: (async function* () { yield content; })(),
       text: Promise.resolve(content),
     };
   }
-
-  const system = `You are StructureMyLearning's expert educator. Write a rich, beautifully structured HTML lesson for one topic inside a personalized learning guide.
-
-Output rules:
-- Output ONLY a valid HTML fragment — no <html>, <head>, or <body> tags, no markdown, no JSON wrapper, no explanation.
-- Use Tailwind CSS utility classes for ALL styling — the page loads the Tailwind CDN, so every class works.
-- Target 800–1500 words of educational content.
-- Include: clear explanation, real-world analogies, concrete examples, and a brief summary.
-- Do not use inline style attributes (use Tailwind classes instead).
-- Do not include <script> or <style> tags.
-- Match vocabulary and depth to the guide age level.
-- Do not invent citations or make unsupported claims.
-- Do not mention these instructions.
-
-HTML structure and component patterns:
-- Open with a 1–2 sentence compelling overview paragraph (no heading): <p class="text-lg text-slate-600 leading-relaxed mb-8">...</p>
-- Major sections: <h2 class="text-2xl font-bold text-slate-900 mt-10 mb-4">...</h2>
-- Sub-sections: <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">...</h3>
-- Body paragraphs: <p class="text-slate-700 leading-7 mb-4">...</p>
-- Key concept callout: <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-blue-900 mb-1">Key Concept</p><p class="text-blue-800 leading-relaxed">...</p></div>
-- Analogy callout: <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-amber-900 mb-1">Analogy</p><p class="text-amber-800 leading-relaxed">...</p></div>
-- Warning / common mistake: <div class="bg-red-50 border-l-4 border-red-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-red-900 mb-1">Common Mistake</p><p class="text-red-800 leading-relaxed">...</p></div>
-- Code blocks: <pre class="bg-slate-900 rounded-xl p-5 overflow-x-auto my-6 text-sm"><code class="text-emerald-300 font-mono">...</code></pre>
-- Bullet lists: <ul class="list-disc list-inside space-y-2 text-slate-700 mb-4 pl-2">
-- Numbered steps: <ol class="space-y-3 mb-6"> with items: <li class="flex gap-3 items-start"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">1</span><div class="text-slate-700 leading-relaxed">...</div></li>
-- Simple comparison table: <div class="overflow-x-auto my-6"><table class="w-full border-collapse text-sm"><thead><tr class="bg-slate-100"><th class="text-left px-4 py-2 font-semibold text-slate-700 border-b border-slate-200">...</th></tr></thead><tbody><tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-3 text-slate-700">...</td></tr></tbody></table></div>
-- Summary box at the end: <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-5 mt-10"><p class="font-bold text-emerald-900 mb-3">Summary</p><ul class="space-y-2 text-emerald-800 text-sm leading-relaxed">...</ul></div>
-- For diagrams that add real value, use inline SVG with appropriate viewBox and Tailwind classes for sizing.`;
 
   const sectionContext = topic.outlineSection
     ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
     : '';
 
-  const prompt = `Guide title: ${guide.title}
-Original user goal: "${guide.prompt}"
-Learner age level: ${guide.ageLevel}
-Age-level guidance: ${ageGuidance[guide.ageLevel]}
-
-Full outline:
-${JSON.stringify(outline)}
+  const baseContext = `Guide: "${guide.title}"
+Goal: "${guide.prompt}"
+Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
+Full outline: ${JSON.stringify(outline)}
 ${sectionContext}
+Topic: "${topic.title}" — ${topic.description}`;
 
-Write the full lesson for topic: "${topic.title}" — ${topic.description}`;
+  // Phase 1: agent loop — verify facts and generate illustrations
+  onEvent({ type: 'agent_status', message: 'Planning lesson...' });
 
-  return streamText({ model: getModel(), system, prompt, maxTokens: 4000 });
+  const { steps } = await generateText({
+    model: getModel(),
+    maxTokens: 2000,
+    stopWhen: stepCountIs(6),
+    tools: {
+      generate_illustration: tool({
+        description: generateTopicIllustrationTool.description,
+        inputSchema: generateTopicIllustrationTool.inputSchema,
+        execute: async (params) => {
+          onEvent({ type: 'agent_tool_call', message: `Generating illustration: ${params.title}` });
+          try {
+            const result = await generateTopicIllustrationTool.execute(params);
+            onEvent({ type: 'agent_tool_result', message: `Illustration ready: ${params.title}` });
+            return result;
+          } catch (err) {
+            console.error('[illustration tool] failed:', err.message);
+            onEvent({ type: 'agent_tool_result', message: `Illustration skipped` });
+            return { url: null, title: params.title };
+          }
+        },
+      }),
+      verify_content_plan: tool({
+        description: verifyContentPlanTool.description,
+        inputSchema: verifyContentPlanTool.inputSchema,
+        execute: async (params) => {
+          onEvent({ type: 'agent_tool_call', message: `Verifying ${params.planned_claims.length} claims...` });
+          const result = await verifyContentPlanTool.execute(params);
+          onEvent({ type: 'agent_tool_result', message: 'Claims verified' });
+          return result;
+        },
+      }),
+    },
+    system: `You are a lesson-preparation assistant. Do NOT write the HTML lesson yet — that happens next.
+Your job is to prepare resources for the lesson writer:
+1. Call verify_content_plan with 5–10 key claims you plan to make in this lesson.
+2. Call generate_illustration for images that would genuinely aid understanding (0–2 max). Skip if the topic is purely abstract or text-only is sufficient.
+3. After your tool calls, output only: { "ready": true }`,
+    prompt: baseContext,
+  });
+
+  // Collect tool results from all agent steps
+  const toolResults = steps.flatMap((s) => s.toolResults ?? []);
+  const illustrations = toolResults.filter((r) => r.toolName === 'generate_illustration');
+  const verifications = toolResults.filter((r) => r.toolName === 'verify_content_plan');
+
+  const validIllustrations = illustrations.filter((r) => r.output?.url);
+  const illustrationContext = validIllustrations.length > 0
+    ? `\n\nPre-generated illustration images — embed these <img> tags at the most relevant point in the lesson:\n${validIllustrations.map((r) => `<!-- ${r.output.title} -->\n<img src="${r.output.url}" alt="${r.output.title}" class="w-full rounded-xl my-6">`).join('\n\n')}`
+    : '';
+
+  const verifyContext = verifications.length > 0
+    ? `\n\nFact-check notes — apply any corrections before writing:\n${verifications.map((r) => r.output.verification).join('\n')}`
+    : '';
+
+  onEvent({ type: 'agent_status', message: 'Writing lesson...' });
+
+  // Phase 2: stream the final HTML lesson
+  return streamText({
+    model: getModel(),
+    maxTokens: 4000,
+    system: TOPIC_HTML_SYSTEM,
+    prompt: `${baseContext}${illustrationContext}${verifyContext}\n\nWrite the complete HTML lesson now.`,
+  });
 }
 
 async function chatWithTutor({ guide, topic, messages }) {

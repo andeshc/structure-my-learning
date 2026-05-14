@@ -59,9 +59,12 @@ router.get('/:topicId/content', aiRateLimit, asyncHandler(async (req, res, next)
     return;
   }
 
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
   if (found.topic.contentHtml) {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.end(found.topic.contentHtml);
+    res.write(JSON.stringify({ type: 'content_chunk', text: found.topic.contentHtml }) + '\n');
+    res.end();
     return;
   }
 
@@ -76,13 +79,29 @@ router.get('/:topicId/content', aiRateLimit, asyncHandler(async (req, res, next)
   const outlineSection = outline.sections?.[found.topic.position - 1] ?? null;
   const topicWithSection = { ...found.topic, outlineSection };
 
-  const result = await ai.streamTopicContent({ guide: found.guide, outline, topic: topicWithSection });
+  const onEvent = (event) => {
+    if (!res.writableEnded) res.write(JSON.stringify(event) + '\n');
+  };
 
-  result.text
-    .then((html) => topicsDb.saveTopicContentHtml(found.topic.id, html))
-    .catch((err) => console.error('Content save failed:', err.message));
+  try {
+    const result = await ai.streamTopicContent({ guide: found.guide, outline, topic: topicWithSection, onEvent });
 
-  result.pipeTextStreamToResponse(res);
+    result.text
+      .then((html) => topicsDb.saveTopicContentHtml(found.topic.id, html))
+      .catch((err) => console.error('Content save failed:', err.message));
+
+    for await (const chunk of result.textStream) {
+      if (res.writableEnded) break;
+      res.write(JSON.stringify({ type: 'content_chunk', text: chunk }) + '\n');
+    }
+  } catch (err) {
+    console.error('[content] generation error:', err);
+    if (!res.writableEnded) {
+      res.write(JSON.stringify({ type: 'error', message: 'Content generation failed.' }) + '\n');
+    }
+  }
+
+  if (!res.writableEnded) res.end();
 }));
 
 router.patch('/:topicId/progress', (req, res, next) => {

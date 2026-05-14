@@ -124,7 +124,9 @@ describe('API', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(contentResponse.status).toBe(200);
-    expect(contentResponse.text).toContain('<h1>Foundations</h1>');
+    const contentEvents = contentResponse.text.trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
+    const contentText = contentEvents.filter((e) => e.type === 'content_chunk').map((e) => e.text).join('');
+    expect(contentText).toContain('<h1>Foundations</h1>');
 
     const topicResponse = await request(app)
       .get(`/api/topics/${topicId}`)

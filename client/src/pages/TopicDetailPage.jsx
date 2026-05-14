@@ -28,6 +28,58 @@ function sanitize(html) {
   return DOMPurify.sanitize(html, PURIFY_CONFIG);
 }
 
+// --- Agent activity feed ---
+
+const EVENT_ICONS = {
+  agent_status: '◆',
+  agent_tool_call: '⟳',
+  agent_tool_result: '✓',
+};
+
+function AgentActivityFeed({ events, isStreaming }) {
+  return (
+    <div className="py-2">
+      <style>{`@keyframes eventIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }`}</style>
+      {events.length === 0 ? (
+        <div className="flex items-center gap-2.5 text-sm text-slate-400">
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-blue-400" />
+          Preparing lesson…
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {events.map((event, i) => {
+            const isLast = i === events.length - 1;
+            const isPending = isStreaming && isLast && event.type !== 'agent_tool_result';
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-3 text-sm"
+                style={{ animation: 'eventIn 0.2s ease forwards' }}
+              >
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  isPending
+                    ? 'bg-blue-100 text-blue-500'
+                    : event.type === 'agent_tool_result'
+                    ? 'bg-emerald-100 text-emerald-600'
+                    : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {isPending
+                    ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-blue-500" />
+                    : EVENT_ICONS[event.type] ?? '·'
+                  }
+                </span>
+                <span className={isPending ? 'text-slate-700' : 'text-slate-400'}>
+                  {event.message}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- AI Tutor widget ---
 
 function AiTutorWidget({ topicId, topicTitle, onClose }) {
@@ -133,6 +185,7 @@ export default function TopicDetailPage() {
   const [showMobileAi, setShowMobileAi] = useState(false);
   const [streamedHtml, setStreamedHtml] = useState(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [agentEvents, setAgentEvents] = useState([]);
   const articleRef = useRef(null);
 
   // Inject Tailwind CDN once so AI-generated HTML classes are available at runtime
@@ -147,6 +200,7 @@ export default function TopicDetailPage() {
   async function streamContent(id, signal) {
     setIsStreaming(true);
     setStreamedHtml('');
+    setAgentEvents([]);
     try {
       const res = await fetch(`/api/topics/${id}/content`, {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
@@ -155,12 +209,26 @@ export default function TopicDetailPage() {
       if (!res.ok) throw new Error('Failed to load topic content.');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
       let html = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        html += decoder.decode(value, { stream: true });
-        setStreamedHtml(html);
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+          if (event.type === 'agent_status' || event.type === 'agent_tool_call' || event.type === 'agent_tool_result') {
+            setAgentEvents((prev) => [...prev, event]);
+          } else if (event.type === 'content_chunk') {
+            html += event.text;
+            setStreamedHtml(html);
+          } else if (event.type === 'error') {
+            setError(event.message);
+          }
+        }
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -177,6 +245,7 @@ export default function TopicDetailPage() {
     setTopic(null);
     setStreamedHtml(null);
     setIsStreaming(false);
+    setAgentEvents([]);
     getTopic(topicId)
       .then((data) => {
         if (controller.signal.aborted) return;
@@ -347,8 +416,8 @@ export default function TopicDetailPage() {
             </button>
           </div>
 
-          {/* Streaming progress bar */}
-          {isStreaming && (
+          {/* Phase 2 streaming bar — only when HTML is already flowing */}
+          {isStreaming && displayedHtml && (
             <div className="mt-6 h-0.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div className="h-full w-1/3 animate-pulse bg-blue-400" />
             </div>
@@ -361,14 +430,10 @@ export default function TopicDetailPage() {
                 className="lesson-content"
                 dangerouslySetInnerHTML={{ __html: sanitize(displayedHtml) }}
               />
-            ) : !isStreaming ? (
-              <p className="text-slate-400 text-sm">No content available.</p>
+            ) : isStreaming ? (
+              <AgentActivityFeed events={agentEvents} isStreaming={isStreaming} />
             ) : (
-              <div className="space-y-3 animate-pulse">
-                <div className="h-4 w-3/4 rounded-full bg-slate-200" />
-                <div className="h-4 w-full rounded-full bg-slate-200" />
-                <div className="h-4 w-5/6 rounded-full bg-slate-200" />
-              </div>
+              <p className="text-slate-400 text-sm">No content available.</p>
             )}
           </div>
 

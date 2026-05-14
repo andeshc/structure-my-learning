@@ -48,11 +48,11 @@ Apply the following based on the depth level:
 
 | Depth Level | Adaptation Rules |
 |---|---|
-| `ages_8_10` | Use playful language, story-driven framing, tactile/visual activities, and very short learning blocks (5-10 min). Subtopics should lean toward games, crafts, and guided exploration. Avoid abstract concepts; ground everything in tangible, sensory experiences. |
-| `ages_11_13` | Introduce light critical thinking, project-based subtopics, relatable real-world examples, and collaborative activities. Vocabulary can be more precise. Encourage curiosity through "what if" questions and guided experimentation. |
-| `ages_14_17` | Use real-world case studies, encourage debate and independent research, introduce foundational theory, and include self-directed subtopics. Learners can handle nuance, multiple perspectives, and longer-form analysis. |
-| `adult_beginner` | Assume zero prior knowledge of the subject but full cognitive maturity. Focus on practical, career-relevant outcomes, clear mental models, and confidence-building progression. Use scenario-based subtopics, relatable analogies, and avoid patronizing simplicity — teach thoroughly, not childishly. |
-| `adult_advanced` | Assume solid foundational knowledge. Prioritize advanced frameworks, edge cases, critical analysis, and synthesis across domains. Subtopics should challenge assumptions, introduce competing schools of thought, and include portfolio-grade or professional-output activities. |
+| `ages_8_10` | Elementary learner; simple vocabulary, concrete examples, gentle pacing, no assumed background knowledge. |
+| `ages_11_13` | Middle-grade learner; clear vocabulary, light technical terms with definitions, relatable examples. |
+| `ages_14_17` | Teen learner; stronger conceptual depth, school-level terminology, examples that connect to real applications. |
+| `adult_beginner` | Adult learner new to the subject; respectful tone, practical examples, no childish framing. |
+| `adult_advanced` | Adult or professional learner; deeper explanations, precise terminology, more nuance, and efficient pacing. |
 
 ### 6. Dont include projects or assesments
 Dont include Capstone or any other projects, assesments, demonstrations, activities. The user will participate only to consume the content. Nothing needs to be handson.
