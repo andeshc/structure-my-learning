@@ -35,6 +35,26 @@ const EVENT_ICONS = {
   agent_tool_result: '✓',
 };
 
+function buildRows(groupEvents) {
+  // Pair each tool_call with its corresponding tool_result (by order of appearance).
+  // Status events render individually; paired tool rows collapse into one row.
+  const rows = [];
+  const calls = groupEvents.filter((e) => e.event.type === 'agent_tool_call');
+  const results = groupEvents.filter((e) => e.event.type === 'agent_tool_result');
+
+  for (const { event, globalIdx } of groupEvents) {
+    if (event.type === 'agent_status') {
+      rows.push({ kind: 'status', event, globalIdx });
+    } else if (event.type === 'agent_tool_call') {
+      const callIdx = calls.findIndex((c) => c.globalIdx === globalIdx);
+      const result = results[callIdx] ?? null;
+      rows.push({ kind: 'tool', call: event, result: result?.event ?? null, globalIdx: result?.globalIdx ?? globalIdx });
+    }
+    // tool_results are consumed by their paired call row — skip standalone
+  }
+  return rows;
+}
+
 function AgentActivityFeed({ events, isStreaming }) {
   // Group events into phases on each agent_status boundary
   const groups = [];
@@ -83,42 +103,47 @@ function AgentActivityFeed({ events, isStreaming }) {
 
       {/* Phase groups */}
       <div className="space-y-4">
-        {groups.map((group, gi) => (
+        {groups.map((group, gi) => {
+          const rows = buildRows(group.events);
+          return (
           <div key={gi}>
             <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-300">
               {group.label}
             </p>
             <div className="space-y-1.5">
-              {group.events.map(({ event, globalIdx }, ei) => {
-                const isLast = globalIdx === events.length - 1;
-                const isPending = isStreaming && isLast && event.type !== 'agent_tool_result';
+              {rows.map((row, ri) => {
+                const isLast = row.globalIdx === events.length - 1;
+                const isDone = row.kind === 'tool' ? Boolean(row.result) : !isLast;
+                const isPending = isStreaming && !isDone && isLast;
+                const displayEvent = row.kind === 'tool' && row.result ? row.result : row.kind === 'tool' ? row.call : row.event;
                 return (
                   <div
-                    key={ei}
+                    key={ri}
                     className={`flex items-center gap-3 text-sm transition-opacity ${isPending ? '' : 'opacity-40'}`}
                     style={{ animation: 'eventIn 0.2s ease forwards' }}
                   >
                     <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
                       isPending
                         ? 'bg-blue-100 text-blue-500'
-                        : event.type === 'agent_tool_result'
+                        : (row.kind === 'tool' && row.result) || row.kind === 'status'
                         ? 'bg-emerald-100 text-emerald-600'
                         : 'bg-slate-100 text-slate-500'
                     }`}>
                       {isPending
                         ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-blue-500" />
-                        : EVENT_ICONS[event.type] ?? '·'
+                        : EVENT_ICONS[displayEvent.type] ?? '·'
                       }
                     </span>
                     <span className={isPending ? 'font-medium text-slate-800' : 'text-slate-500'}>
-                      {event.message}
+                      {displayEvent.message}
                     </span>
                   </div>
                 );
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
