@@ -25,6 +25,11 @@ function initDb() {
   if (guideColumns.length > 0 && !guideColumns.includes('status')) {
     db.exec(`ALTER TABLE guides ADD COLUMN status TEXT NOT NULL DEFAULT 'ready' CHECK (status IN ('pending', 'ready', 'failed'))`);
   }
+
+  const topicColumns = db.prepare('PRAGMA table_info(topics)').all().map((column) => column.name);
+  if (topicColumns.length > 0 && !topicColumns.includes('content_html')) {
+    db.exec('ALTER TABLE topics ADD COLUMN content_html TEXT');
+  }
 }
 
 module.exports = { initDb };

@@ -1,74 +1,32 @@
+import DOMPurify from 'dompurify';
 import {
-  BookOpen,
   Bot,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Circle,
-  Code,
-  FileText,
-  GitBranch,
-  HelpCircle,
   Lightbulb,
-  MessageCircle,
   Send,
   X,
-  Zap,
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Link, useParams } from 'react-router';
 import { getTopic, updateTopicProgress } from '../api/guides';
 import { getAccessToken } from '../api/client';
 import LoadingPanel from '../components/LoadingPanel';
 
-// --- Heading icon mapping ---
+const PURIFY_CONFIG = {
+  USE_PROFILES: { html: true, svg: true, svgFilters: true },
+  ADD_TAGS: [],
+  FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+};
 
-const HEADING_ICON_MAP = [
-  [['overview', 'introduction', 'what is', 'background', 'context'], FileText],
-  [['core idea', 'core concept', 'key concept', 'key idea', 'concept', 'foundation', 'fundamentals'], Lightbulb],
-  [['analogy', 'real-world', 'real world', 'metaphor', 'comparison', 'think of it'], MessageCircle],
-  [['diagram', 'visual', 'imagine', 'illustration', 'architecture', 'structure'], GitBranch],
-  [['summary', 'conclusion', 'recap', 'takeaway', 'review', 'key point'], CheckCircle2],
-  [['exercise', 'practice', 'challenge', 'try it', 'activity', 'hands-on'], Zap],
-  [['code', 'implementation', 'example code', 'syntax', 'snippet'], Code],
-  [['question', 'faq', 'common question', 'why does', 'how does'], HelpCircle],
-];
-
-function getHeadingIcon(text) {
-  const lower = text.toLowerCase();
-  for (const [keywords, Icon] of HEADING_ICON_MAP) {
-    if (keywords.some((k) => lower.includes(k))) return Icon;
-  }
-  return BookOpen;
+function sanitize(html) {
+  return DOMPurify.sanitize(html, PURIFY_CONFIG);
 }
-
-// --- Custom markdown components ---
-
-function buildMarkdownComponents() {
-  return {
-    h2: ({ children }) => {
-      const text = String(children);
-      const Icon = getHeadingIcon(text);
-      return (
-        <h2 className="not-prose mb-3 mt-8 flex items-center gap-2.5 text-xl font-bold text-slate-950 first:mt-0">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
-            <Icon size={15} />
-          </span>
-          {children}
-        </h2>
-      );
-    },
-    h3: ({ children }) => (
-      <h3 className="not-prose mb-2 mt-6 text-lg font-semibold text-slate-900">{children}</h3>
-    ),
-  };
-}
-
-const markdownComponents = buildMarkdownComponents();
 
 // --- AI Tutor widget ---
 
@@ -173,30 +131,39 @@ export default function TopicDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showMobileAi, setShowMobileAi] = useState(false);
-  const [streamedContent, setStreamedContent] = useState(null);
+  const [streamedHtml, setStreamedHtml] = useState(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const articleRef = useRef(null);
 
-  async function streamContent(id) {
+  // Inject Tailwind CDN once so AI-generated HTML classes are available at runtime
+  useEffect(() => {
+    if (document.querySelector('script[data-tailwind-cdn]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.tailwindcss.com';
+    script.setAttribute('data-tailwind-cdn', '');
+    document.head.appendChild(script);
+  }, []);
+
+  async function streamContent(id, signal) {
     setIsStreaming(true);
-    setStreamedContent('');
+    setStreamedHtml('');
     try {
       const res = await fetch(`/api/topics/${id}/content`, {
         headers: { Authorization: `Bearer ${getAccessToken()}` },
+        signal,
       });
-      if (!res.ok) {
-        throw new Error('Failed to load topic content.');
-      }
+      if (!res.ok) throw new Error('Failed to load topic content.');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let text = '';
+      let html = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        text += decoder.decode(value, { stream: true });
-        setStreamedContent(text);
+        html += decoder.decode(value, { stream: true });
+        setStreamedHtml(html);
       }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setError(err.message);
     } finally {
       setIsStreaming(false);
@@ -204,23 +171,28 @@ export default function TopicDetailPage() {
   }
 
   useEffect(() => {
+    const controller = new AbortController();
     setReadingProgress(0);
     setGuide(null);
     setTopic(null);
-    setStreamedContent(null);
+    setStreamedHtml(null);
     setIsStreaming(false);
     getTopic(topicId)
       .then((data) => {
+        if (controller.signal.aborted) return;
         setGuide(data.guide);
         setTopic(data.topic);
         setAllTopics(data.allTopics || []);
         setPrevTopic(data.prevTopic || null);
         setNextTopic(data.nextTopic || null);
-        if (!data.topic.contentMarkdown) {
-          streamContent(data.topic.id);
+        if (!data.topic.contentHtml) {
+          streamContent(data.topic.id, controller.signal);
         }
       })
-      .catch((loadError) => setError(loadError.message));
+      .catch((loadError) => {
+        if (!controller.signal.aborted) setError(loadError.message);
+      });
+    return () => controller.abort();
   }, [topicId]);
 
   useEffect(() => {
@@ -263,7 +235,7 @@ export default function TopicDetailPage() {
     return <LoadingPanel title="Loading topic" detail="Fetching topic details…" />;
   }
 
-  const displayedContent = topic.contentMarkdown ?? streamedContent ?? '';
+  const displayedHtml = topic.contentHtml ?? streamedHtml;
 
   const completedCount = allTopics.filter((t) => t.isCompleted).length;
   const guideProgress = allTopics.length > 0 ? Math.round((completedCount / allTopics.length) * 100) : 0;
@@ -375,21 +347,28 @@ export default function TopicDetailPage() {
             </button>
           </div>
 
-          {/* Streaming indicator */}
+          {/* Streaming progress bar */}
           {isStreaming && (
             <div className="mt-6 h-0.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-1/3 origin-left animate-pulse bg-blue-400" />
+              <div className="h-full w-1/3 animate-pulse bg-blue-400" />
             </div>
           )}
 
           {/* Lesson content */}
-          <div className="prose prose-slate mt-6 max-w-none rounded-xl border border-slate-200 bg-white p-6 lg:p-8">
-            {displayedContent ? (
-              <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
-                {displayedContent}
-              </ReactMarkdown>
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
+            {displayedHtml ? (
+              <div
+                className="lesson-content"
+                dangerouslySetInnerHTML={{ __html: sanitize(displayedHtml) }}
+              />
+            ) : !isStreaming ? (
+              <p className="text-slate-400 text-sm">No content available.</p>
             ) : (
-              <p className="text-slate-400 text-sm animate-pulse">Generating lesson…</p>
+              <div className="space-y-3 animate-pulse">
+                <div className="h-4 w-3/4 rounded-full bg-slate-200" />
+                <div className="h-4 w-full rounded-full bg-slate-200" />
+                <div className="h-4 w-5/6 rounded-full bg-slate-200" />
+              </div>
             )}
           </div>
 

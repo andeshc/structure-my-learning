@@ -13,9 +13,10 @@ function toTopic(row) {
     title: row.title,
     description: row.description,
     contentMarkdown: row.content_markdown,
+    contentHtml: row.content_html,
     isCompleted: Boolean(row.is_completed),
     completedAt: row.completed_at,
-    hasContent: Boolean(row.content_markdown),
+    hasContent: Boolean(row.content_html || row.content_markdown),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -61,6 +62,14 @@ function saveTopicContent(topicId, contentMarkdown) {
   `).run(contentMarkdown, topicId);
 }
 
+function saveTopicContentHtml(topicId, contentHtml) {
+  db.prepare(`
+    UPDATE topics
+    SET content_html = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(contentHtml, topicId);
+}
+
 function updateTopicProgress(topicId, isCompleted) {
   const completedAt = isCompleted ? new Date().toISOString() : null;
 
@@ -83,5 +92,6 @@ module.exports = {
   findTopicForUser,
   listTopicsForGuide,
   saveTopicContent,
+  saveTopicContentHtml,
   updateTopicProgress,
 };

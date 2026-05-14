@@ -70,7 +70,7 @@ describe('API', () => {
         ],
       }),
       generateTopicContent: async ({ topic }) => ({
-        contentMarkdown: `# ${topic.title}\n\nThis lesson explains the concept with examples, analogies, and a summary. `.repeat(14),
+        contentHtml: `<h1>${topic.title}</h1><p>This lesson explains the concept with examples, analogies, and a summary.</p>`.repeat(14),
       }),
       generateGuideIllustration: async ({ guideId }) => `/generated/guide-illustrations/${guideId}.png`,
     });
@@ -124,14 +124,14 @@ describe('API', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(contentResponse.status).toBe(200);
-    expect(contentResponse.text).toContain('# Foundations');
+    expect(contentResponse.text).toContain('<h1>Foundations</h1>');
 
     const topicResponse = await request(app)
       .get(`/api/topics/${topicId}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(topicResponse.status).toBe(200);
-    expect(topicResponse.body.topic.contentMarkdown).toContain('# Foundations');
+    expect(topicResponse.body.topic.contentHtml).toContain('<h1>Foundations</h1>');
 
     const progressResponse = await request(app)
       .patch(`/api/topics/${topicId}/progress`)

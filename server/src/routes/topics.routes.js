@@ -59,9 +59,9 @@ router.get('/:topicId/content', aiRateLimit, asyncHandler(async (req, res, next)
     return;
   }
 
-  if (found.topic.contentMarkdown) {
+  if (found.topic.contentHtml) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.end(found.topic.contentMarkdown);
+    res.end(found.topic.contentHtml);
     return;
   }
 
@@ -79,7 +79,7 @@ router.get('/:topicId/content', aiRateLimit, asyncHandler(async (req, res, next)
   const result = await ai.streamTopicContent({ guide: found.guide, outline, topic: topicWithSection });
 
   result.text
-    .then((text) => topicsDb.saveTopicContent(found.topic.id, text))
+    .then((html) => topicsDb.saveTopicContentHtml(found.topic.id, html))
     .catch((err) => console.error('Content save failed:', err.message));
 
   result.pipeTextStreamToResponse(res);

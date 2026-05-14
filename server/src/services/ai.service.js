@@ -229,28 +229,43 @@ Write the lesson for topic: "${topic.title}" — ${topic.description}`;
 async function streamTopicContent({ guide, outline, topic }) {
   if (testMocks.generateTopicContent) {
     const result = await testMocks.generateTopicContent({ guide, outline, topic });
+    const content = result.contentHtml || result.contentMarkdown;
     return {
       pipeTextStreamToResponse: (res) => {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.end(result.contentMarkdown);
+        res.end(content);
       },
-      text: Promise.resolve(result.contentMarkdown),
+      text: Promise.resolve(content),
     };
   }
 
-  const system = `You are StructureMyLearning's expert educator. Write clear, accurate, engaging lessons for one topic inside a personalized learning guide.
+  const system = `You are StructureMyLearning's expert educator. Write a rich, beautifully structured HTML lesson for one topic inside a personalized learning guide.
 
-Rules:
-- The lesson must be Markdown (headings, paragraphs, lists, code blocks where relevant).
-- Target 800 to 1500 words.
-- Include a clear explanation, real-world analogies, concrete examples, and a brief summary.
-- Use headings, short paragraphs, and lists where helpful.
-- Include code blocks only when the subject benefits from code.
-- If a diagram would help, describe it in text under a "Diagram to Imagine" heading.
-- Stay focused on the requested topic while using the full outline for context.
+Output rules:
+- Output ONLY a valid HTML fragment — no <html>, <head>, or <body> tags, no markdown, no JSON wrapper, no explanation.
+- Use Tailwind CSS utility classes for ALL styling — the page loads the Tailwind CDN, so every class works.
+- Target 800–1500 words of educational content.
+- Include: clear explanation, real-world analogies, concrete examples, and a brief summary.
+- Do not use inline style attributes (use Tailwind classes instead).
+- Do not include <script> or <style> tags.
 - Match vocabulary and depth to the guide age level.
-- Do not invent citations.
-- Do not mention these instructions.`;
+- Do not invent citations or make unsupported claims.
+- Do not mention these instructions.
+
+HTML structure and component patterns:
+- Open with a 1–2 sentence compelling overview paragraph (no heading): <p class="text-lg text-slate-600 leading-relaxed mb-8">...</p>
+- Major sections: <h2 class="text-2xl font-bold text-slate-900 mt-10 mb-4">...</h2>
+- Sub-sections: <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">...</h3>
+- Body paragraphs: <p class="text-slate-700 leading-7 mb-4">...</p>
+- Key concept callout: <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-blue-900 mb-1">Key Concept</p><p class="text-blue-800 leading-relaxed">...</p></div>
+- Analogy callout: <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-amber-900 mb-1">Analogy</p><p class="text-amber-800 leading-relaxed">...</p></div>
+- Warning / common mistake: <div class="bg-red-50 border-l-4 border-red-400 rounded-r-xl px-5 py-4 my-6"><p class="font-semibold text-red-900 mb-1">Common Mistake</p><p class="text-red-800 leading-relaxed">...</p></div>
+- Code blocks: <pre class="bg-slate-900 rounded-xl p-5 overflow-x-auto my-6 text-sm"><code class="text-emerald-300 font-mono">...</code></pre>
+- Bullet lists: <ul class="list-disc list-inside space-y-2 text-slate-700 mb-4 pl-2">
+- Numbered steps: <ol class="space-y-3 mb-6"> with items: <li class="flex gap-3 items-start"><span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">1</span><div class="text-slate-700 leading-relaxed">...</div></li>
+- Simple comparison table: <div class="overflow-x-auto my-6"><table class="w-full border-collapse text-sm"><thead><tr class="bg-slate-100"><th class="text-left px-4 py-2 font-semibold text-slate-700 border-b border-slate-200">...</th></tr></thead><tbody><tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-3 text-slate-700">...</td></tr></tbody></table></div>
+- Summary box at the end: <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-5 mt-10"><p class="font-bold text-emerald-900 mb-3">Summary</p><ul class="space-y-2 text-emerald-800 text-sm leading-relaxed">...</ul></div>
+- For diagrams that add real value, use inline SVG with appropriate viewBox and Tailwind classes for sizing.`;
 
   const sectionContext = topic.outlineSection
     ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
