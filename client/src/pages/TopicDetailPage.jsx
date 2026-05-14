@@ -15,11 +15,14 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Link, useParams } from 'react-router';
-import { chatWithTutor, getTopic, updateTopicProgress } from '../api/guides';
+import { getTopic, updateTopicProgress } from '../api/guides';
+import { getAccessToken } from '../api/client';
 import LoadingPanel from '../components/LoadingPanel';
 
 // --- Heading icon mapping ---
@@ -70,32 +73,25 @@ const markdownComponents = buildMarkdownComponents();
 // --- AI Tutor widget ---
 
 function AiTutorWidget({ topicId, topicTitle, onClose }) {
-  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: `/api/topics/${topicId}/chat`,
+      headers: { Authorization: `Bearer ${getAccessToken()}` },
+    }),
+  });
+  const isLoading = status === 'streaming' || status === 'submitted';
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, isLoading]);
 
-  async function sendMessage(e) {
-    e?.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    sendMessage({ text: input });
     setInput('');
-    const userMsg = { role: 'user', content: text };
-    const history = [...messages, userMsg];
-    setMessages(history);
-    setLoading(true);
-    try {
-      const data = await chatWithTutor(topicId, history);
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch (err) {
-      setMessages((prev) => [...prev, { role: 'error', content: err.message }]);
-    } finally {
-      setLoading(false);
-    }
   }
 
   return (
@@ -115,32 +111,36 @@ function AiTutorWidget({ topicId, topicTitle, onClose }) {
         )}
       </div>
 
-      {messages.length > 0 && (
+      {(messages.length > 0 || isLoading) && (
         <div className="max-h-52 overflow-y-auto space-y-2 p-3">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`rounded-lg px-3 py-2 text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'ml-6 bg-blue-50 text-blue-900'
-                  : msg.role === 'error'
-                  ? 'bg-red-50 text-red-700'
-                  : 'mr-6 border border-slate-100 bg-white text-slate-700'
-              }`}
-            >
-              {msg.content}
-            </div>
-          ))}
-          {loading && (
+          {messages.map((msg) => {
+            const text = msg.parts?.find((p) => p.type === 'text')?.text ?? '';
+            return (
+              <div
+                key={msg.id}
+                className={`rounded-lg px-3 py-2 text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'ml-6 bg-blue-50 text-blue-900'
+                    : 'mr-6 border border-slate-100 bg-white text-slate-700'
+                }`}
+              >
+                {text}
+              </div>
+            );
+          })}
+          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="mr-6 animate-pulse rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm text-slate-400">
               Thinking…
             </div>
+          )}
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error.message}</div>
           )}
           <div ref={bottomRef} />
         </div>
       )}
 
-      <form className="flex items-center gap-2 p-3 pt-2" onSubmit={sendMessage}>
+      <form className="flex items-center gap-2 p-3 pt-2" onSubmit={handleSubmit}>
         <input
           className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-1 focus:ring-blue-100"
           placeholder="Ask a question…"
@@ -151,7 +151,7 @@ function AiTutorWidget({ topicId, topicTitle, onClose }) {
           type="submit"
           aria-label="Send message"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-          disabled={!input.trim() || loading}
+          disabled={!input.trim() || isLoading}
         >
           <Send size={14} />
         </button>
@@ -173,12 +173,42 @@ export default function TopicDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showMobileAi, setShowMobileAi] = useState(false);
+  const [streamedContent, setStreamedContent] = useState(null);
+  const [isStreaming, setIsStreaming] = useState(false);
   const articleRef = useRef(null);
+
+  async function streamContent(id) {
+    setIsStreaming(true);
+    setStreamedContent('');
+    try {
+      const res = await fetch(`/api/topics/${id}/content`, {
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+      });
+      if (!res.ok) {
+        throw new Error('Failed to load topic content.');
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+        setStreamedContent(text);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsStreaming(false);
+    }
+  }
 
   useEffect(() => {
     setReadingProgress(0);
     setGuide(null);
     setTopic(null);
+    setStreamedContent(null);
+    setIsStreaming(false);
     getTopic(topicId)
       .then((data) => {
         setGuide(data.guide);
@@ -186,6 +216,9 @@ export default function TopicDetailPage() {
         setAllTopics(data.allTopics || []);
         setPrevTopic(data.prevTopic || null);
         setNextTopic(data.nextTopic || null);
+        if (!data.topic.contentMarkdown) {
+          streamContent(data.topic.id);
+        }
       })
       .catch((loadError) => setError(loadError.message));
   }, [topicId]);
@@ -227,8 +260,10 @@ export default function TopicDetailPage() {
   }
 
   if (!topic || !guide) {
-    return <LoadingPanel title="Generating topic content" detail="If this topic has no stored lesson yet, the server is generating and saving it now." />;
+    return <LoadingPanel title="Loading topic" detail="Fetching topic details…" />;
   }
+
+  const displayedContent = topic.contentMarkdown ?? streamedContent ?? '';
 
   const completedCount = allTopics.filter((t) => t.isCompleted).length;
   const guideProgress = allTopics.length > 0 ? Math.round((completedCount / allTopics.length) * 100) : 0;
@@ -340,11 +375,22 @@ export default function TopicDetailPage() {
             </button>
           </div>
 
+          {/* Streaming indicator */}
+          {isStreaming && (
+            <div className="mt-6 h-0.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full w-1/3 origin-left animate-pulse bg-blue-400" />
+            </div>
+          )}
+
           {/* Lesson content */}
-          <div className="prose prose-slate mt-8 max-w-none rounded-xl border border-slate-200 bg-white p-6 lg:p-8">
-            <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
-              {topic.contentMarkdown}
-            </ReactMarkdown>
+          <div className="prose prose-slate mt-6 max-w-none rounded-xl border border-slate-200 bg-white p-6 lg:p-8">
+            {displayedContent ? (
+              <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+                {displayedContent}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-slate-400 text-sm animate-pulse">Generating lesson…</p>
+            )}
           </div>
 
           {/* Key takeaway callout */}

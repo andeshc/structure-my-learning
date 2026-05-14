@@ -30,9 +30,3 @@ export function updateTopicProgress(topicId, isCompleted) {
   });
 }
 
-export function chatWithTutor(topicId, messages) {
-  return apiRequest(`/api/topics/${topicId}/chat`, {
-    method: 'POST',
-    body: JSON.stringify({ messages }),
-  });
-}

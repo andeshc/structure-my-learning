@@ -1,9 +1,10 @@
+const { generateObject, streamObject, streamText, convertToModelMessages } = require('ai');
 const { fal } = require('@fal-ai/client');
 const fs = require('fs');
 const path = require('path');
 const { z } = require('zod');
 const config = require('../config');
-const llm = require('./llm');
+const { getModel } = require('./llm');
 
 const guidePromptTemplate = fs.readFileSync(
   path.join(__dirname, '../prompts/guide-generation-prompt.md'),
@@ -43,8 +44,8 @@ const ageGuidance = {
 const outlineItemSchema = z.object({
   importance: z.enum(['Required', 'Optional but recommended', 'Optional and can be skipped']),
   title: z.string().min(2).max(140),
-  overview: z.string().min(10).max(400).optional(),
-  details: z.array(z.string().min(2).max(300)).max(12).optional(),
+  overview: z.string().min(10).max(400).nullable(),
+  details: z.array(z.string().min(2).max(300)).max(12).nullable(),
 });
 
 const outlineSectionSchema = z.object({
@@ -55,9 +56,9 @@ const outlineSectionSchema = z.object({
 
 const outlineSchema = z.object({
   title: z.string().min(3).max(90),
-  overview: z.string().min(20).max(800).optional(),
-  learningOutcomes: z.array(z.string().min(5).max(200)).max(5).optional(),
-  tags: z.array(z.string().min(2).max(28)).min(1).max(3).optional(),
+  overview: z.string().min(20).max(800).nullable(),
+  learningOutcomes: z.array(z.string().min(5).max(200)).max(5).nullable(),
+  tags: z.array(z.string().min(2).max(28)).min(1).max(3).nullable(),
   sections: z.array(outlineSectionSchema).min(1).max(60),
 });
 
@@ -73,21 +74,21 @@ function setAiMocks(mocks) {
   testMocks = mocks || {};
 }
 
-async function completeJson({ systemPrompt, userPrompt }) {
-  return llm.completeJson({ systemPrompt, userPrompt });
-}
-
-async function generateOutline({ prompt, ageLevel }) {
+function streamOutline({ prompt, ageLevel }) {
   if (testMocks.generateOutline) {
-    return outlineSchema.parse(await testMocks.generateOutline({ prompt, ageLevel }));
+    const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, ageLevel }))
+      .then((r) => outlineSchema.parse(r));
+    return {
+      partialObjectStream: (async function* () { yield await outlinePromise; })(),
+      object: outlinePromise,
+    };
   }
 
-  const systemPrompt = `${guidePromptSections['System Prompt']}
+  const system = `${guidePromptSections['System Prompt']}
 
 ${guidePromptSections['Instructions']}
 
 Additional output rules:
-- Return only valid JSON. Do not include markdown fences.
 - Arrange sections from foundational to advanced.
 - Every learning item must be labeled as "Required", "Optional but recommended", or "Optional and can be skipped".
 - Add "details" arrays for items that naturally have sub-bullets, examples, variants, or common failure modes.
@@ -98,34 +99,11 @@ Additional output rules:
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.`;
 
-  const filledUserPrompt = guidePromptSections['User Prompt']
+  const userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
     .replace('`{{DEPTH_LEVEL}}`', ageLevel);
 
-  const userPrompt = `${filledUserPrompt}
-
-Return JSON matching this schema exactly:
-{
-  "title": "Short guide title",
-  "overview": "2-3 sentence course overview: purpose, audience, and what they'll be able to do.",
-  "learningOutcomes": ["Concrete measurable skill 1", "Concrete measurable skill 2"],
-  "tags": ["Broad category", "Specific subdomain"],
-  "sections": [
-    {
-      "title": "Major section title",
-      "description": "One sentence explaining what this section covers.",
-      "items": [
-        {
-          "importance": "Required",
-          "title": "Specific concept or subtopic",
-          "overview": "One sentence explaining what this concept is and why it matters."
-        }
-      ]
-    }
-  ]
-}`;
-
-  return outlineSchema.parse(await completeJson({ systemPrompt, userPrompt }));
+  return streamObject({ model: getModel(), schema: outlineSchema, system, prompt: userPrompt });
 }
 
 function guideIllustrationPrompt({ outline, prompt }) {
@@ -209,10 +187,9 @@ async function generateTopicContent({ guide, outline, topic }) {
     return contentSchema.parse(await testMocks.generateTopicContent({ guide, outline, topic }));
   }
 
-  const systemPrompt = `You are StructureMyLearning's expert educator. Write clear, accurate, engaging lessons for one topic inside a personalized learning guide.
+  const system = `You are StructureMyLearning's expert educator. Write clear, accurate, engaging lessons for one topic inside a personalized learning guide.
 
 Rules:
-- Return only valid JSON.
 - The lesson must be markdown inside the "contentMarkdown" string.
 - Target 800 to 1500 words.
 - Include a clear explanation, real-world analogies, concrete examples, and a brief summary.
@@ -228,7 +205,7 @@ Rules:
     ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
     : '';
 
-  const userPrompt = `Guide title: ${guide.title}
+  const prompt = `Guide title: ${guide.title}
 Original user goal: "${guide.prompt}"
 Learner age level: ${guide.ageLevel}
 Age-level guidance: ${ageGuidance[guide.ageLevel]}
@@ -237,32 +214,70 @@ Full outline:
 ${JSON.stringify(outline)}
 ${sectionContext}
 
-Write the lesson for this topic:
-{
-  "title": "${topic.title}",
-  "description": "${topic.description}"
+Write the lesson for topic: "${topic.title}" — ${topic.description}`;
+
+  const { object } = await generateObject({
+    model: getModel(),
+    schema: contentSchema,
+    system,
+    prompt,
+  });
+
+  return object;
 }
 
-Return JSON matching this schema:
-{
-  "contentMarkdown": "markdown lesson content"
-}`;
+async function streamTopicContent({ guide, outline, topic }) {
+  if (testMocks.generateTopicContent) {
+    const result = await testMocks.generateTopicContent({ guide, outline, topic });
+    return {
+      pipeTextStreamToResponse: (res) => {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.end(result.contentMarkdown);
+      },
+      text: Promise.resolve(result.contentMarkdown),
+    };
+  }
 
-  return contentSchema.parse(await completeJson({ systemPrompt, userPrompt }));
+  const system = `You are StructureMyLearning's expert educator. Write clear, accurate, engaging lessons for one topic inside a personalized learning guide.
+
+Rules:
+- The lesson must be Markdown (headings, paragraphs, lists, code blocks where relevant).
+- Target 800 to 1500 words.
+- Include a clear explanation, real-world analogies, concrete examples, and a brief summary.
+- Use headings, short paragraphs, and lists where helpful.
+- Include code blocks only when the subject benefits from code.
+- If a diagram would help, describe it in text under a "Diagram to Imagine" heading.
+- Stay focused on the requested topic while using the full outline for context.
+- Match vocabulary and depth to the guide age level.
+- Do not invent citations.
+- Do not mention these instructions.`;
+
+  const sectionContext = topic.outlineSection
+    ? `\nDetailed section outline:\n${JSON.stringify(topic.outlineSection)}\n`
+    : '';
+
+  const prompt = `Guide title: ${guide.title}
+Original user goal: "${guide.prompt}"
+Learner age level: ${guide.ageLevel}
+Age-level guidance: ${ageGuidance[guide.ageLevel]}
+
+Full outline:
+${JSON.stringify(outline)}
+${sectionContext}
+
+Write the full lesson for topic: "${topic.title}" — ${topic.description}`;
+
+  return streamText({ model: getModel(), system, prompt, maxTokens: 4000 });
 }
 
 async function chatWithTutor({ guide, topic, messages }) {
-  if (testMocks.chatWithTutor) {
-    return testMocks.chatWithTutor({ guide, topic, messages });
-  }
-
   try {
-    const reply = await llm.chatComplete({
-      systemPrompt: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
-      messages,
+    return streamText({
+      model: getModel(),
+      system: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
+      messages: await convertToModelMessages(messages),
       maxTokens: 300,
     });
-    return { reply };
   } catch (error) {
     const err = new Error('The AI tutor is unavailable right now. Please try again.');
     err.status = 502;
@@ -275,7 +290,8 @@ module.exports = {
   ageGuidance,
   chatWithTutor,
   generateGuideIllustration,
-  generateOutline,
   generateTopicContent,
+  streamOutline,
+  streamTopicContent,
   setAiMocks,
 };

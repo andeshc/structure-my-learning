@@ -210,28 +210,6 @@ function GuideIllustration({ guide, index, title }) {
   return index % 3 === 1 ? <WaterIllustration /> : index % 3 === 2 ? <StrategyIllustration /> : <TransformerIllustration />;
 }
 
-function PendingGuideCard({ guide }) {
-  const truncated = guide.prompt && guide.prompt.length > 80 ? guide.prompt.slice(0, 80).trimEnd() + '…' : guide.prompt;
-  return (
-    <article className="overflow-hidden rounded-xl border border-teal-200 bg-white">
-      <div className="relative flex h-48 items-center justify-center border-b border-teal-100 bg-teal-50">
-        <div className="flex flex-col items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-          </span>
-          <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Building</p>
-        </div>
-      </div>
-      <div className="p-5">
-        <Link to={`/guides/${guide.id}`} className="block text-base font-semibold leading-snug text-slate-700 hover:text-blue-700">
-          "{truncated}"
-        </Link>
-        <p className="mt-2 text-xs text-slate-400">Your guide is being generated…</p>
-      </div>
-    </article>
-  );
-}
-
 function GuideCard({ guide, index, onDelete }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -364,9 +342,6 @@ export default function DashboardPage() {
         if (cancelled) return;
         setGuides(data.guides);
         setIsLoading(false);
-        if (data.guides.some((g) => g.status === 'pending')) {
-          timerId = setTimeout(fetchGuides, 4000);
-        }
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError.message);
@@ -461,9 +436,7 @@ export default function DashboardPage() {
         ) : (
           <div className="mt-10 grid justify-start gap-8 sm:grid-cols-[repeat(auto-fill,minmax(280px,360px))]">
             {guides.map((guide, index) => (
-              guide.status === 'pending'
-                ? <PendingGuideCard key={guide.id} guide={guide} />
-                : <GuideCard key={guide.id} guide={guide} index={index} onDelete={setDeleteTarget} />
+              <GuideCard key={guide.id} guide={guide} index={index} onDelete={setDeleteTarget} />
             ))}
           </div>
         )}

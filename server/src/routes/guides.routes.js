@@ -4,6 +4,7 @@ const guides = require('../db/guides');
 const topicsDb = require('../db/topics');
 const ai = require('../services/ai.service');
 const asyncHandler = require('../utils/asyncHandler');
+const config = require('../config');
 const ids = require('../utils/ids');
 
 const router = express.Router();
@@ -32,20 +33,34 @@ router.get('/', (req, res) => {
   res.json({ guides: guides.listGuidesForUser(req.user.id) });
 });
 
-async function runGuideGeneration({ guideId, input, userId }) {
+router.post('/', asyncHandler(async (req, res) => {
+  const input = createGuideSchema.parse(req.body);
+  const guideId = ids.guideId();
+  guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, ageLevel: input.ageLevel });
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
+  let aborted = false;
+  req.on('close', () => { aborted = true; });
+
   try {
-    const outline = await ai.generateOutline(input);
-    const illustrationPath = await ai.generateGuideIllustration({
-      guideId,
-      outline,
-      prompt: input.prompt,
-    });
+    const result = ai.streamOutline({ prompt: input.prompt, ageLevel: input.ageLevel });
+
+    for await (const partial of result.partialObjectStream) {
+      if (aborted) break;
+      res.write(JSON.stringify({ type: 'partial', outline: partial }) + '\n');
+    }
+
+    if (aborted) { guides.markGuideFailed(guideId); return; }
+
+    const outline = await result.object;
 
     guides.completeGuide({
       id: guideId,
       title: outline.title,
       outlineJson: JSON.stringify(outline),
-      illustrationPath,
+      illustrationPath: null,
       topics: outline.sections.map((section, index) => ({
         id: ids.topicId(),
         guideId,
@@ -54,27 +69,21 @@ async function runGuideGeneration({ guideId, input, userId }) {
         description: section.description,
       })),
     });
-  } catch (error) {
-    console.error(`Guide generation failed for ${guideId}:`, error.message);
-    guides.markGuideFailed(guideId);
+
+    ai.generateGuideIllustration({ guideId, outline, prompt: input.prompt })
+      .then((path) => guides.setGuideIllustration(guideId, path))
+      .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
+
+    const completedGuide = guides.findGuideForUser(guideId, req.user.id);
+    res.write(JSON.stringify({ type: 'done', guide: guideWithTopics(completedGuide) }) + '\n');
+    res.end();
+  } catch (err) {
+    if (!aborted) guides.markGuideFailed(guideId);
+    if (!res.writableEnded) {
+      res.write(JSON.stringify({ type: 'error', message: 'Guide generation failed.' }) + '\n');
+      res.end();
+    }
   }
-}
-
-router.post('/', asyncHandler(async (req, res) => {
-  const input = createGuideSchema.parse(req.body);
-  const guideId = ids.guideId();
-
-  guides.createPendingGuide({
-    id: guideId,
-    userId: req.user.id,
-    prompt: input.prompt,
-    ageLevel: input.ageLevel,
-  });
-
-  const guide = guides.findGuideForUser(guideId, req.user.id);
-  res.status(201).json({ guide: guideWithTopics(guide) });
-
-  runGuideGeneration({ guideId, input, userId: req.user.id });
 }));
 
 router.get('/:guideId', (req, res, next) => {

@@ -29,16 +29,6 @@ async function registerUser(email = 'test@example.com') {
   return response.body.accessToken;
 }
 
-async function waitForGuideReady(guideId, token, maxMs = 3000) {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    const res = await request(app).get(`/api/guides/${guideId}`).set('Authorization', `Bearer ${token}`);
-    if (res.body.guide?.status === 'ready') return res.body.guide;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error(`Guide ${guideId} did not become ready within ${maxMs}ms`);
-}
-
 describe('API', () => {
   beforeEach(() => {
     resetDatabase();
@@ -46,34 +36,36 @@ describe('API', () => {
       generateOutline: async () => ({
         title: 'Mocked Guide',
         tags: ['Learning', 'Mocked'],
+        overview: null,
+        learningOutcomes: null,
         sections: [
           {
             title: 'Foundations',
             description: 'Learn the basic ideas that support the rest of the subject.',
             items: [
-              { importance: 'Required', title: 'Core idea' },
-              { importance: 'Optional but recommended', title: 'Helpful context', details: ['A useful example'] },
+              { importance: 'Required', title: 'Core idea', overview: null, details: null },
+              { importance: 'Optional but recommended', title: 'Helpful context', overview: null, details: ['A useful example'] },
             ],
           },
           {
             title: 'Key Vocabulary',
             description: 'Understand the core terms used when discussing this topic.',
-            items: [{ importance: 'Required', title: 'Important terms' }],
+            items: [{ importance: 'Required', title: 'Important terms', overview: null, details: null }],
           },
           {
             title: 'Main Process',
             description: 'Explore how the central process works step by step.',
-            items: [{ importance: 'Required', title: 'Step-by-step flow' }],
+            items: [{ importance: 'Required', title: 'Step-by-step flow', overview: null, details: null }],
           },
           {
             title: 'Examples',
             description: 'See concrete examples that make the ideas easier to apply.',
-            items: [{ importance: 'Optional and can be skipped', title: 'Extra worked example' }],
+            items: [{ importance: 'Optional and can be skipped', title: 'Extra worked example', overview: null, details: null }],
           },
           {
             title: 'Review',
             description: 'Summarize the topic and connect it to future learning.',
-            items: [{ importance: 'Required', title: 'Final synthesis' }],
+            items: [{ importance: 'Required', title: 'Final synthesis', overview: null, details: null }],
           },
         ],
       }),
@@ -114,16 +106,26 @@ describe('API', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ prompt: 'teach me mocked learning', ageLevel: 'adult_beginner' });
 
-    expect(guideResponse.status).toBe(201);
-    expect(guideResponse.body.guide.status).toBe('pending');
+    expect(guideResponse.status).toBe(200);
 
-    const guide = await waitForGuideReady(guideResponse.body.guide.id, token);
+    const lines = guideResponse.text.trim().split('\n').filter(Boolean);
+    const doneEvent = JSON.parse(lines[lines.length - 1]);
+    expect(doneEvent.type).toBe('done');
+    const guide = doneEvent.guide;
+
     expect(guide.topics).toHaveLength(5);
-    expect(guide.illustrationUrl).toMatch(/^\/generated\/guide-illustrations\/.+\.png$/);
     expect(guide.outline.tags).toEqual(['Learning', 'Mocked']);
     expect(guide.outline.sections[0].items[0].importance).toBe('Required');
 
     const topicId = guide.topics[0].id;
+
+    const contentResponse = await request(app)
+      .get(`/api/topics/${topicId}/content`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(contentResponse.status).toBe(200);
+    expect(contentResponse.text).toContain('# Foundations');
+
     const topicResponse = await request(app)
       .get(`/api/topics/${topicId}`)
       .set('Authorization', `Bearer ${token}`);
@@ -146,11 +148,13 @@ describe('API', () => {
       generateOutline: async () => ({
         title: 'Fallback Illustration Guide',
         tags: ['General', 'Learning'],
+        overview: null,
+        learningOutcomes: null,
         sections: [
           {
             title: 'Foundations',
             description: 'Learn the basic ideas that support the rest of the subject.',
-            items: [{ importance: 'Required', title: 'Core idea' }],
+            items: [{ importance: 'Required', title: 'Core idea', overview: null, details: null }],
           },
         ],
       }),
@@ -163,9 +167,15 @@ describe('API', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ prompt: 'teach me fallback illustration behavior', ageLevel: 'adult_beginner' });
 
-    expect(response.status).toBe(201);
-    const guide = await waitForGuideReady(response.body.guide.id, token);
-    expect(guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
+    expect(response.status).toBe(200);
+    const lines = response.text.trim().split('\n').filter(Boolean);
+    const { guide: doneGuide } = JSON.parse(lines[lines.length - 1]);
+
+    // Illustration is set asynchronously after POST completes — fetch guide to verify
+    const guideRes = await request(app)
+      .get(`/api/guides/${doneGuide.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(guideRes.body.guide.illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');
   });
 
   it('returns the static fallback when image generation is unavailable', async () => {

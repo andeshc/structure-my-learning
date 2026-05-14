@@ -182,31 +182,6 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
   );
 }
 
-function BuildingScreen({ prompt }) {
-  const truncated = prompt && prompt.length > 80 ? prompt.slice(0, 80).trimEnd() + '…' : prompt;
-  return (
-    <section className="flex min-h-[60vh] items-center justify-center">
-      <div className="w-full max-w-md">
-        <Link className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-blue-700" to="/">
-          <ArrowLeft size={15} />
-          Back to Dashboard
-        </Link>
-        <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Building your guide</p>
-        <p className="mt-2 text-2xl font-semibold leading-snug text-slate-800">"{truncated}"</p>
-        <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-1/3 animate-pulse rounded-full bg-teal-700" />
-        </div>
-        <div className="mt-6 flex items-center gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50">
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-teal-700 border-t-transparent" />
-          </span>
-          <p className="text-sm font-medium text-slate-700">Building your guide… you can navigate away and come back.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function GuideDetailPage() {
   const { guideId } = useParams();
   const navigate = useNavigate();
@@ -224,9 +199,6 @@ export default function GuideDetailPage() {
         const data = await getGuide(guideId);
         if (cancelled) return;
         setGuide(data.guide);
-        if (data.guide.status === 'pending') {
-          timerId = setTimeout(fetchGuide, 3000);
-        }
       } catch (loadError) {
         if (!cancelled) setError(loadError.message);
       }
@@ -271,10 +243,6 @@ export default function GuideDetailPage() {
 
   if (!guide) {
     return <LoadingPanel title="Loading guide" detail="Fetching the stored outline." />;
-  }
-
-  if (guide.status === 'pending') {
-    return <BuildingScreen prompt={guide.prompt} />;
   }
 
   if (guide.status === 'failed') {

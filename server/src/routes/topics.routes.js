@@ -13,10 +13,9 @@ const progressSchema = z.object({
 });
 
 const chatSchema = z.object({
-  messages: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string().min(1).max(1000),
-  })).min(1).max(20),
+  messages: z.array(
+    z.object({ role: z.enum(['user', 'assistant', 'system']) }).passthrough()
+  ).min(1).max(20),
 });
 
 router.get('/:topicId', asyncHandler(async (req, res, next) => {
@@ -29,26 +28,7 @@ router.get('/:topicId', asyncHandler(async (req, res, next) => {
     return;
   }
 
-  let { topic } = found;
-
-  if (!topic.contentMarkdown) {
-    const outline = found.guide.outline || {
-      title: found.guide.title,
-      sections: topicsDb.listTopicsForGuide(found.guide.id).map(({ title, description, position }) => ({
-        title,
-        description,
-        position,
-      })),
-    };
-    const outlineSection = outline.sections && outline.sections[topic.position - 1]
-      ? outline.sections[topic.position - 1]
-      : null;
-    topic = { ...topic, outlineSection };
-    const generated = await ai.generateTopicContent({ guide: found.guide, outline, topic });
-    topicsDb.saveTopicContent(topic.id, generated.contentMarkdown);
-    topic = topicsDb.findTopicForUser(topic.id, req.user.id).topic;
-  }
-
+  const { topic } = found;
   const allTopics = topicsDb.listTopicsForGuide(found.guide.id);
   const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
   const prevItem = currentIdx > 0 ? allTopics[currentIdx - 1] : null;
@@ -67,6 +47,42 @@ router.get('/:topicId', asyncHandler(async (req, res, next) => {
     prevTopic: prevItem ? { id: prevItem.id, title: prevItem.title } : null,
     nextTopic: nextItem ? { id: nextItem.id, title: nextItem.title } : null,
   });
+}));
+
+router.get('/:topicId/content', aiRateLimit, asyncHandler(async (req, res, next) => {
+  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+
+  if (!found) {
+    const error = new Error('Topic not found.');
+    error.status = 404;
+    next(error);
+    return;
+  }
+
+  if (found.topic.contentMarkdown) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.end(found.topic.contentMarkdown);
+    return;
+  }
+
+  const outline = found.guide.outline || {
+    title: found.guide.title,
+    sections: topicsDb.listTopicsForGuide(found.guide.id).map(({ title, description, position }) => ({
+      title,
+      description,
+      position,
+    })),
+  };
+  const outlineSection = outline.sections?.[found.topic.position - 1] ?? null;
+  const topicWithSection = { ...found.topic, outlineSection };
+
+  const result = await ai.streamTopicContent({ guide: found.guide, outline, topic: topicWithSection });
+
+  result.text
+    .then((text) => topicsDb.saveTopicContent(found.topic.id, text))
+    .catch((err) => console.error('Content save failed:', err.message));
+
+  result.pipeTextStreamToResponse(res);
 }));
 
 router.patch('/:topicId/progress', (req, res, next) => {
@@ -108,7 +124,7 @@ router.post('/:topicId/chat', aiRateLimit, asyncHandler(async (req, res, next) =
   }
 
   const result = await ai.chatWithTutor({ guide: found.guide, topic: found.topic, messages });
-  res.json(result);
+  result.pipeUIMessageStreamToResponse(res);
 }));
 
 module.exports = router;

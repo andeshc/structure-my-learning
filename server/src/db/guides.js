@@ -78,6 +78,11 @@ function completeGuide({ id, title, outlineJson, illustrationPath, topics }) {
   transaction();
 }
 
+function setGuideIllustration(id, illustrationPath) {
+  db.prepare(`UPDATE guides SET illustration_path = ?, updated_at = datetime('now') WHERE id = ?`)
+    .run(illustrationPath, id);
+}
+
 function markGuideFailed(id) {
   db.prepare(`UPDATE guides SET status = 'failed', updated_at = datetime('now') WHERE id = ?`).run(id);
 }
@@ -119,5 +124,6 @@ module.exports = {
   findGuideForUser,
   listGuidesForUser,
   markGuideFailed,
+  setGuideIllustration,
   touchGuide,
 };
