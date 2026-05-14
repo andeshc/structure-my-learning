@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Circle,
-  Lightbulb,
   Send,
   X,
 } from 'lucide-react';
@@ -423,13 +422,6 @@ export default function SubtopicDetailPage() {
             </button>
           </div>
 
-          {/* Streaming progress bar */}
-          {isStreaming && displayedHtml && (
-            <div className="mt-6 h-0.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-1/3 animate-pulse bg-blue-400" />
-            </div>
-          )}
-
           {/* Lesson content */}
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
             {displayedHtml ? (
@@ -443,17 +435,6 @@ export default function SubtopicDetailPage() {
               <p className="text-slate-400 text-sm">No content available.</p>
             )}
           </div>
-
-          {/* Key takeaway */}
-          {item.overview && (
-            <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <Lightbulb className="mt-0.5 shrink-0 text-amber-600" size={16} />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Key takeaway</p>
-                <p className="mt-1 text-sm leading-relaxed text-slate-700">{item.overview}</p>
-              </div>
-            </div>
-          )}
 
           {/* Prev / Next nav */}
           <nav className="mt-8 flex items-center gap-3 border-t border-slate-200 pt-6">
