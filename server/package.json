@@ -8,6 +8,7 @@
     "test": "NODE_ENV=test DATABASE_PATH=../data/StructureMyLearning.test.db vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.96.0",
     "@fal-ai/client": "^1.10.1",
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^9.4.3",

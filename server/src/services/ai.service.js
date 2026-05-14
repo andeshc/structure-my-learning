@@ -1,9 +1,9 @@
-const OpenAI = require('openai');
 const { fal } = require('@fal-ai/client');
 const fs = require('fs');
 const path = require('path');
 const { z } = require('zod');
 const config = require('../config');
+const llm = require('./llm');
 
 const guidePromptTemplate = fs.readFileSync(
   path.join(__dirname, '../prompts/guide-generation-prompt.md'),
@@ -43,7 +43,7 @@ const ageGuidance = {
 const outlineItemSchema = z.object({
   importance: z.enum(['Required', 'Optional but recommended', 'Optional and can be skipped']),
   title: z.string().min(2).max(140),
-  overview: z.string().min(10).max(220).optional(),
+  overview: z.string().min(10).max(400).optional(),
   details: z.array(z.string().min(2).max(300)).max(12).optional(),
 });
 
@@ -73,46 +73,8 @@ function setAiMocks(mocks) {
   testMocks = mocks || {};
 }
 
-function openAiClient() {
-  if (!config.openaiApiKey) {
-    const error = new Error("We couldn't generate your content right now. Please try again in a moment.");
-    error.status = 503;
-    error.expose = true;
-    throw error;
-  }
-
-  return new OpenAI({ apiKey: config.openaiApiKey });
-}
-
 async function completeJson({ systemPrompt, userPrompt }) {
-  if (!config.openaiApiKey) {
-    openAiClient();
-  }
-
-  let lastError;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const response = await openAiClient().chat.completions.create({
-        model: config.openaiModel,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      });
-
-      return JSON.parse(response.choices[0].message.content);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  const error = new Error("We couldn't generate your content right now. Please try again in a moment.");
-  error.status = 502;
-  error.expose = true;
-  error.cause = lastError;
-  throw error;
+  return llm.completeJson({ systemPrompt, userPrompt });
 }
 
 async function generateOutline({ prompt, ageLevel }) {
@@ -133,7 +95,7 @@ Additional output rules:
 - Generate exactly two short category tags based on the completed guide, not by splitting the title.
 - Make each section description exactly one sentence.
 - Do not include content lessons yet.
-- Write a one-sentence "overview" for every item that states what it is and why it matters at this learner level.
+- Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.`;
 
   const filledUserPrompt = guidePromptSections['User Prompt']
@@ -295,18 +257,12 @@ async function chatWithTutor({ guide, topic, messages }) {
   }
 
   try {
-    const response = await openAiClient().chat.completions.create({
-      model: config.openaiModel,
-      max_tokens: 300,
-      messages: [
-        {
-          role: 'system',
-          content: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
-        },
-        ...messages,
-      ],
+    const reply = await llm.chatComplete({
+      systemPrompt: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
+      messages,
+      maxTokens: 300,
     });
-    return { reply: response.choices[0].message.content };
+    return { reply };
   } catch (error) {
     const err = new Error('The AI tutor is unavailable right now. Please try again.');
     err.status = 502;

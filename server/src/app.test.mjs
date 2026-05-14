@@ -155,8 +155,8 @@ describe('API', () => {
   });
 
   it('returns the static fallback when image generation is unavailable', async () => {
-    const originalApiKey = config.openaiApiKey;
-    config.openaiApiKey = '';
+    const originalFalKey = config.falKey;
+    config.falKey = '';
     setAiMocks({});
 
     let illustrationUrl;
@@ -171,7 +171,7 @@ describe('API', () => {
         prompt: 'teach me matrix multiplication',
       });
     } finally {
-      config.openaiApiKey = originalApiKey;
+      config.falKey = originalFalKey;
     }
 
     expect(illustrationUrl).toBe('/static/guide-illustrations/generic-guide.svg');

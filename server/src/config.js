@@ -14,9 +14,12 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  aiProvider: process.env.AI_PROVIDER || 'openai',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
   openaiImageModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2',
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
   falKey: process.env.FAL_KEY || '',
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
