@@ -168,46 +168,43 @@ export default function NewGuidePage() {
   }
 
   return (
-    <section className="grid gap-8 md:grid-cols-[1fr_360px]">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">New Guide</h1>
-        <p className="mt-2 max-w-2xl text-charcoal-400">
-          Describe what you want to learn and StructureMyLearning will turn it into a guided outline.
-        </p>
+    <section>
+      <h1 className="text-3xl font-semibold tracking-tight">New Guide</h1>
+      <p className="mt-2 text-charcoal-400">
+        Describe what you want to learn and StructureMyLearning will turn it into a guided outline.
+      </p>
 
-        <form className="mt-8 rounded-lg border border-charcoal/10 bg-white p-5" onSubmit={handleSubmit}>
-          <label className="block text-sm font-medium">
-            Learning goal
-            <textarea
-              className="mt-2 min-h-36 w-full resize-y rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700"
-              placeholder="Teach me about transformer architecture"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              required
-              minLength="5"
-              maxLength="500"
-            />
-          </label>
+      <form className="mt-8 rounded-lg border border-charcoal/10 bg-white p-5" onSubmit={handleSubmit}>
+        <label className="block text-sm font-medium">
+          Learning goal
+          <textarea
+            className="mt-2 min-h-36 w-full resize-y rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700"
+            placeholder="Teach me about transformer architecture"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            required
+            minLength="5"
+            maxLength="500"
+          />
+        </label>
 
-          <label className="mt-4 block text-sm font-medium">
-            Learner level
-            <select
-              className="mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700"
-              value={ageLevel}
-              onChange={(event) => setAgeLevel(event.target.value)}
-            >
-              {ageLevels.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
+        <label className="mt-4 block text-sm font-medium">
+          Learner level
+          <select
+            className="mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700"
+            value={ageLevel}
+            onChange={(event) => setAgeLevel(event.target.value)}
+          >
+            {ageLevels.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
 
-          {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-          <button className="mt-5 rounded-md bg-charcoal px-4 py-2.5 font-medium text-white disabled:opacity-60">
-            Generate guide
-          </button>
-        </form>
-      </div>
-
+        <button className="mt-5 rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+          Generate guide
+        </button>
+      </form>
     </section>
   );
 }
