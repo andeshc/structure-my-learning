@@ -30,13 +30,13 @@ export default function AppShell() {
     <div className="min-h-screen bg-[#fbfaf7] text-slate-950">
       <div className="w-full bg-white lg:grid lg:h-screen lg:grid-cols-[240px_1fr] lg:overflow-hidden">
         <aside className="hidden border-r border-slate-200 bg-[#fffdfa] px-5 py-6 lg:flex lg:flex-col lg:overflow-y-auto">
-          <Link to="/" className="flex items-center gap-4">
-            <span className="grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-              <BookOpenCheck size={40} strokeWidth={2.1} />
+          <Link to="/" className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
+              <BookOpenCheck size={24} strokeWidth={2.1} />
             </span>
-            <span className="leading-none">
-              <span className="block text-3xl font-bold">Structure</span>
-              <span className="block text-3xl font-bold"><span className="text-blue-700">My</span>Learning</span>
+            <span className="leading-snug">
+              <span className="block text-base font-bold">Structure</span>
+              <span className="block text-base font-bold"><span className="text-blue-700">My</span>Learning</span>
             </span>
           </Link>
 
