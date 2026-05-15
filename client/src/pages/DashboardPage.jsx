@@ -214,14 +214,17 @@ function GuideCard({ guide, index, onDelete }) {
   const menuRef = useRef(null);
   const tags = guideTags(guide);
   const title = displayGuideTitle(guide.title);
+  const topics = guide.topicCount || 0;
+  const completedTopics = guide.completedTopicCount || 0;
   const subtopicCount = guide.outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
-  const completed = guide.completedSubtopicCount || 0;
-  const isNotStarted = completed === 0;
-  const isFinished = guide.progressPercentage === 100;
+  const completedSubtopics = guide.completedSubtopicCount || 0;
+  const subtopicPct = subtopicCount > 0 ? Math.round((completedSubtopics / subtopicCount) * 100) : 0;
+  const isNotStarted = completedTopics === 0 && completedSubtopics === 0;
+  const isFinished = subtopicPct === 100;
   const actionLabel = isFinished ? 'Review' : isNotStarted ? 'Begin' : 'Continue';
   const progressText = isNotStarted
-    ? `${subtopicCount} lesson${subtopicCount !== 1 ? 's' : ''}`
-    : `${completed} of ${subtopicCount} completed`;
+    ? `${topics} topic${topics !== 1 ? 's' : ''}`
+    : `${completedTopics} of ${topics} topics completed`;
 
   useEffect(() => {
     function closeMenu(event) {
@@ -282,10 +285,10 @@ function GuideCard({ guide, index, onDelete }) {
         </div>
 
         <div className="mt-4 grid grid-cols-[1fr_auto] items-center gap-2">
-          <progress className="h-1.5 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
-            {guide.progressPercentage}%
+          <progress className="h-1.5 w-full overflow-hidden rounded-full" max="100" value={subtopicPct}>
+            {subtopicPct}%
           </progress>
-          <span className="text-sm font-semibold text-slate-950">{guide.progressPercentage}%</span>
+          <span className="text-sm font-semibold text-slate-950">{subtopicPct}%</span>
         </div>
       </div>
 
