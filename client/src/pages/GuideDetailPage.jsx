@@ -24,8 +24,20 @@ function formatDuration(minutes) {
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
-function estimatedMinutes(guide) {
-  return Math.max(guide.topicCount || guide.topics.length || 1, 1) * 25;
+const ageLevelLabels = {
+  ages_8_10: 'Ages 8–10',
+  ages_11_13: 'Ages 11–13',
+  ages_14_17: 'Ages 14–17',
+  adult_beginner: 'Adult Beginner',
+  adult_advanced: 'Adult Advanced',
+};
+
+function formatAgeLevel(ageLevel) {
+  return ageLevelLabels[ageLevel] ?? ageLevel.replaceAll('_', ' ');
+}
+
+function estimatedMinutes(subtopicCount) {
+  return Math.max(subtopicCount, 1) * 15;
 }
 
 function statusLabel(topic, isNext) {
@@ -207,11 +219,16 @@ export default function GuideDetailPage() {
     const completed = guide.topics.filter((topic) => topic.isCompleted).length;
     const nextTopic = guide.topics.find((topic) => !topic.isCompleted) || guide.topics[0];
     const nextIndex = nextTopic ? guide.topics.findIndex((topic) => topic.id === nextTopic.id) : -1;
+    const subtopicCount = guide.outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || guide.topicCount || guide.topics.length;
+    const completedSubtopics = guide.completedSubtopicCount || 0;
+    const subtopicPct = subtopicCount > 0 ? Math.round((completedSubtopics / subtopicCount) * 100) : 0;
     return {
       completed,
-      duration: formatDuration(estimatedMinutes(guide)),
+      duration: formatDuration(estimatedMinutes(subtopicCount)),
       nextIndex,
       nextTopic,
+      subtopicCount,
+      subtopicPct,
       tags: guideTags(guide),
       total: guide.topicCount || guide.topics.length,
     };
@@ -293,7 +310,7 @@ export default function GuideDetailPage() {
             {/* Age level + tags */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
-                {guide.ageLevel.replaceAll('_', ' ')}
+                {formatAgeLevel(guide.ageLevel)}
               </span>
               {summary.tags.map((tag) => (
                 <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
@@ -303,20 +320,19 @@ export default function GuideDetailPage() {
             </div>
 
             <h1 className="mt-2 max-w-3xl text-3xl font-bold leading-tight text-slate-950">{guide.title}</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{guide.prompt}</p>
 
             <p className="mt-3 text-xs text-slate-400">
-              {summary.total} lessons · {summary.duration} est.
+              {summary.subtopicCount} lessons · {summary.duration} est.
             </p>
 
             {/* Progress */}
             <div className="mt-4">
-              <div className="mb-1.5 flex items-center justify-between gap-4 text-sm">
-                <span className="font-semibold text-slate-700">{guide.progressPercentage}% complete</span>
-                <span className="text-xs text-slate-400">{summary.completed} of {summary.total} done</span>
+              <div className="mb-1.5 flex items-center gap-3 text-sm">
+                <span className="font-semibold text-slate-700">{summary.subtopicPct}% complete</span>
+                <span className="text-xs text-slate-400">{summary.completed} of {summary.total} topics done</span>
               </div>
-              <progress className="h-2 w-full max-w-xs overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
-                {guide.progressPercentage}%
+              <progress className="h-2 w-full max-w-xs overflow-hidden rounded-full" max="100" value={summary.subtopicPct}>
+                {summary.subtopicPct}%
               </progress>
             </div>
 
@@ -326,7 +342,7 @@ export default function GuideDetailPage() {
                 onClick={() => document.getElementById(`section-${summary.nextIndex + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               >
                 <Layers size={17} />
-                {summary.completed === summary.total ? 'Review guide' : `Go to: ${summary.nextTopic.title}`}
+                {summary.subtopicPct === 100 ? 'Review guide' : summary.completed === 0 ? 'Start learning' : 'Continue'}
               </button>
             )}
           </div>
