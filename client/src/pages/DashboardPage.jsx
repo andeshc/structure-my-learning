@@ -67,7 +67,7 @@ function displayGuideTitle(title) {
 
 function EmptyIllustration() {
   return (
-    <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="New learning guide illustration">
+    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="New learning guide illustration">
       <rect width="420" height="220" className="fill-blue-50" />
       <circle cx="88" cy="72" r="32" className="fill-blue-200" />
       <circle cx="320" cy="74" r="42" className="fill-amber-200" />
@@ -80,7 +80,7 @@ function EmptyIllustration() {
 
 function TransformerIllustration() {
   return (
-    <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Transformer architecture illustration">
+    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Transformer architecture illustration">
       <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <g className="stroke-slate-700" strokeWidth="3" fill="none" strokeLinecap="round">
         <path d="M98 92h56M98 144h56M268 92h56M268 144h56" />
@@ -107,7 +107,7 @@ function TransformerIllustration() {
 
 function MatrixIllustration() {
   return (
-    <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Matrix multiplication illustration">
+    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Matrix multiplication illustration">
       <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <g className="fill-amber-200">
         <circle cx="26" cy="32" r="3" /><circle cx="42" cy="32" r="3" /><circle cx="58" cy="32" r="3" />
@@ -142,7 +142,7 @@ function MatrixIllustration() {
 
 function WaterIllustration() {
   return (
-    <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Water cycle illustration">
+    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Water cycle illustration">
       <rect width="420" height="220" className="fill-sky-50" />
       <path d="M0 168c70-42 118-42 180-12 62 30 120 22 240-10v74H0z" className="fill-cyan-300" />
       <path d="M0 178c70-22 120-12 180 8 72 24 132 8 240-16v50H0z" className="fill-teal-500" opacity=".75" />
@@ -166,7 +166,7 @@ function WaterIllustration() {
 
 function StrategyIllustration() {
   return (
-    <svg className="h-48 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Strategy illustration">
+    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Strategy illustration">
       <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <circle cx="105" cy="112" r="67" className="fill-red-100 stroke-slate-800" strokeWidth="3" />
       <circle cx="105" cy="112" r="48" className="fill-white stroke-red-300" strokeWidth="12" />
@@ -186,7 +186,7 @@ function StrategyIllustration() {
 
 function GuideIllustration({ guide, index, title }) {
   if (guide.illustrationUrl) {
-    return <img className="h-48 w-full object-cover" src={guide.illustrationUrl} alt={`${title} illustration`} />;
+    return <img className="h-32 w-full object-cover" src={guide.illustrationUrl} alt={`${title} illustration`} />;
   }
 
   const lower = title.toLowerCase();
@@ -234,20 +234,20 @@ function GuideCard({ guide, index, onDelete }) {
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-blue-200">
       <div className="relative border-b border-slate-100">
         <GuideIllustration guide={guide} index={index} title={title} />
-        <div ref={menuRef} className="absolute right-3 top-3">
+        <div ref={menuRef} className="absolute right-2 top-2">
           <button
-            className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-700"
+            className="grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-700"
             type="button"
             aria-label={`Open menu for ${title}`}
             aria-expanded={isMenuOpen}
             aria-haspopup="menu"
             onClick={() => setIsMenuOpen((current) => !current)}
           >
-            <MoreHorizontal size={21} />
+            <MoreHorizontal size={15} />
           </button>
 
           {isMenuOpen && (
-            <div className="absolute right-0 top-11 z-20 w-40 rounded-lg border border-slate-200 bg-white p-1" role="menu">
+            <div className="absolute right-0 top-9 z-20 w-36 rounded-lg border border-slate-200 bg-white p-1" role="menu">
               <button
                 className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
                 type="button"
@@ -257,7 +257,7 @@ function GuideCard({ guide, index, onDelete }) {
                   onDelete(guide);
                 }}
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} />
                 Delete guide
               </button>
             </div>
@@ -265,46 +265,46 @@ function GuideCard({ guide, index, onDelete }) {
         </div>
       </div>
 
-      <div className="p-5">
-        <Link to={`/guides/${guide.id}`} className="block text-xl font-bold leading-tight text-slate-950 transition-colors hover:text-blue-700">
+      <div className="p-4">
+        <Link to={`/guides/${guide.id}`} className="block text-base font-bold leading-tight text-slate-950 transition-colors hover:text-blue-700">
           {title}
         </Link>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {tags.map((tag, tagIndex) => (
-            <span key={tag} className={`rounded-lg px-3 py-2 text-sm font-semibold ${tagThemes[(index + tagIndex) % tagThemes.length]}`}>
+            <span key={tag} className={`rounded px-2 py-0.5 text-xs font-semibold ${tagThemes[(index + tagIndex) % tagThemes.length]}`}>
               {tag}
             </span>
           ))}
         </div>
 
-        <div className="mt-7 grid grid-cols-[1fr_auto] items-center gap-3">
-          <progress className="h-3 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
+        <div className="mt-4 grid grid-cols-[1fr_auto] items-center gap-2">
+          <progress className="h-1.5 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
             {guide.progressPercentage}%
           </progress>
-          <span className="text-lg font-semibold text-slate-950">{guide.progressPercentage}%</span>
+          <span className="text-sm font-semibold text-slate-950">{guide.progressPercentage}%</span>
         </div>
       </div>
 
       <div className="grid grid-cols-3 border-t border-slate-200 bg-white">
-        <div className="flex items-center justify-center gap-2.5 px-3 py-4">
-          <FileText className="shrink-0 text-slate-500" size={22} />
+        <div className="flex items-center justify-center gap-1.5 px-2 py-3">
+          <FileText className="shrink-0 text-slate-500" size={14} />
           <div className="min-w-0 text-center">
-            <p className="text-lg font-bold leading-none text-slate-950">{lessons}</p>
-            <p className="mt-1 text-xs text-slate-600">Lessons</p>
+            <p className="text-sm font-bold leading-none text-slate-950">{lessons}</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">Lessons</p>
           </div>
         </div>
-        <div className="flex items-center justify-center gap-2.5 border-x border-slate-200 px-3 py-4">
-          <CheckCircle2 className="shrink-0 text-slate-500" size={22} />
+        <div className="flex items-center justify-center gap-1.5 border-x border-slate-200 px-2 py-3">
+          <CheckCircle2 className="shrink-0 text-slate-500" size={14} />
           <div className="min-w-0 text-center">
-            <p className="text-lg font-bold leading-none text-slate-950">{activities}</p>
-            <p className="mt-1 text-xs text-slate-600">Activities</p>
+            <p className="text-sm font-bold leading-none text-slate-950">{activities}</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">Activities</p>
           </div>
         </div>
-        <div className="flex items-center justify-center gap-2.5 px-3 py-4">
-          <Clock3 className="shrink-0 text-slate-500" size={22} />
+        <div className="flex items-center justify-center gap-1.5 px-2 py-3">
+          <Clock3 className="shrink-0 text-slate-500" size={14} />
           <div className="min-w-0 text-center">
-            <p className="whitespace-nowrap text-lg font-bold leading-none text-slate-950">{formatDuration(studyMinutes)}</p>
-            <p className="mt-1 text-xs text-slate-600">Study time</p>
+            <p className="whitespace-nowrap text-sm font-bold leading-none text-slate-950">{formatDuration(studyMinutes)}</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">Study time</p>
           </div>
         </div>
       </div>
@@ -314,13 +314,13 @@ function GuideCard({ guide, index, onDelete }) {
 
 function StatPill({ icon, value, label, color }) {
   return (
-    <div className="flex min-w-0 items-center gap-5">
-      <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-full ${color}`}>
+    <div className="flex min-w-0 items-center gap-3">
+      <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${color}`}>
         {icon}
       </div>
       <div>
-        <p className="text-3xl font-bold">{value}</p>
-        <p className="mt-1 text-sm text-slate-600">{label}</p>
+        <p className="text-xl font-bold">{value}</p>
+        <p className="text-xs text-slate-500">{label}</p>
       </div>
     </div>
   );
@@ -392,49 +392,39 @@ export default function DashboardPage() {
 
   return (
     <section>
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="text-5xl font-bold text-slate-950">Dashboard</h1>
-        <Link className="relative inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-blue-600 px-6 text-lg font-semibold text-white hover:bg-blue-700" to="/guides/new">
-          <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-white/70">
-            <Plus size={21} />
-          </span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-slate-950">Dashboard</h1>
+        <Link className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700" to="/guides/new">
+          <Plus size={16} />
           New guide
-          <span className="absolute -left-11 top-2 hidden text-orange-500 lg:block">
-            <svg width="38" height="46" viewBox="0 0 38 46" aria-hidden="true">
-              <path d="M31 4l-8 24M8 16l13 14M3 35l17-3" className="fill-none stroke-current" strokeWidth="4" strokeLinecap="round" />
-            </svg>
-          </span>
         </Link>
       </div>
 
-      <div className="mt-14">
-        <div className="flex items-start gap-4">
-          <BookOpen className="mt-1 text-blue-700" size={34} />
-          <div>
-            <h2 className="text-3xl font-bold">Your learning guides</h2>
-            <p className="mt-3 text-lg text-slate-600">Continue where you left off or build something new.</p>
-          </div>
+      <div className="mt-8">
+        <div className="flex items-center gap-3">
+          <BookOpen className="text-blue-700" size={20} />
+          <h2 className="text-lg font-bold">Your learning guides</h2>
         </div>
 
         {error && <p className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
 
         {guides.length === 0 ? (
-          <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_360px]">
+          <div className="mt-6">
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <EmptyIllustration />
-              <div className="p-6">
-                <h3 className="text-2xl font-bold">Create your first learning guide</h3>
-                <p className="mt-3 max-w-2xl text-slate-600">
+              <div className="p-5">
+                <h3 className="text-lg font-bold">Create your first learning guide</h3>
+                <p className="mt-2 max-w-2xl text-sm text-slate-600">
                   Turn any topic into a structured roadmap with detailed sections, required concepts, optional depth, and generated lessons.
                 </p>
-                <Link className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white" to="/guides/new">
+                <Link className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white" to="/guides/new">
                   New guide
                 </Link>
               </div>
             </div>
           </div>
         ) : (
-          <div className="mt-10 grid justify-start gap-8 sm:grid-cols-[repeat(auto-fill,minmax(280px,360px))]">
+          <div className="mt-6 grid justify-start gap-5 sm:grid-cols-[repeat(auto-fill,minmax(260px,340px))]">
             {guides.map((guide, index) => (
               <GuideCard key={guide.id} guide={guide} index={index} onDelete={setDeleteTarget} />
             ))}
@@ -442,17 +432,17 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="mt-10 rounded-xl border border-slate-200 bg-white p-7">
-        <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-slate-200">
-          <StatPill icon={<BookOpen className="text-emerald-600" size={34} />} value={totals.completed} label="Lessons completed" color="bg-emerald-100" />
-          <div className="xl:pl-9">
-            <StatPill icon={<CheckCircle2 className="text-amber-600" size={34} />} value={totals.activities} label="Activities completed" color="bg-amber-100" />
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-slate-200">
+          <StatPill icon={<BookOpen className="text-emerald-600" size={20} />} value={totals.completed} label="Lessons completed" color="bg-emerald-100" />
+          <div className="xl:pl-6">
+            <StatPill icon={<CheckCircle2 className="text-amber-600" size={20} />} value={totals.activities} label="Activities completed" color="bg-amber-100" />
           </div>
-          <div className="xl:pl-9">
-            <StatPill icon={<Clock3 className="text-blue-600" size={34} />} value={totals.duration} label="Total study time" color="bg-blue-100" />
+          <div className="xl:pl-6">
+            <StatPill icon={<Clock3 className="text-blue-600" size={20} />} value={totals.duration} label="Total study time" color="bg-blue-100" />
           </div>
-          <div className="xl:pl-9">
-            <StatPill icon={<TrendingUp className="text-orange-600" size={34} />} value={`${totals.progress}%`} label="Overall progress" color="bg-orange-100" />
+          <div className="xl:pl-6">
+            <StatPill icon={<TrendingUp className="text-orange-600" size={20} />} value={`${totals.progress}%`} label="Overall progress" color="bg-orange-100" />
           </div>
         </div>
       </div>
