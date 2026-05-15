@@ -26,6 +26,7 @@ import {
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Link, useParams } from 'react-router';
 import { getSubtopic, updateSubtopicProgress } from '../api/guides';
 import { getAccessToken } from '../api/client';
@@ -278,6 +279,8 @@ export default function SubtopicDetailPage() {
   const [streamedHtml, setStreamedHtml] = useState(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [agentEvents, setAgentEvents] = useState([]);
+  const [hasStreamedContent, setHasStreamedContent] = useState(false);
+  const hasStreamedContentRef = useRef(false);
   const articleRef = useRef(null);
   const contentRef = useRef(null);
 
@@ -290,8 +293,9 @@ export default function SubtopicDetailPage() {
   }, []);
 
   async function streamContent(signal) {
+    hasStreamedContentRef.current = false;
     setIsStreaming(true);
-    setStreamedHtml('');
+    setStreamedHtml(null);
     setAgentEvents([]);
     try {
       const res = await fetch(`/api/topics/${topicId}/subtopics/${position}/content`, {
@@ -316,17 +320,27 @@ export default function SubtopicDetailPage() {
             setAgentEvents((prev) => [...prev, event]);
           } else if (event.type === 'content_chunk') {
             html += event.text;
-            setStreamedHtml(html);
+            if (!hasStreamedContentRef.current) {
+              hasStreamedContentRef.current = true;
+              // flushSync mounts the content div synchronously so contentRef is
+              // available immediately for the first and all subsequent chunks.
+              flushSync(() => setHasStreamedContent(true));
+            }
+            contentRef.current?.insertAdjacentHTML('beforeend', DOMPurify.sanitize(event.text, PURIFY_CONFIG));
           } else if (event.type === 'error') {
             setError(event.message);
           }
         }
       }
+      // Set full HTML once at the end — triggers Prism highlighting.
+      setStreamedHtml(html);
     } catch (err) {
       if (err.name === 'AbortError') return;
       setError(err.message);
     } finally {
       setIsStreaming(false);
+      setHasStreamedContent(false);
+      hasStreamedContentRef.current = false;
     }
   }
 
@@ -337,6 +351,8 @@ export default function SubtopicDetailPage() {
     setStreamedHtml(null);
     setIsStreaming(false);
     setAgentEvents([]);
+    setHasStreamedContent(false);
+    hasStreamedContentRef.current = false;
 
     getSubtopic(topicId, position)
       .then((res) => {
@@ -516,7 +532,9 @@ export default function SubtopicDetailPage() {
 
           {/* Lesson content */}
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
-            {displayedHtml ? (
+            {hasStreamedContent ? (
+              <div ref={contentRef} className="lesson-content" />
+            ) : displayedHtml ? (
               <div
                 ref={contentRef}
                 className="lesson-content"
