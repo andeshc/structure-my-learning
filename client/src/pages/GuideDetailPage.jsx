@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  ChevronDown,
   Layers,
   Trash2,
 } from 'lucide-react';
@@ -78,14 +77,14 @@ function FallbackIllustration({ title }) {
   );
 }
 
-function ImportanceLabel({ importance }) {
+function ImportanceDot({ importance }) {
   if (importance === 'Required') {
-    return <span className="shrink-0 text-[10px] font-semibold text-emerald-600">Required</span>;
+    return <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-emerald-400" title="Required" />;
   }
   if (importance === 'Optional and can be skipped') {
-    return <span className="shrink-0 text-[10px] font-semibold text-slate-400">Optional</span>;
+    return <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-slate-300" title="Optional" />;
   }
-  return <span className="shrink-0 text-[10px] font-semibold text-amber-600">Recommended</span>;
+  return <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-amber-400" title="Recommended" />;
 }
 
 function dominantBorderClass(items) {
@@ -103,22 +102,22 @@ function ItemGroup({ items, borderClass, topicId }) {
           <li key={i} className="px-3 py-2.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <span className="text-sm font-medium text-slate-700">{item.title}</span>
+                <div className="flex items-start gap-2">
+                  <ImportanceDot importance={item.importance} />
+                  <span className="text-sm font-medium text-slate-700">{item.title}</span>
+                </div>
                 {item.overview && (
-                  <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
+                  <p className="ml-4 mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-2 pt-0.5">
-                <ImportanceLabel importance={item.importance} />
-                {topicId && (
-                  <Link
-                    to={`/topics/${topicId}/subtopics/${i}`}
-                    className="rounded-md border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-700"
-                  >
-                    Generate →
-                  </Link>
-                )}
-              </div>
+              {topicId && (
+                <Link
+                  to={`/topics/${topicId}/subtopics/${i}`}
+                  className="shrink-0 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                >
+                  Open →
+                </Link>
+              )}
             </div>
           </li>
         ))}
@@ -128,7 +127,6 @@ function ItemGroup({ items, borderClass, topicId }) {
 }
 
 function TopicRow({ section, sectionIndex, topic, isNext }) {
-  const [expanded, setExpanded] = useState(false);
   const hasSubtopics = section.items && section.items.length > 0;
 
   return (
@@ -138,7 +136,7 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
         isNext ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white'
       }`}
     >
-      <div className="flex items-center gap-4 p-4">
+      <div className="flex items-start gap-4 p-4">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
           topic?.isCompleted
             ? 'bg-emerald-100 text-emerald-700'
@@ -150,33 +148,17 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
         </span>
 
         <div className="min-w-0 flex-1">
-          <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${statusClass(topic, isNext)}`}>
-            {statusLabel(topic, isNext)}
-          </span>
-          <p className="mt-1 font-semibold text-slate-950">{section.title}</p>
-          <p className="mt-0.5 line-clamp-1 text-sm text-slate-500">{section.description}</p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {hasSubtopics && (
-            <button
-              aria-expanded={expanded}
-              aria-label={expanded ? 'Collapse subtopics' : 'Expand subtopics'}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                isNext
-                  ? 'border-blue-200 bg-white text-blue-700 hover:bg-blue-50'
-                  : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-700'
-              }`}
-              onClick={() => setExpanded((v) => !v)}
-            >
-              <ChevronDown className={`mr-1 inline-block transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} size={13} />
-              {expanded ? 'Hide' : 'Lessons'}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-slate-950">{section.title}</p>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusClass(topic, isNext)}`}>
+              {statusLabel(topic, isNext)}
+            </span>
+          </div>
+          <p className="mt-0.5 text-sm text-slate-500">{section.description}</p>
         </div>
       </div>
 
-      {expanded && hasSubtopics && (
+      {hasSubtopics && (
         <div className="border-t border-slate-100 px-4 pb-4 pt-3">
           <ItemGroup items={section.items} borderClass={dominantBorderClass(section.items)} topicId={topic?.id} />
         </div>
