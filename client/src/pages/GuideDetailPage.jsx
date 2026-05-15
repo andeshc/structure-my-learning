@@ -321,17 +321,13 @@ export default function GuideDetailPage() {
 
             <h1 className="mt-2 max-w-3xl text-3xl font-bold leading-tight text-slate-950">{guide.title}</h1>
 
-            <p className="mt-3 text-xs text-slate-400">
-              {summary.subtopicCount} lessons · {summary.duration} est.
-            </p>
-
             {/* Progress */}
-            <div className="mt-4">
-              <div className="mb-1.5 flex items-center gap-3 text-sm">
+            <div className="mt-4 max-w-xs">
+              <div className="mb-1.5 flex items-center justify-between text-sm">
                 <span className="font-semibold text-slate-700">{summary.subtopicPct}% complete</span>
                 <span className="text-xs text-slate-400">{summary.completed} of {summary.total} topics done</span>
               </div>
-              <progress className="h-2 w-full max-w-xs overflow-hidden rounded-full" max="100" value={summary.subtopicPct}>
+              <progress className="h-2 w-full overflow-hidden rounded-full" max="100" value={summary.subtopicPct}>
                 {summary.subtopicPct}%
               </progress>
             </div>
