@@ -14,6 +14,7 @@
     "ai": "^6.0.182",
     "dompurify": "^3.4.3",
     "lucide-react": "^1.14.0",
+    "morphdom": "^2.7.8",
     "prismjs": "^1.30.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

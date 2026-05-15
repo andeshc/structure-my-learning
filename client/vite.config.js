@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     include: [
+      'morphdom',
       'prismjs',
       'prismjs/components/prism-python',
       'prismjs/components/prism-javascript',

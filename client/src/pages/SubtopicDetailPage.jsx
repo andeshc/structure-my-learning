@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import morphdom from 'morphdom';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-tomorrow.css';
 import 'prismjs/components/prism-python';
@@ -326,7 +327,10 @@ export default function SubtopicDetailPage() {
               // available immediately for the first and all subsequent chunks.
               flushSync(() => setHasStreamedContent(true));
             }
-            contentRef.current?.insertAdjacentHTML('beforeend', DOMPurify.sanitize(event.text, PURIFY_CONFIG));
+            if (contentRef.current) {
+              const sanitized = DOMPurify.sanitize(html, PURIFY_CONFIG);
+              morphdom(contentRef.current, `<div class="lesson-content">${sanitized}</div>`);
+            }
           } else if (event.type === 'error') {
             setError(event.message);
           }
