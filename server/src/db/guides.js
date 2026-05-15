@@ -16,6 +16,7 @@ function toGuide(row) {
     illustrationUrl: row.illustration_path || null,
     topicCount: Number(row.topic_count || 0),
     completedTopicCount: Number(row.completed_topic_count || 0),
+    completedSubtopicCount: Number(row.completed_subtopic_count || 0),
     progressPercentage: Number(row.progress_percentage || 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -29,7 +30,8 @@ function progressSelect() {
     CASE
       WHEN COUNT(t.id) = 0 THEN 0
       ELSE ROUND((SUM(CASE WHEN t.is_completed = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id))
-    END AS progress_percentage
+    END AS progress_percentage,
+    (SELECT COUNT(*) FROM subtopics s JOIN topics t2 ON s.topic_id = t2.id WHERE t2.guide_id = g.id AND s.is_completed = 1) AS completed_subtopic_count
   `;
 }
 

@@ -214,14 +214,14 @@ function GuideCard({ guide, index, onDelete }) {
   const menuRef = useRef(null);
   const tags = guideTags(guide);
   const title = displayGuideTitle(guide.title);
-  const lessons = guide.topicCount || 0;
-  const completed = guide.completedTopicCount || 0;
+  const subtopicCount = guide.outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
+  const completed = guide.completedSubtopicCount || 0;
   const isNotStarted = completed === 0;
-  const isFinished = lessons > 0 && completed >= lessons;
+  const isFinished = guide.progressPercentage === 100;
   const actionLabel = isFinished ? 'Review' : isNotStarted ? 'Begin' : 'Continue';
   const progressText = isNotStarted
-    ? `${lessons} topic${lessons !== 1 ? 's' : ''}`
-    : `${completed} of ${lessons} completed`;
+    ? `${subtopicCount} lesson${subtopicCount !== 1 ? 's' : ''}`
+    : `${completed} of ${subtopicCount} completed`;
 
   useEffect(() => {
     function closeMenu(event) {
