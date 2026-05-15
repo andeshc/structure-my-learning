@@ -3,7 +3,6 @@ import {
   BookOpen,
   CheckCircle2,
   Clock3,
-  FileText,
   MoreHorizontal,
   Plus,
   TrendingUp,
@@ -216,8 +215,13 @@ function GuideCard({ guide, index, onDelete }) {
   const tags = guideTags(guide);
   const title = displayGuideTitle(guide.title);
   const lessons = guide.topicCount || 0;
-  const activities = lessons + Math.max(guide.completedTopicCount || 0, 0);
-  const studyMinutes = minutesForGuide(guide);
+  const completed = guide.completedTopicCount || 0;
+  const isNotStarted = completed === 0;
+  const isFinished = lessons > 0 && completed >= lessons;
+  const actionLabel = isFinished ? 'Review' : isNotStarted ? 'Begin' : 'Continue';
+  const progressText = isNotStarted
+    ? `${lessons} topic${lessons !== 1 ? 's' : ''}`
+    : `${completed} of ${lessons} completed`;
 
   useEffect(() => {
     function closeMenu(event) {
@@ -266,7 +270,7 @@ function GuideCard({ guide, index, onDelete }) {
       </div>
 
       <div className="p-4">
-        <Link to={`/guides/${guide.id}`} className="block text-base font-bold leading-tight text-slate-950 transition-colors hover:text-blue-700">
+        <Link to={`/guides/${guide.id}`} className="block min-h-[2.5rem] line-clamp-2 text-base font-bold leading-tight text-slate-950 transition-colors hover:text-blue-700">
           {title}
         </Link>
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -285,29 +289,13 @@ function GuideCard({ guide, index, onDelete }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 border-t border-slate-200 bg-white">
-        <div className="flex items-center justify-center gap-1.5 px-2 py-3">
-          <FileText className="shrink-0 text-slate-500" size={14} />
-          <div className="min-w-0 text-center">
-            <p className="text-sm font-bold leading-none text-slate-950">{lessons}</p>
-            <p className="mt-0.5 text-[10px] text-slate-500">Lessons</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center gap-1.5 border-x border-slate-200 px-2 py-3">
-          <CheckCircle2 className="shrink-0 text-slate-500" size={14} />
-          <div className="min-w-0 text-center">
-            <p className="text-sm font-bold leading-none text-slate-950">{activities}</p>
-            <p className="mt-0.5 text-[10px] text-slate-500">Activities</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center gap-1.5 px-2 py-3">
-          <Clock3 className="shrink-0 text-slate-500" size={14} />
-          <div className="min-w-0 text-center">
-            <p className="whitespace-nowrap text-sm font-bold leading-none text-slate-950">{formatDuration(studyMinutes)}</p>
-            <p className="mt-0.5 text-[10px] text-slate-500">Study time</p>
-          </div>
-        </div>
-      </div>
+      <Link
+        to={`/guides/${guide.id}`}
+        className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 transition-colors hover:bg-slate-50"
+      >
+        <span className="text-xs text-slate-500">{progressText}</span>
+        <span className="text-xs font-semibold text-blue-600">{actionLabel} →</span>
+      </Link>
     </article>
   );
 }
