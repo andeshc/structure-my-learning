@@ -1,11 +1,7 @@
 import {
-  Bot,
   BookOpenCheck,
-  Flame,
   Home,
   LogOut,
-  Medal,
-  MessageSquare,
   PlusCircle,
   UserRound,
 } from 'lucide-react';
@@ -32,8 +28,8 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-slate-950">
-      <div className="min-h-screen w-full bg-white lg:grid lg:grid-cols-[340px_1fr]">
-        <aside className="hidden border-r border-slate-200 bg-[#fffdfa] px-7 py-8 lg:flex lg:flex-col">
+      <div className="w-full bg-white lg:grid lg:h-screen lg:grid-cols-[340px_1fr] lg:overflow-hidden">
+        <aside className="hidden border-r border-slate-200 bg-[#fffdfa] px-7 py-8 lg:flex lg:flex-col lg:overflow-y-auto">
           <Link to="/" className="flex items-center gap-4">
             <span className="grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-700">
               <BookOpenCheck size={40} strokeWidth={2.1} />
@@ -59,53 +55,15 @@ export default function AppShell() {
             </NavLink>
           </nav>
 
-          <div className="mt-auto">
-            <div className="rounded-xl border border-amber-200 bg-[#fffaf0] p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-lg font-bold">Your AI tutor</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">I'm here to help you learn smarter.</p>
-                </div>
-                <span className="rounded-full bg-amber-100 p-2 text-amber-700">
-                  <MessageSquare size={22} />
-                </span>
-              </div>
-              <div className="mt-2 flex justify-center">
-                <div className="relative">
-                  <div className="absolute left-1/2 top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-emerald-400" />
-                  <div className="relative mt-5 grid h-20 w-24 place-items-center rounded-[28px] border-4 border-blue-100 bg-white">
-                    <Bot className="text-blue-700" size={46} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-9 border-t border-slate-200 pt-7">
-              <div className="grid grid-cols-2 divide-x divide-slate-200">
-                <div className="flex items-center gap-3">
-                  <Flame className="text-orange-500" size={28} fill="currentColor" />
-                  <div>
-                    <p className="text-2xl font-bold text-orange-600">7</p>
-                    <p className="text-xs text-slate-600">day streak</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 pl-7">
-                  <Medal className="text-amber-500" size={30} fill="currentColor" />
-                  <div>
-                    <p className="text-2xl font-bold">320</p>
-                    <p className="text-xs text-slate-600">points</p>
-                  </div>
-                </div>
-              </div>
-              <button className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-red-200 hover:text-red-700" onClick={handleLogout}>
-                <LogOut size={18} />
-                Log out
-              </button>
-            </div>
+          <div className="mt-auto border-t border-slate-200 pt-5">
+            <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-red-200 hover:text-red-700" onClick={handleLogout}>
+              <LogOut size={18} />
+              Log out
+            </button>
           </div>
         </aside>
 
-        <div className="min-w-0">
+        <div className="min-w-0 lg:overflow-y-auto">
           <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
             <Link to="/" className="flex items-center gap-2 font-bold">
               <BookOpenCheck className="text-blue-700" size={28} />
