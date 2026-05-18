@@ -15,6 +15,7 @@ function toSubtopic(row) {
     completedAt: row.completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    devStatus: row.dev_status ?? 'pending',
   };
 }
 

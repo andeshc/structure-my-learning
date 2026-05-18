@@ -440,4 +440,6 @@ module.exports = {
   streamOutline,
   streamSubtopicContent,
   setAiMocks,
+  TOPIC_HTML_SYSTEM,
+  generateTopicIllustrationTool,
 };

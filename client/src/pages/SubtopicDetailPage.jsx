@@ -1,5 +1,4 @@
 import DOMPurify from 'dompurify';
-import morphdom from 'morphdom';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-tomorrow.css';
 import 'prismjs/components/prism-python';
@@ -16,18 +15,19 @@ import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-css';
 import 'prismjs/components/prism-markup';
 import {
+  AlertTriangle,
   Bot,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Circle,
+  Clock,
   Send,
   X,
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useEffect, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { Link, useParams } from 'react-router';
 import { getSubtopic, updateSubtopicProgress } from '../api/guides';
 import { getAccessToken } from '../api/client';
@@ -44,123 +44,35 @@ function sanitize(html) {
   return DOMPurify.sanitize(html, PURIFY_CONFIG);
 }
 
-// --- Agent activity feed ---
-
-const EVENT_ICONS = {
-  agent_status: '◆',
-  agent_tool_call: '⟳',
-  agent_tool_result: '✓',
-};
-
-function buildRows(groupEvents) {
-  // Pair each tool_call with its corresponding tool_result (by order of appearance).
-  // Status events render individually; paired tool rows collapse into one row.
-  const rows = [];
-  const calls = groupEvents.filter((e) => e.event.type === 'agent_tool_call');
-  const results = groupEvents.filter((e) => e.event.type === 'agent_tool_result');
-
-  for (const { event, globalIdx } of groupEvents) {
-    if (event.type === 'agent_status') {
-      rows.push({ kind: 'status', event, globalIdx });
-    } else if (event.type === 'agent_tool_call') {
-      const callIdx = calls.findIndex((c) => c.globalIdx === globalIdx);
-      const result = results[callIdx] ?? null;
-      rows.push({ kind: 'tool', call: event, result: result?.event ?? null, globalIdx: result?.globalIdx ?? globalIdx });
-    }
-    // tool_results are consumed by their paired call row — skip standalone
-  }
-  return rows;
-}
-
-function AgentActivityFeed({ events, isStreaming }) {
-  // Group events into phases on each agent_status boundary
-  const groups = [];
-  let current = null;
-  events.forEach((event, i) => {
-    if (event.type === 'agent_status') {
-      if (current) groups.push(current);
-      const label = event.message.toLowerCase().includes('writing') ? 'Writing' : 'Planning';
-      current = { label, events: [{ event, globalIdx: i }] };
-    } else if (current) {
-      current.events.push({ event, globalIdx: i });
-    }
-  });
-  if (current) groups.push(current);
-
-  const progress = Math.min(90, Math.round((events.length / 6) * 90));
-
-  if (events.length === 0) {
+function SubtopicStatusPanel({ devStatus }) {
+  if (devStatus === 'developing') {
     return (
-      <div className="py-2">
-        <div className="flex items-center gap-2.5 text-sm text-slate-400">
-          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-blue-400" />
-          Preparing lesson…
+      <div className="flex flex-col items-center gap-4 py-10 text-center">
+        <span className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-500" />
+        <div>
+          <p className="font-semibold text-slate-800">Writing this lesson…</p>
+          <p className="mt-1 text-sm text-slate-500">The AI is generating content. This page will update automatically.</p>
         </div>
       </div>
     );
   }
-
-  return (
-    <div className="py-2">
-      <style>{`@keyframes eventIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }`}</style>
-
-      {/* Overall progress bar */}
-      <div className="mb-5">
-        <div className="mb-1.5 flex items-center justify-between text-xs text-slate-400">
-          <span>Generating lesson</span>
-          <span>{progress}%</span>
-        </div>
-        <div className="h-1 overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full bg-blue-400 transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
+  if (devStatus === 'failed') {
+    return (
+      <div className="flex flex-col items-center gap-4 py-10 text-center">
+        <AlertTriangle className="text-red-400" size={32} />
+        <div>
+          <p className="font-semibold text-slate-800">Generation failed</p>
+          <p className="mt-1 text-sm text-slate-500">Use "Resume development" on the guide page to retry.</p>
         </div>
       </div>
-
-      {/* Phase groups */}
-      <div className="space-y-4">
-        {groups.map((group, gi) => {
-          const rows = buildRows(group.events);
-          return (
-          <div key={gi}>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-300">
-              {group.label}
-            </p>
-            <div className="space-y-1.5">
-              {rows.map((row, ri) => {
-                const isLast = row.globalIdx === events.length - 1;
-                const isDone = row.kind === 'tool' ? Boolean(row.result) : !isLast;
-                const isPending = isStreaming && !isDone && isLast;
-                const displayEvent = row.kind === 'tool' && row.result ? row.result : row.kind === 'tool' ? row.call : row.event;
-                return (
-                  <div
-                    key={ri}
-                    className={`flex items-center gap-3 text-sm transition-opacity ${isPending ? '' : 'opacity-40'}`}
-                    style={{ animation: 'eventIn 0.2s ease forwards' }}
-                  >
-                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                      isPending
-                        ? 'bg-blue-100 text-blue-500'
-                        : (row.kind === 'tool' && row.result) || row.kind === 'status'
-                        ? 'bg-emerald-100 text-emerald-600'
-                        : 'bg-slate-100 text-slate-500'
-                    }`}>
-                      {isPending
-                        ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-blue-500" />
-                        : EVENT_ICONS[displayEvent.type] ?? '·'
-                      }
-                    </span>
-                    <span className={isPending ? 'font-medium text-slate-800' : 'text-slate-500'}>
-                      {displayEvent.message}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          );
-        })}
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-4 py-10 text-center">
+      <Clock className="text-slate-300" size={32} />
+      <div>
+        <p className="font-semibold text-slate-800">Lesson queued</p>
+        <p className="mt-1 text-sm text-slate-500">This lesson is waiting to be generated. This page will update automatically.</p>
       </div>
     </div>
   );
@@ -277,11 +189,6 @@ export default function SubtopicDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showMobileAi, setShowMobileAi] = useState(false);
-  const [streamedHtml, setStreamedHtml] = useState(null);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [agentEvents, setAgentEvents] = useState([]);
-  const [hasStreamedContent, setHasStreamedContent] = useState(false);
-  const hasStreamedContentRef = useRef(false);
   const articleRef = useRef(null);
   const contentRef = useRef(null);
 
@@ -293,85 +200,29 @@ export default function SubtopicDetailPage() {
     document.head.appendChild(script);
   }, []);
 
-  async function streamContent(signal) {
-    hasStreamedContentRef.current = false;
-    setIsStreaming(true);
-    setStreamedHtml(null);
-    setAgentEvents([]);
-    try {
-      const res = await fetch(`/api/topics/${topicId}/subtopics/${position}/content`, {
-        headers: { Authorization: `Bearer ${getAccessToken()}` },
-        signal,
-      });
-      if (!res.ok) throw new Error('Failed to load subtopic content.');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let html = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const event = JSON.parse(line);
-          if (event.type === 'agent_status' || event.type === 'agent_tool_call' || event.type === 'agent_tool_result') {
-            setAgentEvents((prev) => [...prev, event]);
-          } else if (event.type === 'content_chunk') {
-            html += event.text;
-            if (!hasStreamedContentRef.current) {
-              hasStreamedContentRef.current = true;
-              // flushSync mounts the content div synchronously so contentRef is
-              // available immediately for the first and all subsequent chunks.
-              flushSync(() => setHasStreamedContent(true));
-            }
-            if (contentRef.current) {
-              const sanitized = DOMPurify.sanitize(html, PURIFY_CONFIG);
-              morphdom(contentRef.current, `<div class="lesson-content">${sanitized}</div>`);
-            }
-          } else if (event.type === 'error') {
-            setError(event.message);
-          }
-        }
-      }
-      // Set full HTML once at the end — triggers Prism highlighting.
-      setStreamedHtml(html);
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-      setError(err.message);
-    } finally {
-      setIsStreaming(false);
-      setHasStreamedContent(false);
-      hasStreamedContentRef.current = false;
-    }
-  }
-
   useEffect(() => {
     const controller = new AbortController();
     setReadingProgress(0);
     setData(null);
-    setStreamedHtml(null);
-    setIsStreaming(false);
-    setAgentEvents([]);
-    setHasStreamedContent(false);
-    hasStreamedContentRef.current = false;
+    setError('');
 
     getSubtopic(topicId, position)
-      .then((res) => {
-        if (controller.signal.aborted) return;
-        setData(res);
-        if (!res.subtopic?.contentHtml) {
-          streamContent(controller.signal);
-        }
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) setError(err.message);
-      });
+      .then((res) => { if (!controller.signal.aborted) setData(res); })
+      .catch((err) => { if (!controller.signal.aborted) setError(err.message); });
 
     return () => controller.abort();
   }, [topicId, positionParam]);
+
+  // Poll while content isn't ready yet
+  useEffect(() => {
+    if (!data || data.subtopic?.contentHtml) return;
+    const devStatus = data.subtopic?.devStatus;
+    if (devStatus !== 'pending' && devStatus !== 'developing') return;
+    const interval = setInterval(() => {
+      getSubtopic(topicId, position).then((res) => setData(res)).catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [data, topicId, position]);
 
   useEffect(() => {
     function onScroll() {
@@ -390,7 +241,7 @@ export default function SubtopicDetailPage() {
     if (contentRef.current) {
       Prism.highlightAllUnder(contentRef.current);
     }
-  }, [streamedHtml, data]);
+  }, [data]);
 
   async function toggleComplete() {
     if (!data) return;
@@ -421,7 +272,7 @@ export default function SubtopicDetailPage() {
   }
 
   const { subtopic, item, sectionItems, prevItem, nextItem, topic, guide } = data;
-  const displayedHtml = subtopic?.contentHtml ?? streamedHtml;
+  const displayedHtml = subtopic?.contentHtml;
   const lessonNumber = position + 1;
   const totalLessons = sectionItems.length;
 
@@ -482,7 +333,7 @@ export default function SubtopicDetailPage() {
                       <span className="min-w-0">
                         <span className="block truncate font-medium leading-snug">{si.title}</span>
                         <span className="mt-0.5 block text-xs text-slate-400">
-                          {si.isCompleted ? 'Done' : si.hasContent ? 'Generated' : 'Not started'}
+                          {si.isCompleted ? 'Done' : si.hasContent ? 'Ready' : si.devStatus === 'developing' ? 'Writing…' : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
                         </span>
                       </span>
                     </Link>
@@ -536,18 +387,14 @@ export default function SubtopicDetailPage() {
 
           {/* Lesson content */}
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
-            {hasStreamedContent ? (
-              <div ref={contentRef} className="lesson-content" />
-            ) : displayedHtml ? (
+            {displayedHtml ? (
               <div
                 ref={contentRef}
                 className="lesson-content"
                 dangerouslySetInnerHTML={{ __html: sanitize(displayedHtml) }}
               />
-            ) : isStreaming ? (
-              <AgentActivityFeed events={agentEvents} isStreaming={isStreaming} />
             ) : (
-              <p className="text-slate-400 text-sm">No content available.</p>
+              <SubtopicStatusPanel devStatus={subtopic?.devStatus} />
             )}
           </div>
 

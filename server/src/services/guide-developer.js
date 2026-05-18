@@ -1,5 +1,5 @@
 const subtopicsDb = require('../db/subtopics');
-const ai = require('./ai.service');
+const subtopicAgent = require('./subtopic-agent');
 
 const BATCH_SIZE = 4;
 const activeDevelopments = new Set();
@@ -15,13 +15,12 @@ async function developSubtopic(id) {
   }
 
   try {
-    const stream = await ai.streamSubtopicContent({
+    const html = await subtopicAgent.generateSubtopicContent({
       guide: ctx.guide,
       outline: ctx.outline,
       topic: ctx.topic,
       item: ctx.item,
     });
-    const html = await stream.text;
     subtopicsDb.saveSubtopicContentHtml(id, html);
     subtopicsDb.setDevStatus(id, 'ready');
   } catch (err) {
