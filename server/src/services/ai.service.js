@@ -41,6 +41,14 @@ const ageGuidance = {
   adult_advanced: 'Adult or professional learner; deeper explanations but simple terminology.',
 };
 
+const maxSubtopicsPerAgeLevel = {
+  ages_8_10: 18,
+  ages_11_13: 40,
+  ages_14_17: 48,
+  adult_beginner: Infinity,
+  adult_advanced: Infinity,
+};
+
 const outlineItemSchema = z.object({
   importance: z.enum(['Required', 'Optional but recommended', 'Optional and can be skipped']),
   title: z.string().min(2).max(140),
@@ -174,6 +182,11 @@ function streamOutline({ prompt, ageLevel }) {
     };
   }
 
+  const max = maxSubtopicsPerAgeLevel[ageLevel];
+  const subtopicLimitRule = isFinite(max)
+    ? `- The total number of items across ALL sections must not exceed ${max}. Distribute items across sections accordingly — do not exceed this budget.`
+    : '';
+
   const system = `${guidePromptSections['System Prompt']}
 
 ${guidePromptSections['Instructions']}
@@ -187,7 +200,7 @@ Additional output rules:
 - Make each section description exactly one sentence.
 - Do not include content lessons yet.
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
-- Avoid unsupported claims, hype, and filler.`;
+- Avoid unsupported claims, hype, and filler.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
 
   const userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
