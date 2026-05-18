@@ -5,7 +5,7 @@ import {
   PlusCircle,
   UserRound,
 } from 'lucide-react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 
 function navClass({ isActive }) {
@@ -20,6 +20,10 @@ function navClass({ isActive }) {
 export default function AppShell() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  // Hide sidebar on subtopic pages — those have their own full-outline navigation
+  const hideSidebar = pathname.startsWith('/topics/');
 
   async function handleLogout() {
     await auth.signOut();
@@ -28,42 +32,57 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-slate-950">
-      <div className="w-full bg-white lg:grid lg:h-screen lg:grid-cols-[240px_1fr] lg:overflow-hidden">
-        <aside className="hidden border-r border-slate-200 bg-[#fffdfa] px-5 py-6 lg:flex lg:flex-col lg:overflow-y-auto">
-          <Link to="/" className="flex items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
-              <BookOpenCheck size={24} strokeWidth={2.1} />
-            </span>
-            <span className="leading-snug">
-              <span className="block text-base font-bold">Structure</span>
-              <span className="block text-base font-bold"><span className="text-blue-700">My</span>Learning</span>
-            </span>
-          </Link>
+      <div className="w-full bg-white lg:flex lg:h-screen lg:overflow-hidden">
+        {/* Sidebar — animates out on guide/subtopic pages */}
+        <aside
+          className={`hidden shrink-0 border-r border-slate-200 bg-[#fffdfa] lg:flex lg:flex-col lg:overflow-hidden transition-[width] duration-300 ease-in-out ${
+            hideSidebar ? 'lg:w-0' : 'lg:w-60'
+          }`}
+        >
+          {/* Fixed-width inner panel so content clips cleanly during width animation */}
+          <div
+            className={`flex w-60 shrink-0 flex-col overflow-y-auto px-5 py-6 transition-opacity duration-200 ${
+              hideSidebar ? 'opacity-0' : 'opacity-100'
+            } h-full`}
+          >
+            <Link to="/" className="flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
+                <BookOpenCheck size={24} strokeWidth={2.1} />
+              </span>
+              <span className="leading-snug">
+                <span className="block text-base font-bold">Structure</span>
+                <span className="block text-base font-bold"><span className="text-blue-700">My</span>Learning</span>
+              </span>
+            </Link>
 
-          <nav className="mt-14 grid gap-4">
-            <NavLink className={navClass} to="/">
-              <Home size={27} fill="currentColor" strokeWidth={2.2} />
-              Dashboard
-            </NavLink>
-            <NavLink className={navClass} to="/guides/new">
-              <PlusCircle size={28} strokeWidth={2.2} />
-              New Guide
-            </NavLink>
-            <NavLink className={navClass} to="/account">
-              <UserRound size={28} strokeWidth={2.2} />
-              Account
-            </NavLink>
-          </nav>
+            <nav className="mt-14 grid gap-4">
+              <NavLink className={navClass} to="/">
+                <Home size={27} fill="currentColor" strokeWidth={2.2} />
+                Dashboard
+              </NavLink>
+              <NavLink className={navClass} to="/guides/new">
+                <PlusCircle size={28} strokeWidth={2.2} />
+                New Guide
+              </NavLink>
+              <NavLink className={navClass} to="/account">
+                <UserRound size={28} strokeWidth={2.2} />
+                Account
+              </NavLink>
+            </nav>
 
-          <div className="mt-auto border-t border-slate-200 pt-5">
-            <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-red-200 hover:text-red-700" onClick={handleLogout}>
-              <LogOut size={18} />
-              Log out
-            </button>
+            <div className="mt-auto border-t border-slate-200 pt-5">
+              <button
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-red-200 hover:text-red-700"
+                onClick={handleLogout}
+              >
+                <LogOut size={18} />
+                Log out
+              </button>
+            </div>
           </div>
         </aside>
 
-        <div className="min-w-0 lg:overflow-y-auto">
+        <div className="min-w-0 lg:flex-1 lg:overflow-y-auto">
           <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
             <Link to="/" className="flex items-center gap-2 font-bold">
               <BookOpenCheck className="text-blue-700" size={28} />

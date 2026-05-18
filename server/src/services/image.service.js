@@ -9,7 +9,7 @@ const MODEL_ADAPTERS = {
   'fal-ai/nano-banana-2': {
     buildInput: ({ prompt }) => ({
       // Nano-banana is used for inline lesson illustrations — wrap prompt with style guidance
-      prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. No watermarks, no text unless labeled in description.`,
+      prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. Include labels and annotations where they aid understanding. Do not add a title, heading, or caption text to the image.`,
       output_format: 'png',
       num_images: 1,
       resolution: '0.5K',
@@ -26,7 +26,7 @@ const MODEL_ADAPTERS = {
   },
   'openai/gpt-image-2': {
     buildInput: ({ prompt, size = 'auto', quality = 'low' }) => ({
-      prompt,
+      prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. Include labels and annotations where they aid understanding. Do not add a title, heading, or caption text to the image.`,
       image_size: size,
       num_images: 1,
       quality,

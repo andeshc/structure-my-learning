@@ -355,7 +355,7 @@ Your job is to prepare resources for the lesson writer:
 
   const validIllustrations = illustrations.filter((r) => r.output?.url);
   const illustrationContext = validIllustrations.length > 0
-    ? `\n\nPre-generated illustration images — embed these <img> tags at the most relevant point in the lesson:\n${validIllustrations.map((r) => `<!-- ${r.output.title} -->\n<img src="${r.output.url}" alt="${r.output.title}" class="w-full rounded-xl my-6">`).join('\n\n')}`
+    ? `\n\nPre-generated illustration images — embed each <img> tag at the most relevant point in the lesson. Do not add a caption, heading, or any text around the image:\n${validIllustrations.map((r) => `<img src="${r.output.url}" alt="${r.output.title}" class="lesson-illustration">`).join('\n\n')}`
     : '';
 
   const verifyContext = verifications.length > 0

@@ -72,7 +72,7 @@ After your tool calls, output a brief structured research summary covering the k
   const verifications = toolResults.filter((r) => r.toolName === 'verify_content_plan');
 
   const illustrationContext = illustrations.length > 0
-    ? `\n\nPre-generated illustration images — embed each <img> tag at the most relevant point in the lesson:\n${illustrations.map((r) => `<!-- ${r.output.title} -->\n<img src="${r.output.url}" alt="${r.output.title}" class="w-full rounded-xl my-6">`).join('\n\n')}`
+    ? `\n\nPre-generated illustration images — embed each <img> tag at the most relevant point in the lesson. Do not add a caption, heading, or any text around the image:\n${illustrations.map((r) => `<img src="${r.output.url}" alt="${r.output.title}" class="lesson-illustration">`).join('\n\n')}`
     : '';
 
   const researchNotes = verifications.length > 0

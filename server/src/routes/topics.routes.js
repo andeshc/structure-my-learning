@@ -77,6 +77,30 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
   // May not exist yet (first visit before generation)
   const dbSubtopic = dbByPosition[position] ?? null;
 
+  // Full guide outline with all sections and per-subtopic status (for sidebar nav)
+  const allTopics = topicsDb.listTopicsForGuide(found.guide.id);
+  const allSubtopics = subtopicsDb.listAllSubtopicsForGuide(found.guide.id);
+  const subsByTopicAndPos = {};
+  for (const s of allSubtopics) {
+    if (!subsByTopicAndPos[s.topicId]) subsByTopicAndPos[s.topicId] = {};
+    subsByTopicAndPos[s.topicId][s.position] = s;
+  }
+  const fullOutline = outline.sections.map((section, i) => {
+    const t = allTopics[i];
+    const topicSubs = t ? subsByTopicAndPos[t.id] ?? {} : {};
+    return {
+      topicId: t?.id ?? null,
+      title: section.title,
+      items: section.items.map((item, pos) => ({
+        position: pos,
+        title: item.title,
+        isCompleted: topicSubs[pos]?.isCompleted ?? false,
+        hasContent: topicSubs[pos]?.hasContent ?? false,
+        devStatus: topicSubs[pos]?.devStatus ?? 'pending',
+      })),
+    };
+  });
+
   const guide = guides.findGuideForUser(found.guide.id, req.user.id);
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
   const completedSubtopics = guide?.completedSubtopicCount ?? 0;
@@ -91,6 +115,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     prevItem,
     nextItem,
     nextTopic,
+    fullOutline,
     topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
     guide: { id: found.guide.id, title: found.guide.title, progressPercentage: guide?.progressPercentage ?? 0, subtopicProgressPercentage },
   });

@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* AI-generated lesson content container — kept outside @layer to win over Tailwind CDN preflight */
+.lesson-content {
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+.lesson-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.lesson-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Illustration images embedded in AI-generated lesson content */
+.lesson-illustration {
+  display: block;
+  width: 100%;
+  margin: 1.5rem auto;
+  max-width: 52rem; /* ~832px — change here to resize all lesson illustrations */
+  border-radius: 0.75rem;
+}
+
 @layer base {
   html {
     @apply bg-canvas text-charcoal font-sans;

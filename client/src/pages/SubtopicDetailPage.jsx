@@ -271,7 +271,7 @@ export default function SubtopicDetailPage() {
     return <LoadingPanel title="Loading lesson" detail="Fetching subtopic details…" />;
   }
 
-  const { subtopic, item, sectionItems, prevItem, nextItem, nextTopic, topic, guide } = data;
+  const { subtopic, item, sectionItems, prevItem, nextItem, nextTopic, fullOutline, topic, guide } = data;
   const displayedHtml = subtopic?.contentHtml;
   const lessonNumber = position + 1;
   const totalLessons = sectionItems.length;
@@ -306,39 +306,47 @@ export default function SubtopicDetailPage() {
               </progress>
             </div>
 
-            {/* Section subtopics list */}
+            {/* Full guide outline nav */}
             <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-slate-200 bg-white p-4">
-              <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-slate-500">Section</p>
-              <p className="mt-1 shrink-0 text-sm font-semibold text-slate-800 leading-snug">{topic.title}</p>
+              <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-slate-500">Guide outline</p>
               <nav className="mt-3 flex-1 overflow-y-auto">
-                {sectionItems.map((si) => {
-                  const isCurrent = si.position === position;
-                  return (
-                    <Link
-                      key={si.position}
-                      to={`/topics/${topicId}/subtopics/${si.position}`}
-                      className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                        isCurrent
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
-                      }`}
-                    >
-                      <span className="mt-0.5 shrink-0">
-                        {si.isCompleted ? (
-                          <CheckCircle2 className="text-emerald-500" size={15} />
-                        ) : (
-                          <Circle className={isCurrent ? 'text-blue-500' : 'text-slate-300'} size={15} />
-                        )}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium leading-snug">{si.title}</span>
-                        <span className="mt-0.5 block text-xs text-slate-400">
-                          {si.isCompleted ? 'Done' : si.hasContent ? 'Ready' : si.devStatus === 'developing' ? 'Writing…' : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
-                        </span>
-                      </span>
-                    </Link>
-                  );
-                })}
+                {(fullOutline ?? []).map((section) => (
+                  <div key={section.topicId} className="mb-4 last:mb-0">
+                    <p className={`mb-1 px-3 text-[11px] font-bold uppercase tracking-wider truncate ${
+                      section.topicId === topicId ? 'text-blue-600' : 'text-slate-400'
+                    }`}>
+                      {section.title}
+                    </p>
+                    {section.items.map((si) => {
+                      const isCurrent = section.topicId === topicId && si.position === position;
+                      return (
+                        <Link
+                          key={`${section.topicId}-${si.position}`}
+                          to={`/topics/${section.topicId}/subtopics/${si.position}`}
+                          className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                            isCurrent
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                          }`}
+                        >
+                          <span className="mt-0.5 shrink-0">
+                            {si.isCompleted ? (
+                              <CheckCircle2 className="text-emerald-500" size={15} />
+                            ) : (
+                              <Circle className={isCurrent ? 'text-blue-500' : 'text-slate-300'} size={15} />
+                            )}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium leading-snug">{si.title}</span>
+                            <span className="mt-0.5 block text-xs text-slate-400">
+                              {si.isCompleted ? 'Done' : si.hasContent ? 'Ready' : si.devStatus === 'developing' ? 'Writing…' : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
+                            </span>
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
               </nav>
             </div>
 
@@ -441,6 +449,14 @@ export default function SubtopicDetailPage() {
               </Link>
             ) : null}
           </nav>
+
+          {/* AI disclaimer */}
+          <p className="mt-6 flex items-center gap-1.5 text-xs text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
+              <path d="M10 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 1ZM5.05 3.05a.75.75 0 0 1 1.06 0l1.062 1.06A.75.75 0 1 1 6.11 5.173L5.05 4.11a.75.75 0 0 1 0-1.06ZM14.95 3.05a.75.75 0 0 1 0 1.06l-1.06 1.063a.75.75 0 0 1-1.062-1.061l1.061-1.062a.75.75 0 0 1 1.06 0ZM3 9.25a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H3ZM15.5 9.25a.75.75 0 0 0 0 1.5H17a.75.75 0 0 0 0-1.5h-1.5ZM6.172 13.768a.75.75 0 0 0-1.06 1.06l1.06 1.062a.75.75 0 0 0 1.062-1.061l-1.062-1.061ZM14.89 14.828a.75.75 0 0 0-1.061-1.06l-1.062 1.06a.75.75 0 1 0 1.061 1.062l1.062-1.062ZM10 15.5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15.5ZM10 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+            </svg>
+            AI-generated content — verify important information independently.
+          </p>
         </div>
       </div>
 

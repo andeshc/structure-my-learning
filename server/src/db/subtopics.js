@@ -180,6 +180,22 @@ function getGuidesWithPendingWork() {
   ).all().map((r) => r.guide_id);
 }
 
+function listAllSubtopicsForGuide(guideId) {
+  return db.prepare(
+    `SELECT s.topic_id, s.position, s.dev_status,
+            CASE WHEN s.is_completed = 1 THEN 1 ELSE 0 END AS is_completed,
+            CASE WHEN s.content_html IS NOT NULL THEN 1 ELSE 0 END AS has_content
+     FROM subtopics s JOIN topics t ON t.id = s.topic_id
+     WHERE t.guide_id = ? ORDER BY t.position, s.position`
+  ).all(guideId).map((r) => ({
+    topicId: r.topic_id,
+    position: r.position,
+    devStatus: r.dev_status ?? 'pending',
+    isCompleted: Boolean(r.is_completed),
+    hasContent: Boolean(r.has_content),
+  }));
+}
+
 function listSubtopicStatusesForGuide(guideId) {
   return db.prepare(
     `SELECT s.topic_id, s.position, s.dev_status,
@@ -196,6 +212,7 @@ function listSubtopicStatusesForGuide(guideId) {
 
 module.exports = {
   claimSubtopic,
+  listAllSubtopicsForGuide,
   findOrCreateSubtopic,
   findSubtopicContext,
   findSubtopicForUser,

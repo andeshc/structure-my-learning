@@ -60,3 +60,11 @@ Apply the following based on the depth level:
 
 ### 6. Dont include projects or assesments
 Dont include Capstone or any other projects, assesments, demonstrations, activities. The user will participate only to consume the content. Nothing needs to be handson.
+
+### 7. Guide Title
+Write a title that reads like a short course or curriculum name — not a question, not a sentence fragment.
+- 3–8 words
+- Specific to what was requested; avoid generic openers like "Introduction to", "Mastering", or "A Beginner's Guide to" unless the request is genuinely introductory
+- Match the learner level: plain language for young learners, precise terminology is fine for advanced
+- Examples of good titles: "Python Data Structures in Depth", "How Stars Form and Die", "The French Revolution: Causes and Consequences"
+- No trailing punctuation
