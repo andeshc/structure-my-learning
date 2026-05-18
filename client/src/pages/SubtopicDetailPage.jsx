@@ -271,7 +271,7 @@ export default function SubtopicDetailPage() {
     return <LoadingPanel title="Loading lesson" detail="Fetching subtopic details…" />;
   }
 
-  const { subtopic, item, sectionItems, prevItem, nextItem, topic, guide } = data;
+  const { subtopic, item, sectionItems, prevItem, nextItem, nextTopic, topic, guide } = data;
   const displayedHtml = subtopic?.contentHtml;
   const lessonNumber = position + 1;
   const totalLessons = sectionItems.length;
@@ -419,7 +419,7 @@ export default function SubtopicDetailPage() {
                 Back to guide
               </Link>
             )}
-            {nextItem && (
+            {nextItem ? (
               <Link
                 className="ml-auto flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                 to={`/topics/${topicId}/subtopics/${nextItem.position}`}
@@ -429,7 +429,17 @@ export default function SubtopicDetailPage() {
                 </span>
                 <ChevronRight size={16} />
               </Link>
-            )}
+            ) : nextTopic ? (
+              <Link
+                className="ml-auto flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                to={`/topics/${nextTopic.id}/subtopics/0`}
+              >
+                <span className="line-clamp-1 max-w-[140px] sm:max-w-xs">
+                  <span className="hidden sm:inline">Next section: </span>{nextTopic.title}
+                </span>
+                <ChevronRight size={16} />
+              </Link>
+            ) : null}
           </nav>
         </div>
       </div>

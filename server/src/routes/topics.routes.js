@@ -63,6 +63,17 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     ? { position: position + 1, title: section.items[position + 1].title }
     : null;
 
+  // On the last subtopic of a topic, find the first subtopic of the next topic
+  let nextTopic = null;
+  if (!nextItem) {
+    const nextSection = outline?.sections?.[sectionIndex + 1];
+    if (nextSection) {
+      const allTopics = topicsDb.listTopicsForGuide(found.guide.id);
+      const nt = allTopics.find((t) => t.position === found.topic.position + 1);
+      if (nt) nextTopic = { id: nt.id, title: nt.title };
+    }
+  }
+
   // May not exist yet (first visit before generation)
   const dbSubtopic = dbByPosition[position] ?? null;
 
@@ -79,6 +90,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     sectionItems,
     prevItem,
     nextItem,
+    nextTopic,
     topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
     guide: { id: found.guide.id, title: found.guide.title, progressPercentage: guide?.progressPercentage ?? 0, subtopicProgressPercentage },
   });
