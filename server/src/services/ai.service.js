@@ -1,10 +1,10 @@
 const { generateObject, generateText, jsonSchema, streamObject, streamText, convertToModelMessages, tool, stepCountIs } = require('ai');
-const { fal } = require('@fal-ai/client');
 const fs = require('fs');
 const path = require('path');
 const { z } = require('zod');
 const config = require('../config');
 const { getModel } = require('./llm');
+const imageService = require('./image.service');
 
 const guidePromptTemplate = fs.readFileSync(
   path.join(__dirname, '../prompts/guide-generation-prompt.md'),
@@ -81,28 +81,14 @@ const generateTopicIllustrationTool = tool({
   execute: async ({ title, prompt }) => {
     const relativeDir = '/generated/topic-illustrations';
     const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
-    fs.mkdirSync(outputDir, { recursive: true });
-
-    fal.config({ credentials: config.falKey });
-
-    const result = await fal.subscribe('fal-ai/nano-banana-2', {
-      input: {
-        prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. No watermarks, no text unless labeled in description.`,
-        output_format: 'png',
-        num_images: 1,
-        resolution: '0.5K'
-      },
-    });
-
-    const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url;
-    if (!imageUrl) throw new Error('fal-ai/nano-banana-2 did not return an image URL.');
-
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) throw new Error('fal.ai image URL could not be downloaded.');
-
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.png`;
-    const outputPath = path.join(outputDir, fileName);
-    fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
+
+    await imageService.generateImage({
+      model: config.topicIllustrationModel,
+      prompt,
+      outputDir,
+      filename: fileName,
+    });
 
     return { url: `${relativeDir}/${fileName}`, title };
   },
@@ -244,39 +230,16 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
   try {
     const relativeDir = '/generated/guide-illustrations';
     const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
-    fs.mkdirSync(outputDir, { recursive: true });
 
-    if (!config.falKey) {
-      return fallbackIllustrationPath;
-    }
-
-    fal.config({ credentials: config.falKey });
-
-    const result = await fal.subscribe('xai/grok-imagine-image/quality/text-to-image', {
-      input: {
-        prompt: guideIllustrationPrompt({ outline, prompt }),
-        num_images: 1,
-        aspect_ratio: '3:2',
-        resolution: '1k',
-        output_format: 'png',
-      },
+    await imageService.generateImage({
+      model: config.guideIllustrationModel,
+      prompt: guideIllustrationPrompt({ outline, prompt }),
+      aspectRatio: '3:2',
+      outputDir,
+      filename: `${guideId}.png`,
     });
 
-    const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url;
-    if (!imageUrl) {
-      throw new Error('fal.ai did not return an image URL.');
-    }
-
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error('fal.ai image URL could not be downloaded.');
-    }
-
-    const fileName = `${guideId}.png`;
-    const outputPath = path.join(outputDir, fileName);
-    fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
-
-    return `${relativeDir}/${fileName}`;
+    return `${relativeDir}/${guideId}.png`;
   } catch (error) {
     if (config.nodeEnv !== 'test') {
       console.warn('Guide image generation failed; using fallback illustration.', error.message);

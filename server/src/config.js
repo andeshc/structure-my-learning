@@ -21,6 +21,8 @@ module.exports = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
   falKey: process.env.FAL_KEY || '',
+  guideIllustrationModel: process.env.GUIDE_ILLUSTRATION_MODEL || 'xai/grok-imagine-image/quality/text-to-image',
+  topicIllustrationModel: process.env.TOPIC_ILLUSTRATION_MODEL || 'fal-ai/nano-banana-2',
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
