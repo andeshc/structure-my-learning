@@ -54,5 +54,9 @@ Apply the following based on the depth level:
 | `adult_beginner` | Adult learner new to the subject; respectful tone, practical examples, no childish framing. |
 | `adult_advanced` | Adult or professional learner; deeper explanations, precise terminology, more nuance, and efficient pacing. |
 
+- ages_8_10: Create a maximum of 18 subtopics
+- ages_11_13: Create a maximum of 40 subtopics
+- ages_14_17: Create a maximum of 48 subtopics
+
 ### 6. Dont include projects or assesments
 Dont include Capstone or any other projects, assesments, demonstrations, activities. The user will participate only to consume the content. Nothing needs to be handson.

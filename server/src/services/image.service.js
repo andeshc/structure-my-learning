@@ -25,7 +25,7 @@ const MODEL_ADAPTERS = {
     }),
   },
   'openai/gpt-image-2': {
-    buildInput: ({ prompt, size = '1024x1024', quality = 'medium' }) => ({
+    buildInput: ({ prompt, size = 'auto', quality = 'low' }) => ({
       prompt,
       image_size: size,
       num_images: 1,

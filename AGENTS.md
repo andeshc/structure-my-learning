@@ -233,3 +233,4 @@ Create a `.env.example` with all keys listed and placeholder values. **Never com
 5.  **You are autonomous.** Do not ask clarifying questions. Make the best decision you can, document it in the commit message, and keep moving.
 6.  **If you are unsure between two approaches, pick the one with fewer dependencies.**
 7.  **The app must work end-to-end.** A user must be able to: sign up → log in → type a topic → see a generated outline → click a topic → read generated content → mark it complete → see progress on dashboard. If this flow doesn't work, the project is not done.
+8. **Commit or push only if I say so**

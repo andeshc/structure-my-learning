@@ -1,0 +1,3 @@
+- [ ] If the illustration image with the same title is generated already and needed for other page, just use the same, dont regenerate it.
+- [ ] At the end of a topic (ie. on the last subtopic) there is not "Next" button to move to the first subtopic of the next topic
+- [ ] "AI Generated Content" disclaimer
