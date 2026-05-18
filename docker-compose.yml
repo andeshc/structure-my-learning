@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-3001}:3001"
+    volumes:
+      - db_data:/data
+      - generated:/app/server/public/generated
+    env_file:
+      - .env
+    environment:
+      # Override .env values that must be fixed in the container
+      NODE_ENV: production
+      DATABASE_PATH: /data/StructureMyLearning.db
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3001}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  db_data:      # SQLite database — survives rebuilds
+  generated:    # AI-generated illustrations — survives rebuilds
