@@ -36,6 +36,11 @@ function initDb() {
     db.exec('ALTER TABLE subtopics ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0');
     db.exec('ALTER TABLE subtopics ADD COLUMN completed_at TEXT');
   }
+  if (subtopicColumns.length > 0 && !subtopicColumns.includes('dev_status')) {
+    db.exec(`ALTER TABLE subtopics ADD COLUMN dev_status TEXT NOT NULL DEFAULT 'pending' CHECK (dev_status IN ('pending', 'developing', 'ready', 'failed'))`);
+    db.exec(`ALTER TABLE subtopics ADD COLUMN locked_at TEXT`);
+    db.exec(`UPDATE subtopics SET dev_status = 'ready' WHERE content_html IS NOT NULL`);
+  }
 }
 
 module.exports = { initDb };

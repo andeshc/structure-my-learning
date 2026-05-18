@@ -400,7 +400,7 @@ export default function SubtopicDetailPage() {
       setData((prev) => ({
         ...prev,
         subtopic: { ...prev.subtopic, isCompleted: res.isCompleted },
-        guide: { ...prev.guide, progressPercentage: res.guide.progressPercentage },
+        guide: { ...prev.guide, subtopicProgressPercentage: res.guide.subtopicProgressPercentage ?? prev.guide.subtopicProgressPercentage },
         sectionItems: prev.sectionItems.map((si) =>
           si.position === position ? { ...si, isCompleted: res.isCompleted } : si
         ),
@@ -448,10 +448,10 @@ export default function SubtopicDetailPage() {
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Guide progress</p>
               <div className="mt-2 flex items-center gap-3">
-                <span className="text-2xl font-bold text-slate-950">{guide.progressPercentage}%</span>
+                <span className="text-2xl font-bold text-slate-950">{guide.subtopicProgressPercentage}%</span>
               </div>
-              <progress className="mt-2 h-2 w-full overflow-hidden rounded-full" max="100" value={guide.progressPercentage}>
-                {guide.progressPercentage}%
+              <progress className="mt-2 h-2 w-full overflow-hidden rounded-full" max="100" value={guide.subtopicProgressPercentage}>
+                {guide.subtopicProgressPercentage}%
               </progress>
             </div>
 

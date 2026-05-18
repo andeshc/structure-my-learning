@@ -90,7 +90,7 @@ const generateTopicIllustrationTool = tool({
         prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. No watermarks, no text unless labeled in description.`,
         output_format: 'png',
         num_images: 1,
-        resolution: '1K'
+        resolution: '0.5K'
       },
     });
 

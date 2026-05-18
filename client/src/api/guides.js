@@ -29,3 +29,7 @@ export function updateSubtopicProgress(topicId, position, isCompleted) {
     body: JSON.stringify({ isCompleted }),
   });
 }
+
+export function developGuide(guideId) {
+  return apiRequest(`/api/guides/${guideId}/develop`, { method: 'POST' });
+}

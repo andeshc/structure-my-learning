@@ -1,0 +1,47 @@
+const subtopicsDb = require('../db/subtopics');
+const ai = require('./ai.service');
+
+const BATCH_SIZE = 4;
+const activeDevelopments = new Set();
+
+async function developSubtopic(id) {
+  const claimed = subtopicsDb.claimSubtopic(id);
+  if (!claimed) return; // another instance claimed it first
+
+  const ctx = subtopicsDb.findSubtopicContext(id);
+  if (!ctx || !ctx.item) {
+    subtopicsDb.setDevStatus(id, 'failed');
+    return;
+  }
+
+  try {
+    const stream = await ai.streamSubtopicContent({
+      guide: ctx.guide,
+      outline: ctx.outline,
+      topic: ctx.topic,
+      item: ctx.item,
+    });
+    const html = await stream.text;
+    subtopicsDb.saveSubtopicContentHtml(id, html);
+    subtopicsDb.setDevStatus(id, 'ready');
+  } catch (err) {
+    console.error(`[guide-developer] subtopic ${id} failed:`, err.message);
+    subtopicsDb.setDevStatus(id, 'failed');
+  }
+}
+
+async function developGuide(guideId) {
+  if (activeDevelopments.has(guideId)) return;
+  activeDevelopments.add(guideId);
+  try {
+    while (true) {
+      const pending = subtopicsDb.getPendingSubtopicsForGuide(guideId);
+      if (pending.length === 0) break;
+      await Promise.all(pending.slice(0, BATCH_SIZE).map((s) => developSubtopic(s.id)));
+    }
+  } finally {
+    activeDevelopments.delete(guideId);
+  }
+}
+
+module.exports = { developGuide };

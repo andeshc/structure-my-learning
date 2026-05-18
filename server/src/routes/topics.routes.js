@@ -66,6 +66,9 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
   const dbSubtopic = dbByPosition[position] ?? null;
 
   const guide = guides.findGuideForUser(found.guide.id, req.user.id);
+  const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
+  const completedSubtopics = guide?.completedSubtopicCount ?? 0;
+  const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
 
   res.json({
     subtopic: dbSubtopic
@@ -76,7 +79,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     prevItem,
     nextItem,
     topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
-    guide: { id: found.guide.id, title: found.guide.title, progressPercentage: guide?.progressPercentage ?? 0 },
+    guide: { id: found.guide.id, title: found.guide.title, progressPercentage: guide?.progressPercentage ?? 0, subtopicProgressPercentage },
   });
 }));
 
@@ -185,10 +188,13 @@ router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, 
   topicsDb.updateTopicProgress(req.params.topicId, completedCount >= totalItems);
 
   const guide = guides.findGuideForUser(found.guide.id, req.user.id);
+  const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
+  const completedSubtopicsCount = guide?.completedSubtopicCount ?? 0;
+  const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopicsCount / totalSubtopics) * 100) : 0;
 
   res.json({
     isCompleted,
-    guide: { id: found.guide.id, progressPercentage: guide?.progressPercentage ?? 0 },
+    guide: { id: found.guide.id, progressPercentage: guide?.progressPercentage ?? 0, subtopicProgressPercentage },
   });
 }));
 

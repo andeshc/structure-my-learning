@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { deleteGuide, getGuide } from '../api/guides';
+import { deleteGuide, developGuide, getGuide } from '../api/guides';
 import LoadingPanel from '../components/LoadingPanel';
 
 function guideTags(guide) {
@@ -77,14 +77,14 @@ function FallbackIllustration({ title }) {
   );
 }
 
-function ImportanceDot({ importance }) {
+function ImportancePill({ importance }) {
   if (importance === 'Required') {
-    return <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-emerald-400" title="Required" />;
+    return <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded-full bg-emerald-100 px-2 text-[10px] font-semibold text-emerald-700">Required</span>;
   }
   if (importance === 'Optional and can be skipped') {
-    return <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-slate-300" title="Optional" />;
+    return <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded-full bg-slate-100 px-2 text-[10px] font-semibold text-slate-500">Optional</span>;
   }
-  return <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-amber-400" title="Recommended" />;
+  return <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded-full bg-amber-100 px-2 text-[10px] font-semibold text-amber-700">Recommended</span>;
 }
 
 function dominantBorderClass(items) {
@@ -94,7 +94,34 @@ function dominantBorderClass(items) {
 }
 
 
-function ItemGroup({ items, borderClass, topicId }) {
+function SubtopicStatusButton({ item, topicId, subtopicIndex, onRetry }) {
+  if (item.hasContent) {
+    return (
+      <Link
+        to={`/topics/${topicId}/subtopics/${subtopicIndex}`}
+        className="shrink-0 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+      >
+        Open →
+      </Link>
+    );
+  }
+  if (item.devStatus === 'developing') {
+    return <span className="shrink-0 animate-pulse rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600">Developing…</span>;
+  }
+  if (item.devStatus === 'failed') {
+    return (
+      <button
+        onClick={onRetry}
+        className="shrink-0 rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
+      >
+        Retry →
+      </button>
+    );
+  }
+  return <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">Pending</span>;
+}
+
+function ItemGroup({ items, borderClass, topicId, onRetry }) {
   return (
     <div className={`overflow-hidden rounded-lg border border-slate-200 border-l-4 bg-slate-50 ${borderClass}`}>
       <ul className="divide-y divide-slate-100">
@@ -102,22 +129,15 @@ function ItemGroup({ items, borderClass, topicId }) {
           <li key={i} className="px-3 py-2.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="flex items-start gap-2">
-                  <ImportanceDot importance={item.importance} />
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium text-slate-700">{item.title}</span>
+                  <ImportancePill importance={item.importance} />
                 </div>
                 {item.overview && (
-                  <p className="ml-4 mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
                 )}
               </div>
-              {topicId && (
-                <Link
-                  to={`/topics/${topicId}/subtopics/${i}`}
-                  className="shrink-0 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100"
-                >
-                  Open →
-                </Link>
-              )}
+              {topicId && <SubtopicStatusButton item={item} topicId={topicId} subtopicIndex={i} onRetry={onRetry} />}
             </div>
           </li>
         ))}
@@ -126,7 +146,7 @@ function ItemGroup({ items, borderClass, topicId }) {
   );
 }
 
-function TopicRow({ section, sectionIndex, topic, isNext }) {
+function TopicRow({ section, sectionIndex, topic, isNext, onRetry }) {
   const hasSubtopics = section.items && section.items.length > 0;
 
   return (
@@ -149,8 +169,8 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-semibold text-slate-950">{section.title}</p>
-            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusClass(topic, isNext)}`}>
+            <span className="font-semibold text-slate-950">{section.title}</span>
+            <span className={`inline-flex h-5 shrink-0 translate-y-px items-center rounded px-1.5 text-[10px] font-semibold ${statusClass(topic, isNext)}`}>
               {statusLabel(topic, isNext)}
             </span>
           </div>
@@ -160,7 +180,7 @@ function TopicRow({ section, sectionIndex, topic, isNext }) {
 
       {hasSubtopics && (
         <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-          <ItemGroup items={section.items} borderClass={dominantBorderClass(section.items)} topicId={topic?.id} />
+          <ItemGroup items={section.items} borderClass={dominantBorderClass(section.items)} topicId={topic?.id} onRetry={onRetry} />
         </div>
       )}
     </div>
@@ -177,7 +197,6 @@ export default function GuideDetailPage() {
 
   useEffect(() => {
     let cancelled = false;
-    let timerId = null;
 
     async function fetchGuide() {
       try {
@@ -190,11 +209,19 @@ export default function GuideDetailPage() {
     }
 
     fetchGuide();
-    return () => {
-      cancelled = true;
-      clearTimeout(timerId);
-    };
+    return () => { cancelled = true; };
   }, [guideId]);
+
+  useEffect(() => {
+    if (!guide?.isBeingDeveloped) return;
+    const timer = setInterval(async () => {
+      try {
+        const data = await getGuide(guideId);
+        setGuide(data.guide);
+      } catch { /* ignore poll errors */ }
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [guide?.isBeingDeveloped, guideId]);
 
   const summary = useMemo(() => {
     if (!guide) return null;
@@ -215,6 +242,13 @@ export default function GuideDetailPage() {
       total: guide.topicCount || guide.topics.length,
     };
   }, [guide]);
+
+  async function handleDevelop() {
+    try {
+      const data = await developGuide(guideId);
+      setGuide(data.guide);
+    } catch { /* ignore */ }
+  }
 
   async function handleDelete() {
     setIsDeleting(true);
@@ -314,15 +348,25 @@ export default function GuideDetailPage() {
               </progress>
             </div>
 
-            {summary.nextTopic && (
-              <button
-                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                onClick={() => document.getElementById(`section-${summary.nextIndex + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              >
-                <Layers size={17} />
-                {summary.subtopicPct === 100 ? 'Review guide' : summary.completed === 0 ? 'Start learning' : 'Continue'}
-              </button>
-            )}
+            <div className="mt-5 flex flex-wrap gap-3">
+              {summary.nextTopic && (
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  onClick={() => document.getElementById(`section-${summary.nextIndex + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  <Layers size={17} />
+                  {summary.subtopicPct === 100 ? 'Review guide' : summary.completed === 0 ? 'Start learning' : 'Continue'}
+                </button>
+              )}
+              {guide.outline?.sections?.some((s) => s.items?.some((item) => item.devStatus === 'pending' || item.devStatus === 'failed')) && (
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  onClick={handleDevelop}
+                >
+                  {guide.isBeingDeveloped ? 'Developing…' : 'Resume development'}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="min-h-[220px] border-t border-slate-200 bg-[#fbf4e8] lg:border-l lg:border-t-0">
@@ -344,6 +388,7 @@ export default function GuideDetailPage() {
             sectionIndex={sectionIndex}
             topic={guide.topics[sectionIndex]}
             isNext={sectionIndex === summary.nextIndex}
+            onRetry={handleDevelop}
           />
         ))}
       </div>
