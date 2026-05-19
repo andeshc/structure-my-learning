@@ -124,11 +124,11 @@ router.get('/google',
 
 router.get('/google/callback',
   config.google.clientId && config.google.clientSecret
-    ? passport.authenticate('google', { failureRedirect: `${config.clientUrl}/login`, session: false })
+    ? passport.authenticate('google', { failureRedirect: `${config.appUrl}/login`, session: false })
     : oauthUnavailable,
   (req, res) => {
     tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.clientUrl}/auth/callback?status=success`);
+    res.redirect(`${config.appUrl}/auth/callback?status=success`);
   }
 );
 
@@ -140,11 +140,11 @@ router.get('/github',
 
 router.get('/github/callback',
   config.github.clientId && config.github.clientSecret
-    ? passport.authenticate('github', { failureRedirect: `${config.clientUrl}/login`, session: false })
+    ? passport.authenticate('github', { failureRedirect: `${config.appUrl}/login`, session: false })
     : oauthUnavailable,
   (req, res) => {
     tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.clientUrl}/auth/callback?status=success`);
+    res.redirect(`${config.appUrl}/auth/callback?status=success`);
   }
 );
 

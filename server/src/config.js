@@ -14,6 +14,8 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  // Single canonical frontend URL for OAuth redirects — first entry of CLIENT_URL
+  appUrl: process.env.APP_URL || (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim(),
   aiProvider: process.env.AI_PROVIDER || 'openai',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',

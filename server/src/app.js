@@ -17,6 +17,8 @@ const passport = require('./passport');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: config.clientUrl.split(',').map(u => u.trim()),
   credentials: true,
