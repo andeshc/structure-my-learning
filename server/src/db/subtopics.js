@@ -184,7 +184,7 @@ function listAllSubtopicsForGuide(guideId) {
   return db.prepare(
     `SELECT s.topic_id, s.position, s.dev_status,
             CASE WHEN s.is_completed = 1 THEN 1 ELSE 0 END AS is_completed,
-            CASE WHEN s.content_html IS NOT NULL THEN 1 ELSE 0 END AS has_content
+            CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s JOIN topics t ON t.id = s.topic_id
      WHERE t.guide_id = ? ORDER BY t.position, s.position`
   ).all(guideId).map((r) => ({
@@ -199,7 +199,7 @@ function listAllSubtopicsForGuide(guideId) {
 function listSubtopicStatusesForGuide(guideId) {
   return db.prepare(
     `SELECT s.topic_id, s.position, s.dev_status,
-            CASE WHEN s.content_html IS NOT NULL THEN 1 ELSE 0 END AS has_content
+            CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s JOIN topics t ON t.id = s.topic_id
      WHERE t.guide_id = ? ORDER BY t.position, s.position`
   ).all(guideId).map((r) => ({

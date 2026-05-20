@@ -77,14 +77,8 @@ function FallbackIllustration({ title }) {
   );
 }
 
-function ImportancePill({ importance }) {
-  if (importance === 'Required') {
-    return <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded-full bg-emerald-100 px-2 text-[10px] font-semibold text-emerald-700">Required</span>;
-  }
-  if (importance === 'Optional and can be skipped') {
-    return <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded-full bg-slate-100 px-2 text-[10px] font-semibold text-slate-500">Optional</span>;
-  }
-  return <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded-full bg-amber-100 px-2 text-[10px] font-semibold text-amber-700">Recommended</span>;
+function ImportancePill() {
+  return null;
 }
 
 function dominantBorderClass(items) {
@@ -106,7 +100,7 @@ function SubtopicStatusButton({ item, topicId, subtopicIndex, onRetry }) {
     );
   }
   if (item.devStatus === 'developing') {
-    return <span className="shrink-0 animate-pulse rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600">Developing…</span>;
+    return <span className="shrink-0 inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />;
   }
   if (item.devStatus === 'failed') {
     return (

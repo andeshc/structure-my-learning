@@ -168,14 +168,8 @@ function AiTutorWidget({ topicId, subtopicTitle, onClose }) {
   );
 }
 
-function ImportanceBadge({ importance }) {
-  if (importance === 'Required') {
-    return <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Required</span>;
-  }
-  if (importance === 'Optional and can be skipped') {
-    return <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">Optional</span>;
-  }
-  return <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Recommended</span>;
+function ImportanceBadge() {
+  return null;
 }
 
 // --- Main page ---
@@ -225,16 +219,30 @@ export default function SubtopicDetailPage() {
   }, [data, topicId, position]);
 
   useEffect(() => {
+    if (!articleRef.current) return;
+    // AppShell uses overflow-y-auto on the content div (not window) on lg screens
+    function getScrollContainer(el) {
+      let node = el.parentElement;
+      while (node && node !== document.body) {
+        const { overflowY } = window.getComputedStyle(node);
+        if (overflowY === 'auto' || overflowY === 'scroll') return node;
+        node = node.parentElement;
+      }
+      return window;
+    }
+    const container = getScrollContainer(articleRef.current);
     function onScroll() {
       if (!articleRef.current) return;
-      const total = articleRef.current.offsetHeight - window.innerHeight;
+      const viewH = container === window ? window.innerHeight : container.clientHeight;
+      const total = articleRef.current.offsetHeight - viewH;
       if (total <= 0) { setReadingProgress(100); return; }
       const rect = articleRef.current.getBoundingClientRect();
-      setReadingProgress(Math.min(100, Math.round((Math.max(0, -rect.top) / total) * 100)));
+      const containerTop = container === window ? 0 : container.getBoundingClientRect().top;
+      setReadingProgress(Math.min(100, Math.round((Math.max(0, -(rect.top - containerTop)) / total) * 100)));
     }
-    window.addEventListener('scroll', onScroll, { passive: true });
+    container.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => container.removeEventListener('scroll', onScroll);
   }, [data]);
 
   useEffect(() => {
@@ -339,7 +347,7 @@ export default function SubtopicDetailPage() {
                           <span className="min-w-0">
                             <span className="block truncate font-medium leading-snug">{si.title}</span>
                             <span className="mt-0.5 block text-xs text-slate-400">
-                              {si.isCompleted ? 'Done' : si.hasContent ? 'Ready' : si.devStatus === 'developing' ? 'Writing…' : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
+                              {si.isCompleted ? 'Done' : si.hasContent ? 'Ready' : si.devStatus === 'developing' ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" /> : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
                             </span>
                           </span>
                         </Link>

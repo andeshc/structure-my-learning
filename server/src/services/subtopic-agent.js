@@ -1,5 +1,5 @@
 const { generateText, tool, jsonSchema, stepCountIs } = require('ai');
-const { getModel } = require('./llm');
+const { getContentModel, clampTokens } = require('./llm');
 const { ageGuidance, TOPIC_HTML_SYSTEM, generateTopicIllustrationTool } = require('./ai.service');
 
 const verifyContentPlanTool = tool({
@@ -20,7 +20,7 @@ const verifyContentPlanTool = tool({
   }),
   execute: async ({ topic, planned_claims }) => {
     const { text } = await generateText({
-      model: getModel(),
+      model: getContentModel(),
       maxTokens: 500,
       prompt: `You are a subject-matter expert reviewing planned lesson claims on "${topic}".
 For each claim, reply on one line: CORRECT | CLARIFY: <note> | WRONG: <correction>
@@ -43,8 +43,8 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
 
 async function runResearchPhase(baseContext, topicTitle) {
   const { steps } = await generateText({
-    model: getModel(),
-    maxTokens: 1500,
+    model: getContentModel(),
+    maxTokens: clampTokens(1500),
     stopWhen: stepCountIs(6),
     tools: {
       verify_content_plan: verifyContentPlanTool,
@@ -84,8 +84,8 @@ After your tool calls, output a brief structured research summary covering the k
 
 async function runDraftPhase(baseContext, researchNotes, illustrationContext) {
   const { text } = await generateText({
-    model: getModel(),
-    maxTokens: 4000,
+    model: getContentModel(),
+    maxTokens: clampTokens(4000),
     system: TOPIC_HTML_SYSTEM,
     prompt: `${baseContext}${researchNotes}${illustrationContext}\n\nWrite the complete HTML lesson now.`,
   });
@@ -94,8 +94,8 @@ async function runDraftPhase(baseContext, researchNotes, illustrationContext) {
 
 async function runQualityCheckPhase(draft, ageLevel, topicTitle) {
   const { text } = await generateText({
-    model: getModel(),
-    maxTokens: 600,
+    model: getContentModel(),
+    maxTokens: clampTokens(600),
     system: `You are a lesson quality reviewer for a ${ageLevel.replace(/_/g, ' ')} learner.
 Evaluate the lesson on:
 - Factual accuracy (any incorrect or misleading claims)
@@ -111,8 +111,8 @@ Output a concise bullet list of specific improvements. Be direct — the writer 
 
 async function runRefinePhase(baseContext, draft, feedback, illustrationContext) {
   const { text } = await generateText({
-    model: getModel(),
-    maxTokens: 4500,
+    model: getContentModel(),
+    maxTokens: clampTokens(4500),
     system: TOPIC_HTML_SYSTEM,
     prompt: `${baseContext}${illustrationContext}
 

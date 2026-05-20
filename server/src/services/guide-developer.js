@@ -15,12 +15,15 @@ async function developSubtopic(id) {
   }
 
   try {
-    const html = await subtopicAgent.generateSubtopicContent({
+    let html = await subtopicAgent.generateSubtopicContent({
       guide: ctx.guide,
       outline: ctx.outline,
       topic: ctx.topic,
       item: ctx.item,
     });
+    // Strip markdown code fences if the model wrapped the HTML (e.g. ```html ... ```)
+    html = html.replace(/^```(?:html)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    if (!html) throw new Error('Model returned empty content');
     subtopicsDb.saveSubtopicContentHtml(id, html);
     subtopicsDb.setDevStatus(id, 'ready');
   } catch (err) {

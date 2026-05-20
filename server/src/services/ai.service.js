@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { z } = require('zod');
 const config = require('../config');
-const { getModel } = require('./llm');
+const { getGuideModel, getContentModel, clampTokens, getObjectMode } = require('./llm');
 const imageService = require('./image.service');
 
 const guidePromptTemplate = fs.readFileSync(
@@ -122,7 +122,7 @@ const verifyContentPlanTool = tool({
   }),
   execute: async ({ topic, planned_claims }) => {
     const { text } = await generateText({
-      model: getModel(),
+      model: getContentModel(),
       maxTokens: 500,
       prompt: `You are a subject-matter expert reviewing planned lesson claims on "${topic}".
 For each claim, reply on one line: CORRECT | CLARIFY: <note> | WRONG: <correction>
@@ -206,7 +206,20 @@ Additional output rules:
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
     .replace('`{{DEPTH_LEVEL}}`', ageLevel);
 
-  return streamObject({ model: getModel(), schema: outlineSchema, system, prompt: userPrompt });
+  if (getObjectMode() === 'tool') {
+    const objectPromise = generateObject({
+      model: getGuideModel(),
+      schema: outlineSchema,
+      mode: 'tool',
+      system,
+      prompt: userPrompt,
+    }).then((r) => r.object);
+    return {
+      partialObjectStream: (async function* () { yield await objectPromise; })(),
+      object: objectPromise,
+    };
+  }
+  return streamObject({ model: getGuideModel(), schema: outlineSchema, system, prompt: userPrompt });
 }
 
 function guideIllustrationPrompt({ outline, prompt }) {
@@ -297,8 +310,10 @@ ${sectionContext}
 Write the lesson for topic: "${topic.title}" — ${topic.description}`;
 
   const { object } = await generateObject({
-    model: getModel(),
+    model: getContentModel(),
     schema: contentSchema,
+    mode: getObjectMode(),
+    maxTokens: clampTokens(4000),
     system,
     prompt,
   });
@@ -310,7 +325,7 @@ async function _streamLesson({ baseContext, onEvent }) {
   onEvent({ type: 'agent_status', message: 'Planning lesson...' });
 
   const { steps } = await generateText({
-    model: getModel(),
+    model: getContentModel(),
     maxTokens: 2000,
     stopWhen: stepCountIs(6),
     tools: {
@@ -365,7 +380,7 @@ Your job is to prepare resources for the lesson writer:
   onEvent({ type: 'agent_status', message: 'Writing lesson...' });
 
   return streamText({
-    model: getModel(),
+    model: getContentModel(),
     maxTokens: 4000,
     system: TOPIC_HTML_SYSTEM,
     prompt: `${baseContext}${illustrationContext}${verifyContext}\n\nWrite the complete HTML lesson now.`,
@@ -420,7 +435,7 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
 async function chatWithTutor({ guide, topic, messages }) {
   try {
     return streamText({
-      model: getModel(),
+      model: getContentModel(),
       system: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
       messages: await convertToModelMessages(messages),
       maxTokens: 300,
