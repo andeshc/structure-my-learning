@@ -21,44 +21,37 @@ jobs:
       - name: Generate version tag
         id: version
         run: |
-          # Generate date in YYYY.MM.DD format
           DATE_TAG=$(date +%Y.%m.%d)
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
 
-          # Get existing tags for today from GitHub Container Registry
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-
-          # Try to get existing tags, handle case where no tags exist yet
-          EXISTING_TAGS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/users/${{ github.repository_owner }}/packages/container/structure-my-learning/versions" \
+          EXISTING_TAGS=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/users/${OWNER}/packages/container/${REPO_NAME}/versions" \
             | jq -r '.[].metadata.container.tags[]? // empty' 2>/dev/null || echo "")
 
-          # Find highest increment for today's date
           if [ -n "$EXISTING_TAGS" ]; then
-            HIGHEST_INCREMENT=$(echo "$EXISTING_TAGS" | grep "^${DATE_TAG}-" | sed "s/^${DATE_TAG}-//" | grep -E '^[0-9]+$' | sort -n | tail -1)
+            HIGHEST=$(echo "$EXISTING_TAGS" | grep "^${DATE_TAG}-" | sed "s/^${DATE_TAG}-//" | grep -E '^[0-9]+$' | sort -n | tail -1)
           else
-            HIGHEST_INCREMENT=""
+            HIGHEST=""
           fi
 
-          # Set next increment (start from 1 if no existing tags for today)
-          if [ -z "$HIGHEST_INCREMENT" ]; then
-            NEXT_INCREMENT=1
-          else
-            NEXT_INCREMENT=$((HIGHEST_INCREMENT + 1))
-          fi
-
-          # Create version tag
-          VERSION_TAG="${DATE_TAG}-${NEXT_INCREMENT}"
+          NEXT=$([ -z "$HIGHEST" ] && echo 1 || echo $((HIGHEST + 1)))
+          VERSION_TAG="${DATE_TAG}-${NEXT}"
 
           echo "Generated version tag: $VERSION_TAG"
           echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
+          echo "owner=$OWNER" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         run: |
-          IMAGE_TAG=ghcr.io/${{ github.repository_owner }}/structure-my-learning
-          VERSION_TAG=${{ steps.version.outputs.version_tag }}
+          IMAGE=ghcr.io/${{ steps.version.outputs.owner }}/${{ steps.version.outputs.repo_name }}
+          VERSION=${{ steps.version.outputs.version_tag }}
 
-          docker build . --file Dockerfile --tag $IMAGE_TAG:$VERSION_TAG --tag $IMAGE_TAG:latest
-          docker push $IMAGE_TAG:$VERSION_TAG
-          docker push $IMAGE_TAG:latest
+          docker build . --file Dockerfile --tag $IMAGE:$VERSION --tag $IMAGE:latest
+          docker push $IMAGE:$VERSION
+          docker push $IMAGE:latest
 
-          echo "Pushed image with tags: $VERSION_TAG, latest"
+          echo "Pushed: $IMAGE:$VERSION and $IMAGE:latest"

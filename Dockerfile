@@ -12,9 +12,10 @@ RUN cd client && npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Production server deps only (no vitest / supertest)
-COPY server/package*.json ./server/
-RUN cd server && npm ci --omit=dev
+# Use root workspace lock file — server has no standalone package-lock.json
+COPY package*.json ./
+COPY server/package.json ./server/
+RUN npm ci --workspace=server --omit=dev
 
 COPY server/ ./server/
 
