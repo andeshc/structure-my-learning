@@ -6,5 +6,14 @@
 - [ ] Login with google and github
 - [ ] Railway deployment
 - [ ] Resend integration
-- [ ] Payment gateway integration (dodo payments)
+
+## CHORES
+- [ ] Create a favicon png for this application 
+
+## MAJOR FEATURES
+- [ ] Ability to add followup questions for guide generation
 - [ ] Allow users to give feedback on each guide page and each topic page
+- [ ] Payment gateway integration (dodo payments)
+
+
+## MAJOR BUGS
