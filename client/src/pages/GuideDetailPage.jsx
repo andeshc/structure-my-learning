@@ -207,6 +207,15 @@ export default function GuideDetailPage() {
   }, [guideId]);
 
   useEffect(() => {
+    if (!guide) return;
+    const urls = guide.outline?.sections
+      ?.flatMap((s) => s.items ?? [])
+      ?.flatMap((item) => item.illustrationUrls ?? [])
+      ?.filter(Boolean) ?? [];
+    urls.forEach((url) => { const img = new Image(); img.src = url; });
+  }, [guide?.id]);
+
+  useEffect(() => {
     if (!guide?.isBeingDeveloped) return;
     const timer = setInterval(async () => {
       try {

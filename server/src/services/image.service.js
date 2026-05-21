@@ -2,13 +2,11 @@ const { fal } = require('@fal-ai/client');
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
+const storageService = require('./storage.service');
 
-// Each adapter maps a common set of params to the model-specific fal.ai input schema.
-// Add a new entry here to support a new model; set the env var to activate it.
 const MODEL_ADAPTERS = {
   'fal-ai/nano-banana-2': {
     buildInput: ({ prompt }) => ({
-      // Nano-banana is used for inline lesson illustrations — wrap prompt with style guidance
       prompt: `Educational illustration for a learning app. Clean flat vector style, white plain background, soft colors. ${prompt}. Include labels and annotations where they aid understanding. Do not add a title, heading, or caption text to the image.`,
       output_format: 'png',
       num_images: 1,
@@ -39,19 +37,22 @@ function extractImageUrl(result) {
 }
 
 /**
- * Generate an image via fal.ai and save it to disk.
+ * Generate an image via fal.ai and store it.
+ *
+ * When B2 is configured, uploads to B2 and returns the CDN URL.
+ * When B2 is not configured, saves to disk and returns a server-relative URL.
  *
  * @param {object} opts
- * @param {string} opts.model       - fal.ai model ID (must exist in MODEL_ADAPTERS)
- * @param {string} opts.prompt      - Image prompt
- * @param {string} opts.outputDir   - Absolute directory to save the file
- * @param {string} opts.filename    - File name (including extension)
- * @param {string} [opts.aspectRatio] - e.g. '3:2' (passed to adapter if supported)
- * @param {string} [opts.size]      - e.g. '1024x1024' (passed to adapter if supported)
- * @param {string} [opts.quality]   - e.g. 'medium' (passed to adapter if supported)
- * @returns {Promise<string>} Absolute path of the saved file
+ * @param {string} opts.model        - fal.ai model ID
+ * @param {string} opts.prompt       - Image prompt
+ * @param {string} opts.key          - Storage key, e.g. "topic-illustrations/abc.png"
+ *                                     Used as B2 object key and as the local subpath under public/
+ * @param {string} [opts.aspectRatio]
+ * @param {string} [opts.size]
+ * @param {string} [opts.quality]
+ * @returns {Promise<string>} Public URL of the stored image
  */
-async function generateImage({ model, prompt, outputDir, filename, aspectRatio, size, quality }) {
+async function generateImage({ model, prompt, key, aspectRatio, size, quality }) {
   if (!config.falKey) throw new Error('FAL_KEY is not configured.');
 
   const adapter = MODEL_ADAPTERS[model];
@@ -72,11 +73,17 @@ async function generateImage({ model, prompt, outputDir, filename, aspectRatio, 
   const imageResponse = await fetch(imageUrl);
   if (!imageResponse.ok) throw new Error(`Could not download image from ${model}.`);
 
-  fs.mkdirSync(outputDir, { recursive: true });
-  const outputPath = path.join(outputDir, filename);
-  fs.writeFileSync(outputPath, Buffer.from(await imageResponse.arrayBuffer()));
+  const buffer = Buffer.from(await imageResponse.arrayBuffer());
 
-  return outputPath;
+  if (storageService.isConfigured()) {
+    return storageService.uploadImage(buffer, key);
+  }
+
+  // Local fallback — save under server/public/{key}
+  const localPath = path.join(__dirname, '../../public', key);
+  fs.mkdirSync(path.dirname(localPath), { recursive: true });
+  fs.writeFileSync(localPath, buffer);
+  return `/${key}`;
 }
 
 module.exports = { generateImage, MODEL_ADAPTERS };

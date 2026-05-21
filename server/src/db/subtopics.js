@@ -198,7 +198,7 @@ function listAllSubtopicsForGuide(guideId) {
 
 function listSubtopicStatusesForGuide(guideId) {
   return db.prepare(
-    `SELECT s.topic_id, s.position, s.dev_status,
+    `SELECT s.topic_id, s.position, s.dev_status, s.illustration_urls,
             CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s JOIN topics t ON t.id = s.topic_id
      WHERE t.guide_id = ? ORDER BY t.position, s.position`
@@ -207,7 +207,13 @@ function listSubtopicStatusesForGuide(guideId) {
     position: r.position,
     devStatus: r.dev_status,
     hasContent: Boolean(r.has_content),
+    illustrationUrls: r.illustration_urls ? JSON.parse(r.illustration_urls) : [],
   }));
+}
+
+function saveIllustrationUrls(subtopicId, urls) {
+  db.prepare('UPDATE subtopics SET illustration_urls = ? WHERE id = ?')
+    .run(JSON.stringify(urls), subtopicId);
 }
 
 module.exports = {
@@ -221,6 +227,7 @@ module.exports = {
   initSubtopicsForGuide,
   listSubtopicStatusesForGuide,
   listSubtopicsForTopic,
+  saveIllustrationUrls,
   resetAllDevelopingOnStartup,
   resetFailedSubtopicsForGuide,
   resetStaleLocks,

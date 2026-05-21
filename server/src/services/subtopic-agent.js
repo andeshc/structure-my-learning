@@ -139,7 +139,7 @@ async function generateSubtopicContent({ guide, outline, topic, item }) {
   console.log(`[subtopic-agent] phase 4: refine — "${item.title}"`);
   const finalHtml = await runRefinePhase(baseContext, draft, feedback, illustrationContext);
 
-  return finalHtml;
+  return { html: finalHtml, illustrationUrls: validIllustrations.map((r) => r.url) };
 }
 
 module.exports = { generateSubtopicContent };

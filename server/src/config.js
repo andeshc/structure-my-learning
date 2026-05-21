@@ -36,6 +36,11 @@ module.exports = {
   togetherGuideModel: process.env.TOGETHER_GUIDE_MODEL || process.env.TOGETHER_MODEL || 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
   togetherContentModel: process.env.TOGETHER_CONTENT_MODEL || process.env.TOGETHER_MODEL || 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
   falKey: process.env.FAL_KEY || '',
+  b2KeyId: process.env.B2_APPLICATION_KEY_ID || '',
+  b2AppKey: process.env.B2_APPLICATION_KEY || '',
+  b2BucketName: process.env.B2_BUCKET_NAME || '',
+  b2BucketRegion: process.env.B2_BUCKET_REGION || 'us-west-004',
+  cdnUrl: (process.env.CDN_URL || '').replace(/\/$/, ''),
   guideIllustrationModel: process.env.GUIDE_ILLUSTRATION_MODEL || 'xai/grok-imagine-image/quality/text-to-image',
   topicIllustrationModel: process.env.TOPIC_ILLUSTRATION_MODEL || 'fal-ai/nano-banana-2',
   google: {

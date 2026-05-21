@@ -41,6 +41,9 @@ function initDb() {
     db.exec(`ALTER TABLE subtopics ADD COLUMN locked_at TEXT`);
     db.exec(`UPDATE subtopics SET dev_status = 'ready' WHERE content_html IS NOT NULL`);
   }
+  if (subtopicColumns.length > 0 && !subtopicColumns.includes('illustration_urls')) {
+    db.exec('ALTER TABLE subtopics ADD COLUMN illustration_urls TEXT');
+  }
 }
 
 module.exports = { initDb };

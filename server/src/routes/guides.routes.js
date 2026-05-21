@@ -38,6 +38,7 @@ function guideWithTopics(guide) {
         ...item,
         devStatus: byTopicPos[topicId]?.[pos]?.devStatus ?? 'pending',
         hasContent: byTopicPos[topicId]?.[pos]?.hasContent ?? false,
+        illustrationUrls: byTopicPos[topicId]?.[pos]?.illustrationUrls ?? [],
       })),
     };
   });

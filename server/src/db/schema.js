@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS subtopics (
   completed_at TEXT,
   dev_status TEXT NOT NULL DEFAULT 'pending' CHECK (dev_status IN ('pending', 'developing', 'ready', 'failed')),
   locked_at TEXT,
+  illustration_urls TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (topic_id, position),

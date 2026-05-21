@@ -15,7 +15,7 @@ async function developSubtopic(id) {
   }
 
   try {
-    let html = await subtopicAgent.generateSubtopicContent({
+    let { html, illustrationUrls } = await subtopicAgent.generateSubtopicContent({
       guide: ctx.guide,
       outline: ctx.outline,
       topic: ctx.topic,
@@ -25,6 +25,7 @@ async function developSubtopic(id) {
     html = html.replace(/^```(?:html)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
     if (!html) throw new Error('Model returned empty content');
     subtopicsDb.saveSubtopicContentHtml(id, html);
+    if (illustrationUrls.length > 0) subtopicsDb.saveIllustrationUrls(id, illustrationUrls);
     subtopicsDb.setDevStatus(id, 'ready');
   } catch (err) {
     console.error(`[guide-developer] subtopic ${id} failed:`, err.message);

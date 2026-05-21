@@ -88,18 +88,13 @@ const generateTopicIllustrationTool = tool({
     required: ['title', 'prompt'],
   }),
   execute: async ({ title, prompt }) => {
-    const relativeDir = '/generated/topic-illustrations';
-    const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.png`;
-
-    await imageService.generateImage({
+    const key = `topic-illustrations/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.png`;
+    const url = await imageService.generateImage({
       model: config.topicIllustrationModel,
       prompt,
-      outputDir,
-      filename: fileName,
+      key,
     });
-
-    return { url: `${relativeDir}/${fileName}`, title };
+    return { url, title };
   },
 });
 
@@ -256,18 +251,13 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
   }
 
   try {
-    const relativeDir = '/generated/guide-illustrations';
-    const outputDir = path.join(__dirname, '../../public', relativeDir.replace(/^\//, ''));
-
-    await imageService.generateImage({
+    const url = await imageService.generateImage({
       model: config.guideIllustrationModel,
       prompt: guideIllustrationPrompt({ outline, prompt }),
+      key: `guide-illustrations/${guideId}.png`,
       aspectRatio: '3:2',
-      outputDir,
-      filename: `${guideId}.png`,
     });
-
-    return `${relativeDir}/${guideId}.png`;
+    return url;
   } catch (error) {
     if (config.nodeEnv !== 'test') {
       console.warn('Guide image generation failed; using fallback illustration.', error.message);
