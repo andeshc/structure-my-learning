@@ -46,40 +46,18 @@ async function runResearchPhase(baseContext, topicTitle) {
     model: getContentModel(),
     maxTokens: clampTokens(1500),
     stopWhen: stepCountIs(6),
-    tools: {
-      verify_content_plan: verifyContentPlanTool,
-      generate_illustration: tool({
-        description: generateTopicIllustrationTool.description,
-        inputSchema: generateTopicIllustrationTool.inputSchema,
-        execute: async (params) => {
-          try {
-            return await generateTopicIllustrationTool.execute(params);
-          } catch {
-            return { url: null, title: params.title };
-          }
-        },
-      }),
-    },
+    tools: { verify_content_plan: verifyContentPlanTool },
     system: `You are a lesson research assistant. Your job is to prepare resources before the lesson is written.
-1. Call verify_content_plan with 5–8 key facts or claims you plan to make in this lesson.
-2. Call generate_illustration for visuals that would genuinely aid understanding (0–2 max). Skip for purely abstract or text-only topics.
+Call verify_content_plan with 5–8 key facts or claims you plan to make in this lesson.
 After your tool calls, output a brief structured research summary covering the key verified facts and any corrections noted.`,
     prompt: baseContext,
   });
 
   const toolResults = steps.flatMap((s) => s.toolResults ?? []);
-  const illustrations = toolResults.filter((r) => r.toolName === 'generate_illustration' && r.output?.url);
   const verifications = toolResults.filter((r) => r.toolName === 'verify_content_plan');
-
-  const illustrationContext = illustrations.length > 0
-    ? `\n\nPre-generated illustration images — embed each <img> tag at the most relevant point in the lesson. Do not add a caption, heading, or any text around the image:\n${illustrations.map((r) => `<img src="${r.output.url}" alt="${r.output.title}" class="lesson-illustration">`).join('\n\n')}`
-    : '';
-
-  const researchNotes = verifications.length > 0
+  return verifications.length > 0
     ? `\n\nFact-check notes — apply corrections before writing:\n${verifications.map((r) => r.output.verification).join('\n')}`
     : '';
-
-  return { researchNotes, illustrationContext };
 }
 
 async function runDraftPhase(baseContext, researchNotes, illustrationContext) {
@@ -130,8 +108,27 @@ Apply the improvements from the quality review. Output the complete revised HTML
 async function generateSubtopicContent({ guide, outline, topic, item }) {
   const baseContext = buildBaseContext({ guide, outline, topic, item });
 
+  // Pre-generate illustrations decided at outline time, in parallel
+  const prompts = item.illustrationPrompts?.filter(Boolean) ?? [];
+  const illustrationResults = await Promise.all(
+    prompts.map(async (prompt, i) => {
+      try {
+        return await generateTopicIllustrationTool.execute({
+          title: `Illustration ${i + 1} for ${item.title}`,
+          prompt,
+        });
+      } catch {
+        return null;
+      }
+    })
+  );
+  const validIllustrations = illustrationResults.filter((r) => r?.url);
+  const illustrationContext = validIllustrations.length > 0
+    ? `\n\nPre-generated illustration images — embed each <img> tag at the most relevant point in the lesson. Do not add a caption, heading, or any text around the image:\n${validIllustrations.map((r) => `<img src="${r.url}" alt="${r.title}" class="lesson-illustration">`).join('\n\n')}`
+    : '';
+
   console.log(`[subtopic-agent] phase 1: research — "${item.title}"`);
-  const { researchNotes, illustrationContext } = await runResearchPhase(baseContext, item.title);
+  const researchNotes = await runResearchPhase(baseContext, item.title);
 
   console.log(`[subtopic-agent] phase 2: draft — "${item.title}"`);
   const draft = await runDraftPhase(baseContext, researchNotes, illustrationContext);

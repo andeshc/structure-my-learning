@@ -54,6 +54,7 @@ const outlineItemSchema = z.object({
   title: z.string().min(2).max(140),
   overview: z.string().min(10).max(400).nullable(),
   details: z.array(z.string().min(2).max(300)).max(12).nullable(),
+  illustrationPrompts: z.array(z.string().min(20)).max(2).nullable(),
 });
 
 const outlineSectionSchema = z.object({
@@ -200,7 +201,8 @@ Additional output rules:
 - Make each section description exactly one sentence.
 - Do not include content lessons yet.
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
-- Avoid unsupported claims, hype, and filler.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
+- Avoid unsupported claims, hype, and filler.
+- For each subtopic, set "illustrationPrompts" to null unless a visual would provide clear pedagogical value that text alone cannot. Most subtopics should be null. Use a single prompt for subtopics where one diagram, chart, or process flow genuinely aids understanding (e.g. system architecture, data structures, biological processes, step-by-step flows). Use two prompts only when there are two genuinely distinct visuals that each serve a different pedagogical purpose — this should be rare. When you do include a prompt, make it detailed: describe the visual composition, key elements, labels, annotations, and layout in full.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
 
   const userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
