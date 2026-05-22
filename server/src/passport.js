@@ -30,6 +30,7 @@ async function findOrCreateOAuthUser(data, done) {
     let user = await users.findUserByEmail(data.email);
     if (!user) {
       user = await users.createOAuthUser({
+        provider: data.provider,
         name: data.name,
         email: data.email,
         avatarUrl: data.avatarUrl,

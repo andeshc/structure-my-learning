@@ -32,6 +32,7 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    signupProvider: user.signupProvider,
     referralSource: user.referralSource,
     createdAt: user.createdAt,
   };

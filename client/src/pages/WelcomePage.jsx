@@ -5,9 +5,12 @@ import { useAuth } from '../context/AuthContext';
 
 const INPUT = 'mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700';
 
+const PROVIDER_NAMES = { google: 'Google', github: 'GitHub' };
+
 export default function WelcomePage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const providerName = PROVIDER_NAMES[auth.user?.signupProvider] ?? 'external';
 
   const [form, setForm] = useState({
     name: auth.user?.name ?? '',
@@ -113,7 +116,7 @@ export default function WelcomePage() {
 
           <div className="border-t border-charcoal/10 pt-4">
             <p className="text-sm font-medium">Set a password <span className="font-normal text-charcoal-400">(optional)</span></p>
-            <p className="mt-1 text-xs text-charcoal-400">This is your StructureMyLearning password — it won't affect your Google or GitHub account.</p>
+            <p className="mt-1 text-xs text-charcoal-400">This is your StructureMyLearning password — it won't affect your {providerName} account.</p>
             <label className="mt-3 block text-sm font-medium">
               Password
               <input className={INPUT} name="password" type="password" minLength={8} value={form.password} onChange={updateField} autoComplete="new-password" />

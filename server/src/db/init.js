@@ -17,6 +17,14 @@ async function initDb() {
     await query('ALTER TABLE users ADD COLUMN referral_source TEXT');
     await query('ALTER TABLE users ADD COLUMN referral_source_other TEXT');
   }
+  if (uc.length && !uc.includes('signup_provider')) {
+    await query(`ALTER TABLE users ADD COLUMN signup_provider TEXT NOT NULL DEFAULT 'password'`);
+    await query(`
+      UPDATE users u SET signup_provider = oa.provider
+      FROM oauth_accounts oa
+      WHERE oa.user_id = u.id
+    `);
+  }
 
   const gc = await cols('guides');
   if (gc.length && !gc.includes('age_level')) {

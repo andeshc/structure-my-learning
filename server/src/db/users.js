@@ -9,6 +9,7 @@ function toUser(row) {
     email: row.email,
     passwordHash: row.password_hash,
     avatarUrl: row.avatar_url,
+    signupProvider: row.signup_provider,
     referralSource: row.referral_source,
     referralSourceOther: row.referral_source_other,
     createdAt: row.created_at,
@@ -18,17 +19,17 @@ function toUser(row) {
 
 async function createPasswordUser({ name, email, passwordHash, referralSource, referralSourceOther }) {
   const row = await getOne(
-    `INSERT INTO users (id, name, email, password_hash, referral_source, referral_source_other)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    `INSERT INTO users (id, name, email, password_hash, signup_provider, referral_source, referral_source_other)
+     VALUES ($1, $2, $3, $4, 'password', $5, $6) RETURNING id`,
     [ids.userId(), name, email.toLowerCase(), passwordHash, referralSource || null, referralSourceOther || null]
   );
   return findUserById(row.id);
 }
 
-async function createOAuthUser({ name, email, avatarUrl }) {
+async function createOAuthUser({ provider, name, email, avatarUrl }) {
   const row = await getOne(
-    `INSERT INTO users (id, name, email, avatar_url) VALUES ($1, $2, $3, $4) RETURNING id`,
-    [ids.userId(), name, email.toLowerCase(), avatarUrl || null]
+    `INSERT INTO users (id, name, email, avatar_url, signup_provider) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    [ids.userId(), name, email.toLowerCase(), avatarUrl || null, provider]
   );
   return findUserById(row.id);
 }

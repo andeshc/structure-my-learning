@@ -95,7 +95,10 @@ export default function AccountPage() {
       <Section title="Password">
         <form onSubmit={savePassword} className="space-y-4">
           {!hasPassword && (
-            <p className="text-sm text-charcoal-400">You haven't set a password yet. Set one below and you'll be able to log in with your email too.</p>
+            <p className="text-sm text-charcoal-400">
+              You haven't set a password yet. Set one below and you'll be able to log in with your email too.
+              {user?.signupProvider !== 'password' && ` It won't affect your ${{ google: 'Google', github: 'GitHub' }[user?.signupProvider] ?? 'external'} account.`}
+            </p>
           )}
           {hasPassword && (
             <label className="block text-sm font-medium">
