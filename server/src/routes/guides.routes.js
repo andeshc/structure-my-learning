@@ -16,9 +16,9 @@ const createGuideSchema = z.object({
   ageLevel: z.enum(['ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced']),
 });
 
-function guideWithTopics(guide) {
-  const topics = topicsDb.listTopicsForGuide(guide.id);
-  const statuses = subtopicsDb.listSubtopicStatusesForGuide(guide.id);
+async function guideWithTopics(guide) {
+  const topics = await topicsDb.listTopicsForGuide(guide.id);
+  const statuses = await subtopicsDb.listSubtopicStatusesForGuide(guide.id);
 
   const byTopicPos = {};
   for (const s of statuses) {
@@ -53,14 +53,14 @@ function guideWithTopics(guide) {
   };
 }
 
-router.get('/', (req, res) => {
-  res.json({ guides: guides.listGuidesForUser(req.user.id) });
-});
+router.get('/', asyncHandler(async (req, res) => {
+  res.json({ guides: await guides.listGuidesForUser(req.user.id) });
+}));
 
 router.post('/', asyncHandler(async (req, res) => {
   const input = createGuideSchema.parse(req.body);
   const guideId = ids.guideId();
-  guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, ageLevel: input.ageLevel });
+  await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, ageLevel: input.ageLevel });
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Transfer-Encoding', 'chunked');
@@ -76,7 +76,7 @@ router.post('/', asyncHandler(async (req, res) => {
       res.write(JSON.stringify({ type: 'partial', outline: partial }) + '\n');
     }
 
-    if (aborted) { guides.markGuideFailed(guideId); return; }
+    if (aborted) { await guides.markGuideFailed(guideId); return; }
 
     const outline = await result.object;
 
@@ -88,7 +88,7 @@ router.post('/', asyncHandler(async (req, res) => {
       description: section.description,
     }));
 
-    guides.completeGuide({
+    await guides.completeGuide({
       id: guideId,
       title: outline.title,
       outlineJson: JSON.stringify(outline),
@@ -98,7 +98,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
     const topicsByPosition = {};
     topicObjects.forEach((t) => { topicsByPosition[t.position] = t.id; });
-    subtopicsDb.initSubtopicsForGuide(outline.sections, topicsByPosition);
+    await subtopicsDb.initSubtopicsForGuide(outline.sections, topicsByPosition);
     guideDeveloper.developGuide(guideId).catch((err) => {
       if (config.nodeEnv !== 'test') console.error('[guide-developer]', err.message);
     });
@@ -107,11 +107,11 @@ router.post('/', asyncHandler(async (req, res) => {
       .then((path) => guides.setGuideIllustration(guideId, path))
       .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
 
-    const completedGuide = guides.findGuideForUser(guideId, req.user.id);
-    res.write(JSON.stringify({ type: 'done', guide: guideWithTopics(completedGuide) }) + '\n');
+    const completedGuide = await guides.findGuideForUser(guideId, req.user.id);
+    res.write(JSON.stringify({ type: 'done', guide: await guideWithTopics(completedGuide) }) + '\n');
     res.end();
   } catch (err) {
-    if (!aborted) guides.markGuideFailed(guideId);
+    if (!aborted) await guides.markGuideFailed(guideId);
     if (!res.writableEnded) {
       res.write(JSON.stringify({ type: 'error', message: 'Guide generation failed.' }) + '\n');
       res.end();
@@ -119,8 +119,8 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 }));
 
-router.get('/:guideId', (req, res, next) => {
-  const guide = guides.findGuideForUser(req.params.guideId, req.user.id);
+router.get('/:guideId', asyncHandler(async (req, res, next) => {
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
 
   if (!guide) {
     const error = new Error('Guide not found.');
@@ -129,29 +129,29 @@ router.get('/:guideId', (req, res, next) => {
     return;
   }
 
-  res.json({ guide: guideWithTopics(guide) });
-});
+  res.json({ guide: await guideWithTopics(guide) });
+}));
 
 router.post('/:guideId/develop', asyncHandler(async (req, res, next) => {
-  const guide = guides.findGuideForUser(req.params.guideId, req.user.id);
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
   if (!guide) {
     const error = new Error('Guide not found.');
     error.status = 404;
     return next(error);
   }
 
-  subtopicsDb.resetFailedSubtopicsForGuide(req.params.guideId);
+  await subtopicsDb.resetFailedSubtopicsForGuide(req.params.guideId);
   guideDeveloper.developGuide(req.params.guideId).catch((err) => {
     if (config.nodeEnv !== 'test') console.error('[guide-developer]', err.message);
   });
 
-  res.json({ guide: guideWithTopics(guide) });
+  res.json({ guide: await guideWithTopics(guide) });
 }));
 
-router.delete('/:guideId', (req, res, next) => {
-  const result = guides.deleteGuideForUser(req.params.guideId, req.user.id);
+router.delete('/:guideId', asyncHandler(async (req, res, next) => {
+  const result = await guides.deleteGuideForUser(req.params.guideId, req.user.id);
 
-  if (result.changes === 0) {
+  if (result.rowCount === 0) {
     const error = new Error('Guide not found.');
     error.status = 404;
     next(error);
@@ -159,6 +159,6 @@ router.delete('/:guideId', (req, res, next) => {
   }
 
   res.json({ ok: true });
-});
+}));
 
 module.exports = router;

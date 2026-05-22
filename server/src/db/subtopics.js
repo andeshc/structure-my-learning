@@ -1,4 +1,4 @@
-const db = require('./index');
+const { query, getOne, getAll, withTransaction } = require('./index');
 const { subtopicId } = require('../utils/ids');
 const { touchGuide } = require('./guides');
 
@@ -19,34 +19,34 @@ function toSubtopic(row) {
   };
 }
 
-function findOrCreateSubtopic(topicId, position, title) {
-  const existing = db.prepare(
-    'SELECT * FROM subtopics WHERE topic_id = ? AND position = ?'
-  ).get(topicId, position);
+async function findOrCreateSubtopic(topicId, position, title) {
+  const existing = await getOne(
+    'SELECT * FROM subtopics WHERE topic_id = $1 AND position = $2',
+    [topicId, position]
+  );
   if (existing) return toSubtopic(existing);
 
   const id = subtopicId();
-  db.prepare(
-    'INSERT INTO subtopics (id, topic_id, position, title) VALUES (?, ?, ?, ?)'
-  ).run(id, topicId, position, title);
-
-  return toSubtopic(db.prepare('SELECT * FROM subtopics WHERE id = ?').get(id));
+  await query(
+    'INSERT INTO subtopics (id, topic_id, position, title) VALUES ($1, $2, $3, $4)',
+    [id, topicId, position, title]
+  );
+  return toSubtopic(await getOne('SELECT * FROM subtopics WHERE id = $1', [id]));
 }
 
-function findSubtopicForUser(topicId, position, userId) {
-  const row = db.prepare(`
-    SELECT s.*, t.guide_id, t.title AS topic_title, t.description AS topic_description,
-           t.position AS topic_position,
-           g.user_id, g.title AS guide_title, g.prompt AS guide_prompt,
-           g.age_level, g.outline_json
-    FROM subtopics s
-    JOIN topics t ON t.id = s.topic_id
-    JOIN guides g ON g.id = t.guide_id
-    WHERE s.topic_id = ? AND s.position = ? AND g.user_id = ?
-  `).get(topicId, position, userId);
-
+async function findSubtopicForUser(topicId, position, userId) {
+  const row = await getOne(
+    `SELECT s.*, t.guide_id, t.title AS topic_title, t.description AS topic_description,
+            t.position AS topic_position,
+            g.user_id, g.title AS guide_title, g.prompt AS guide_prompt,
+            g.age_level, g.outline_json
+     FROM subtopics s
+     JOIN topics t ON t.id = s.topic_id
+     JOIN guides g ON g.id = t.guide_id
+     WHERE s.topic_id = $1 AND s.position = $2 AND g.user_id = $3`,
+    [topicId, position, userId]
+  );
   if (!row) return null;
-
   return {
     subtopic: toSubtopic(row),
     topic: {
@@ -65,78 +65,91 @@ function findSubtopicForUser(topicId, position, userId) {
   };
 }
 
-function listSubtopicsForTopic(topicId) {
-  return db.prepare(
-    'SELECT * FROM subtopics WHERE topic_id = ? ORDER BY position ASC'
-  ).all(topicId).map(toSubtopic);
-}
-
-function updateSubtopicProgress(subtopicId, isCompleted) {
-  const completedAt = isCompleted ? new Date().toISOString() : null;
-  db.prepare(
-    'UPDATE subtopics SET is_completed = ?, completed_at = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(isCompleted ? 1 : 0, completedAt, subtopicId);
-
-  const row = db.prepare(
-    'SELECT s.topic_id, t.guide_id FROM subtopics s JOIN topics t ON t.id = s.topic_id WHERE s.id = ?'
-  ).get(subtopicId);
-  if (row) touchGuide(row.guide_id);
-
-  return toSubtopic(db.prepare('SELECT * FROM subtopics WHERE id = ?').get(subtopicId));
-}
-
-function saveSubtopicContentHtml(subtopicId, contentHtml) {
-  db.prepare(
-    'UPDATE subtopics SET content_html = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(contentHtml, subtopicId);
-}
-
-function initSubtopicsForGuide(sections, topicsByPosition) {
-  const insert = db.prepare(
-    `INSERT OR IGNORE INTO subtopics (id, topic_id, position, title, dev_status)
-     VALUES (?, ?, ?, ?, 'pending')`
+async function listSubtopicsForTopic(topicId) {
+  const rows = await getAll(
+    'SELECT * FROM subtopics WHERE topic_id = $1 ORDER BY position ASC',
+    [topicId]
   );
-  db.transaction(() => {
-    sections.forEach((section, si) => {
+  return rows.map(toSubtopic);
+}
+
+async function updateSubtopicProgress(subtopicId, isCompleted) {
+  const completedAt = isCompleted ? new Date().toISOString() : null;
+  await query(
+    'UPDATE subtopics SET is_completed = $1, completed_at = $2, updated_at = NOW() WHERE id = $3',
+    [isCompleted ? 1 : 0, completedAt, subtopicId]
+  );
+  const row = await getOne(
+    'SELECT s.topic_id, t.guide_id FROM subtopics s JOIN topics t ON t.id = s.topic_id WHERE s.id = $1',
+    [subtopicId]
+  );
+  if (row) await touchGuide(row.guide_id);
+  return toSubtopic(await getOne('SELECT * FROM subtopics WHERE id = $1', [subtopicId]));
+}
+
+async function saveSubtopicContentHtml(subtopicId, contentHtml) {
+  await query(
+    'UPDATE subtopics SET content_html = $1, updated_at = NOW() WHERE id = $2',
+    [contentHtml, subtopicId]
+  );
+}
+
+async function initSubtopicsForGuide(sections, topicsByPosition) {
+  await withTransaction(async (client) => {
+    for (let si = 0; si < sections.length; si++) {
+      const section = sections[si];
       const topicId = topicsByPosition[si + 1];
-      if (!topicId) return;
-      section.items.forEach((item, pos) => insert.run(subtopicId(), topicId, pos, item.title));
-    });
-  })();
+      if (!topicId) continue;
+      for (let pos = 0; pos < section.items.length; pos++) {
+        const item = section.items[pos];
+        await client.query(
+          `INSERT INTO subtopics (id, topic_id, position, title, dev_status)
+           VALUES ($1, $2, $3, $4, 'pending')
+           ON CONFLICT (topic_id, position) DO NOTHING`,
+          [subtopicId(), topicId, pos, item.title]
+        );
+      }
+    }
+  });
 }
 
-function claimSubtopic(id) {
-  return db.prepare(
-    `UPDATE subtopics SET dev_status = 'developing', locked_at = datetime('now')
-     WHERE id = ? AND dev_status = 'pending'`
-  ).run(id).changes > 0;
+async function claimSubtopic(id) {
+  const result = await query(
+    `UPDATE subtopics SET dev_status = 'developing', locked_at = NOW()
+     WHERE id = $1 AND dev_status = 'pending'`,
+    [id]
+  );
+  return result.rowCount > 0;
 }
 
-function setDevStatus(id, status) {
-  db.prepare(
-    `UPDATE subtopics SET dev_status = ?, updated_at = datetime('now') WHERE id = ?`
-  ).run(status, id);
+async function setDevStatus(id, status) {
+  await query(
+    `UPDATE subtopics SET dev_status = $1, updated_at = NOW() WHERE id = $2`,
+    [status, id]
+  );
 }
 
-function getPendingSubtopicsForGuide(guideId) {
-  return db.prepare(
+async function getPendingSubtopicsForGuide(guideId) {
+  return getAll(
     `SELECT s.id, s.topic_id, s.position, s.title FROM subtopics s
      JOIN topics t ON t.id = s.topic_id
-     WHERE t.guide_id = ? AND s.dev_status = 'pending'
-     ORDER BY t.position, s.position`
-  ).all(guideId);
+     WHERE t.guide_id = $1 AND s.dev_status = 'pending'
+     ORDER BY t.position, s.position`,
+    [guideId]
+  );
 }
 
-function findSubtopicContext(id) {
-  const row = db.prepare(
+async function findSubtopicContext(id) {
+  const row = await getOne(
     `SELECT s.*, t.id AS t_id, t.title AS t_title, t.description AS t_desc,
             t.position AS t_pos, g.id AS g_id, g.title AS g_title,
             g.prompt AS g_prompt, g.age_level, g.outline_json
      FROM subtopics s
      JOIN topics t ON t.id = s.topic_id
      JOIN guides g ON g.id = t.guide_id
-     WHERE s.id = ?`
-  ).get(id);
+     WHERE s.id = $1`,
+    [id]
+  );
   if (!row) return null;
   const outline = row.outline_json ? JSON.parse(row.outline_json) : null;
   const item = outline?.sections?.[row.t_pos - 1]?.items?.[row.position];
@@ -149,45 +162,47 @@ function findSubtopicContext(id) {
   };
 }
 
-function resetFailedSubtopicsForGuide(guideId) {
-  db.prepare(
+async function resetFailedSubtopicsForGuide(guideId) {
+  await query(
     `UPDATE subtopics SET dev_status = 'pending', locked_at = NULL
      WHERE dev_status = 'failed'
-     AND topic_id IN (SELECT id FROM topics WHERE guide_id = ?)`
-  ).run(guideId);
+     AND topic_id IN (SELECT id FROM topics WHERE guide_id = $1)`,
+    [guideId]
+  );
 }
 
-function resetStaleLocks() {
-  db.prepare(
+async function resetStaleLocks() {
+  await query(
     `UPDATE subtopics SET dev_status = 'pending', locked_at = NULL
-     WHERE dev_status = 'developing' AND locked_at < datetime('now', '-10 minutes')`
-  ).run();
+     WHERE dev_status = 'developing' AND locked_at < NOW() - INTERVAL '10 minutes'`
+  );
 }
 
-// On startup only: the previous process is provably dead, so reset all developing subtopics
-// regardless of lease age. At runtime, use resetStaleLocks() for multi-instance safety.
-function resetAllDevelopingOnStartup() {
-  db.prepare(
+async function resetAllDevelopingOnStartup() {
+  await query(
     `UPDATE subtopics SET dev_status = 'pending', locked_at = NULL WHERE dev_status = 'developing'`
-  ).run();
+  );
 }
 
-function getGuidesWithPendingWork() {
-  return db.prepare(
+async function getGuidesWithPendingWork() {
+  const rows = await getAll(
     `SELECT DISTINCT t.guide_id FROM subtopics s
      JOIN topics t ON t.id = s.topic_id
      WHERE s.dev_status IN ('pending', 'developing')`
-  ).all().map((r) => r.guide_id);
+  );
+  return rows.map((r) => r.guide_id);
 }
 
-function listAllSubtopicsForGuide(guideId) {
-  return db.prepare(
+async function listAllSubtopicsForGuide(guideId) {
+  const rows = await getAll(
     `SELECT s.topic_id, s.position, s.dev_status,
             CASE WHEN s.is_completed = 1 THEN 1 ELSE 0 END AS is_completed,
             CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s JOIN topics t ON t.id = s.topic_id
-     WHERE t.guide_id = ? ORDER BY t.position, s.position`
-  ).all(guideId).map((r) => ({
+     WHERE t.guide_id = $1 ORDER BY t.position, s.position`,
+    [guideId]
+  );
+  return rows.map((r) => ({
     topicId: r.topic_id,
     position: r.position,
     devStatus: r.dev_status ?? 'pending',
@@ -196,13 +211,15 @@ function listAllSubtopicsForGuide(guideId) {
   }));
 }
 
-function listSubtopicStatusesForGuide(guideId) {
-  return db.prepare(
+async function listSubtopicStatusesForGuide(guideId) {
+  const rows = await getAll(
     `SELECT s.topic_id, s.position, s.dev_status, s.illustration_urls,
             CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s JOIN topics t ON t.id = s.topic_id
-     WHERE t.guide_id = ? ORDER BY t.position, s.position`
-  ).all(guideId).map((r) => ({
+     WHERE t.guide_id = $1 ORDER BY t.position, s.position`,
+    [guideId]
+  );
+  return rows.map((r) => ({
     topicId: r.topic_id,
     position: r.position,
     devStatus: r.dev_status,
@@ -211,9 +228,11 @@ function listSubtopicStatusesForGuide(guideId) {
   }));
 }
 
-function saveIllustrationUrls(subtopicId, urls) {
-  db.prepare('UPDATE subtopics SET illustration_urls = ? WHERE id = ?')
-    .run(JSON.stringify(urls), subtopicId);
+async function saveIllustrationUrls(subtopicId, urls) {
+  await query(
+    'UPDATE subtopics SET illustration_urls = $1 WHERE id = $2',
+    [JSON.stringify(urls), subtopicId]
+  );
 }
 
 module.exports = {

@@ -1,14 +1,12 @@
 const schema = `
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT,
   avatar_url TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (email <> '')
 );
 
@@ -18,8 +16,8 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
   provider TEXT NOT NULL CHECK (provider IN ('google', 'github')),
   provider_user_id TEXT NOT NULL,
   provider_email TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (provider, provider_user_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -28,9 +26,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   token_hash TEXT NOT NULL UNIQUE,
-  expires_at TEXT NOT NULL,
-  revoked_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -43,8 +41,8 @@ CREATE TABLE IF NOT EXISTS guides (
   status TEXT NOT NULL DEFAULT 'ready' CHECK (status IN ('pending', 'ready', 'failed')),
   outline_json TEXT,
   illustration_path TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -57,9 +55,9 @@ CREATE TABLE IF NOT EXISTS topics (
   content_markdown TEXT,
   content_html TEXT,
   is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0, 1)),
-  completed_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (guide_id, position),
   FOREIGN KEY (guide_id) REFERENCES guides(id) ON DELETE CASCADE
 );
@@ -71,12 +69,12 @@ CREATE TABLE IF NOT EXISTS subtopics (
   title TEXT NOT NULL,
   content_html TEXT,
   is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0, 1)),
-  completed_at TEXT,
+  completed_at TIMESTAMPTZ,
   dev_status TEXT NOT NULL DEFAULT 'pending' CHECK (dev_status IN ('pending', 'developing', 'ready', 'failed')),
-  locked_at TEXT,
+  locked_at TIMESTAMPTZ,
   illustration_urls TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (topic_id, position),
   FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );

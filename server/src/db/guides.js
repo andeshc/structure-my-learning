@@ -1,10 +1,7 @@
-const db = require('./index');
+const { query, getOne, getAll, withTransaction } = require('./index');
 
 function toGuide(row) {
-  if (!row) {
-    return null;
-  }
-
+  if (!row) return null;
   return {
     id: row.id,
     userId: row.user_id,
@@ -29,93 +26,92 @@ function progressSelect() {
     SUM(CASE WHEN t.is_completed = 1 THEN 1 ELSE 0 END) AS completed_topic_count,
     CASE
       WHEN COUNT(t.id) = 0 THEN 0
-      ELSE ROUND((SUM(CASE WHEN t.is_completed = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id))
+      ELSE ROUND(((SUM(CASE WHEN t.is_completed = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id))::numeric)
     END AS progress_percentage,
     (SELECT COUNT(*) FROM subtopics s JOIN topics t2 ON s.topic_id = t2.id WHERE t2.guide_id = g.id AND s.is_completed = 1) AS completed_subtopic_count
   `;
 }
 
-function createGuideWithTopics({ guide, topics }) {
-  const transaction = db.transaction(() => {
-    db.prepare(`
-      INSERT INTO guides (id, user_id, title, prompt, age_level, outline_json, illustration_path)
-      VALUES (@id, @userId, @title, @prompt, @ageLevel, @outlineJson, @illustrationPath)
-    `).run(guide);
-
-    const insertTopic = db.prepare(`
-      INSERT INTO topics (id, guide_id, position, title, description)
-      VALUES (@id, @guideId, @position, @title, @description)
-    `);
-
-    topics.forEach((topic) => insertTopic.run(topic));
+async function createGuideWithTopics({ guide, topics }) {
+  await withTransaction(async (client) => {
+    await client.query(
+      `INSERT INTO guides (id, user_id, title, prompt, age_level, outline_json, illustration_path)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [guide.id, guide.userId, guide.title, guide.prompt, guide.ageLevel, guide.outlineJson, guide.illustrationPath]
+    );
+    for (const topic of topics) {
+      await client.query(
+        `INSERT INTO topics (id, guide_id, position, title, description) VALUES ($1, $2, $3, $4, $5)`,
+        [topic.id, topic.guideId, topic.position, topic.title, topic.description]
+      );
+    }
   });
-
-  transaction();
 }
 
-function createPendingGuide({ id, userId, prompt, ageLevel }) {
-  db.prepare(`
-    INSERT INTO guides (id, user_id, title, prompt, age_level, status)
-    VALUES (@id, @userId, @title, @prompt, @ageLevel, 'pending')
-  `).run({ id, userId, title: prompt.slice(0, 90), prompt, ageLevel });
+async function createPendingGuide({ id, userId, prompt, ageLevel }) {
+  await query(
+    `INSERT INTO guides (id, user_id, title, prompt, age_level, status) VALUES ($1, $2, $3, $4, $5, 'pending')`,
+    [id, userId, prompt.slice(0, 90), prompt, ageLevel]
+  );
 }
 
-function completeGuide({ id, title, outlineJson, illustrationPath, topics }) {
-  const transaction = db.transaction(() => {
-    db.prepare(`
-      UPDATE guides
-      SET title = @title, outline_json = @outlineJson, illustration_path = @illustrationPath,
-          status = 'ready', updated_at = datetime('now')
-      WHERE id = @id
-    `).run({ id, title, outlineJson, illustrationPath });
-
-    const insertTopic = db.prepare(`
-      INSERT INTO topics (id, guide_id, position, title, description)
-      VALUES (@id, @guideId, @position, @title, @description)
-    `);
-
-    topics.forEach((topic) => insertTopic.run(topic));
+async function completeGuide({ id, title, outlineJson, illustrationPath, topics }) {
+  await withTransaction(async (client) => {
+    await client.query(
+      `UPDATE guides SET title = $1, outline_json = $2, illustration_path = $3,
+          status = 'ready', updated_at = NOW() WHERE id = $4`,
+      [title, outlineJson, illustrationPath, id]
+    );
+    for (const topic of topics) {
+      await client.query(
+        `INSERT INTO topics (id, guide_id, position, title, description) VALUES ($1, $2, $3, $4, $5)`,
+        [topic.id, topic.guideId, topic.position, topic.title, topic.description]
+      );
+    }
   });
-
-  transaction();
 }
 
-function setGuideIllustration(id, illustrationPath) {
-  db.prepare(`UPDATE guides SET illustration_path = ?, updated_at = datetime('now') WHERE id = ?`)
-    .run(illustrationPath, id);
+async function setGuideIllustration(id, illustrationPath) {
+  await query(
+    `UPDATE guides SET illustration_path = $1, updated_at = NOW() WHERE id = $2`,
+    [illustrationPath, id]
+  );
 }
 
-function markGuideFailed(id) {
-  db.prepare(`UPDATE guides SET status = 'failed', updated_at = datetime('now') WHERE id = ?`).run(id);
+async function markGuideFailed(id) {
+  await query(`UPDATE guides SET status = 'failed', updated_at = NOW() WHERE id = $1`, [id]);
 }
 
-function listGuidesForUser(userId) {
-  return db.prepare(`
-    SELECT g.*, ${progressSelect()}
-    FROM guides g
-    LEFT JOIN topics t ON t.guide_id = g.id
-    WHERE g.user_id = ?
-    GROUP BY g.id
-    ORDER BY g.updated_at DESC
-  `).all(userId).map(toGuide);
+async function listGuidesForUser(userId) {
+  const rows = await getAll(
+    `SELECT g.*, ${progressSelect()}
+     FROM guides g
+     LEFT JOIN topics t ON t.guide_id = g.id
+     WHERE g.user_id = $1
+     GROUP BY g.id
+     ORDER BY g.updated_at DESC`,
+    [userId]
+  );
+  return rows.map(toGuide);
 }
 
-function findGuideForUser(guideId, userId) {
-  return toGuide(db.prepare(`
-    SELECT g.*, ${progressSelect()}
-    FROM guides g
-    LEFT JOIN topics t ON t.guide_id = g.id
-    WHERE g.id = ? AND g.user_id = ?
-    GROUP BY g.id
-  `).get(guideId, userId));
+async function findGuideForUser(guideId, userId) {
+  return toGuide(await getOne(
+    `SELECT g.*, ${progressSelect()}
+     FROM guides g
+     LEFT JOIN topics t ON t.guide_id = g.id
+     WHERE g.id = $1 AND g.user_id = $2
+     GROUP BY g.id`,
+    [guideId, userId]
+  ));
 }
 
-function deleteGuideForUser(guideId, userId) {
-  return db.prepare('DELETE FROM guides WHERE id = ? AND user_id = ?').run(guideId, userId);
+async function deleteGuideForUser(guideId, userId) {
+  return query('DELETE FROM guides WHERE id = $1 AND user_id = $2', [guideId, userId]);
 }
 
-function touchGuide(guideId) {
-  db.prepare("UPDATE guides SET updated_at = datetime('now') WHERE id = ?").run(guideId);
+async function touchGuide(guideId) {
+  await query(`UPDATE guides SET updated_at = NOW() WHERE id = $1`, [guideId]);
 }
 
 module.exports = {

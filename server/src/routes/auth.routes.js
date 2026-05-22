@@ -38,7 +38,7 @@ function oauthUnavailable(_req, res) {
 
 router.post('/register', asyncHandler(async (req, res) => {
   const input = registerSchema.parse(req.body);
-  const existing = users.findUserByEmail(input.email);
+  const existing = await users.findUserByEmail(input.email);
 
   if (existing) {
     res.status(409).json({ error: 'An account with this email already exists.' });
@@ -46,7 +46,7 @@ router.post('/register', asyncHandler(async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(input.password, 12);
-  const user = users.createPasswordUser({
+  const user = await users.createPasswordUser({
     name: input.name,
     email: input.email,
     passwordHash,
@@ -58,7 +58,7 @@ router.post('/register', asyncHandler(async (req, res) => {
 
 router.post('/login', asyncHandler(async (req, res) => {
   const input = loginSchema.parse(req.body);
-  const user = users.findUserByEmail(input.email);
+  const user = await users.findUserByEmail(input.email);
 
   if (!user || !user.passwordHash) {
     res.status(401).json({ error: 'Invalid email or password.' });
@@ -76,7 +76,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   res.json({ user: publicUser(user), accessToken });
 }));
 
-router.post('/refresh', (req, res) => {
+router.post('/refresh', asyncHandler(async (req, res) => {
   const token = req.cookies.refreshToken;
 
   if (!token) {
@@ -84,33 +84,32 @@ router.post('/refresh', (req, res) => {
     return;
   }
 
-  const stored = refreshTokens.findActiveRefreshToken(token);
+  const stored = await refreshTokens.findActiveRefreshToken(token);
 
   if (!stored) {
     res.status(401).json({ error: 'Invalid refresh token.' });
     return;
   }
 
-  const user = users.findUserById(stored.user_id);
+  const user = await users.findUserById(stored.user_id);
 
   if (!user) {
     res.status(401).json({ error: 'Invalid refresh token.' });
     return;
   }
 
-  refreshTokens.revokeRefreshToken(token);
+  await refreshTokens.revokeRefreshToken(token);
   const accessToken = tokenService.issueAuth(res, user);
   res.json({ accessToken, user: publicUser(user) });
-});
+}));
 
-router.post('/logout', requireAuth, (req, res) => {
+router.post('/logout', requireAuth, asyncHandler(async (req, res) => {
   if (req.cookies.refreshToken) {
-    refreshTokens.revokeRefreshToken(req.cookies.refreshToken);
+    await refreshTokens.revokeRefreshToken(req.cookies.refreshToken);
   }
-
   tokenService.clearRefreshCookie(res);
   res.json({ ok: true });
-});
+}));
 
 router.get('/me', requireAuth, (req, res) => {
   res.json({ user: publicUser(req.user) });

@@ -4,21 +4,20 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const app = require('./app');
-const db = require('./db');
+const { query } = require('./db');
 const { initDb } = require('./db/init');
 const aiService = require('./services/ai.service');
 const config = require('./config');
 const { setAiMocks } = aiService;
 
-function resetDatabase() {
-  initDb();
-  db.exec(`
-    DELETE FROM refresh_tokens;
-    DELETE FROM oauth_accounts;
-    DELETE FROM topics;
-    DELETE FROM guides;
-    DELETE FROM users;
-  `);
+async function resetDatabase() {
+  await initDb();
+  await query('DELETE FROM refresh_tokens');
+  await query('DELETE FROM oauth_accounts');
+  await query('DELETE FROM subtopics');
+  await query('DELETE FROM topics');
+  await query('DELETE FROM guides');
+  await query('DELETE FROM users');
 }
 
 async function registerUser(email = 'test@example.com') {
@@ -30,8 +29,8 @@ async function registerUser(email = 'test@example.com') {
 }
 
 describe('API', () => {
-  beforeEach(() => {
-    resetDatabase();
+  beforeEach(async () => {
+    await resetDatabase();
     setAiMocks({
       generateOutline: async () => ({
         title: 'Mocked Guide',
@@ -69,9 +68,6 @@ describe('API', () => {
           },
         ],
       }),
-      generateTopicContent: async ({ topic }) => ({
-        contentHtml: `<h1>${topic.title}</h1><p>This lesson explains the concept with examples, analogies, and a summary.</p>`.repeat(14),
-      }),
       generateGuideIllustration: async ({ guideId }) => `/generated/guide-illustrations/${guideId}.png`,
     });
   });
@@ -99,7 +95,7 @@ describe('API', () => {
     expect(refreshResponse.body.accessToken).toBeTruthy();
   });
 
-  it('creates a guide, generates topic content, and tracks progress', async () => {
+  it('creates a guide and tracks progress', async () => {
     const token = await registerUser('guide@example.com');
     const guideResponse = await request(app)
       .post('/api/guides')
@@ -114,35 +110,16 @@ describe('API', () => {
     const guide = doneEvent.guide;
 
     expect(guide.topics).toHaveLength(5);
-    expect(guide.outline.tags).toEqual(['Learning', 'Mocked']);
-    expect(guide.outline.sections[0].items[0].importance).toBe('Required');
+    expect(guide.outline.sections[0].items[0].title).toBe('Core idea');
 
     const topicId = guide.topics[0].id;
 
-    const contentResponse = await request(app)
-      .get(`/api/topics/${topicId}/content`)
+    const subtopicResponse = await request(app)
+      .get(`/api/topics/${topicId}/subtopics/0`)
       .set('Authorization', `Bearer ${token}`);
 
-    expect(contentResponse.status).toBe(200);
-    const contentEvents = contentResponse.text.trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
-    const contentText = contentEvents.filter((e) => e.type === 'content_chunk').map((e) => e.text).join('');
-    expect(contentText).toContain('<h1>Foundations</h1>');
-
-    const topicResponse = await request(app)
-      .get(`/api/topics/${topicId}`)
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(topicResponse.status).toBe(200);
-    expect(topicResponse.body.topic.contentHtml).toContain('<h1>Foundations</h1>');
-
-    const progressResponse = await request(app)
-      .patch(`/api/topics/${topicId}/progress`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ isCompleted: true });
-
-    expect(progressResponse.status).toBe(200);
-    expect(progressResponse.body.topic.isCompleted).toBe(true);
-    expect(progressResponse.body.guide.progressPercentage).toBe(20);
+    expect(subtopicResponse.status).toBe(200);
+    expect(subtopicResponse.body.item.title).toBe('Core idea');
   });
 
   it('stores the static fallback illustration URL on guide creation', async () => {

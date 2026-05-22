@@ -27,7 +27,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     return next(error);
   }
 
-  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  const found = await topicsDb.findTopicForUser(req.params.topicId, req.user.id);
   if (!found) {
     const error = new Error('Topic not found.');
     error.status = 404;
@@ -45,8 +45,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     return next(error);
   }
 
-  // Merge outline items with DB completion state
-  const dbSubtopics = subtopicsDb.listSubtopicsForTopic(req.params.topicId);
+  const dbSubtopics = await subtopicsDb.listSubtopicsForTopic(req.params.topicId);
   const dbByPosition = Object.fromEntries(dbSubtopics.map((s) => [s.position, s]));
 
   const sectionItems = (section.items || []).map((si, i) => ({
@@ -63,23 +62,20 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     ? { position: position + 1, title: section.items[position + 1].title }
     : null;
 
-  // On the last subtopic of a topic, find the first subtopic of the next topic
   let nextTopic = null;
   if (!nextItem) {
     const nextSection = outline?.sections?.[sectionIndex + 1];
     if (nextSection) {
-      const allTopics = topicsDb.listTopicsForGuide(found.guide.id);
+      const allTopics = await topicsDb.listTopicsForGuide(found.guide.id);
       const nt = allTopics.find((t) => t.position === found.topic.position + 1);
       if (nt) nextTopic = { id: nt.id, title: nt.title };
     }
   }
 
-  // May not exist yet (first visit before generation)
   const dbSubtopic = dbByPosition[position] ?? null;
 
-  // Full guide outline with all sections and per-subtopic status (for sidebar nav)
-  const allTopics = topicsDb.listTopicsForGuide(found.guide.id);
-  const allSubtopics = subtopicsDb.listAllSubtopicsForGuide(found.guide.id);
+  const allTopics = await topicsDb.listTopicsForGuide(found.guide.id);
+  const allSubtopics = await subtopicsDb.listAllSubtopicsForGuide(found.guide.id);
   const subsByTopicAndPos = {};
   for (const s of allSubtopics) {
     if (!subsByTopicAndPos[s.topicId]) subsByTopicAndPos[s.topicId] = {};
@@ -101,7 +97,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     };
   });
 
-  const guide = guides.findGuideForUser(found.guide.id, req.user.id);
+  const guide = await guides.findGuideForUser(found.guide.id, req.user.id);
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
   const completedSubtopics = guide?.completedSubtopicCount ?? 0;
   const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
@@ -131,7 +127,7 @@ router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, 
     return next(error);
   }
 
-  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  const found = await topicsDb.findTopicForUser(req.params.topicId, req.user.id);
   if (!found) {
     const error = new Error('Topic not found.');
     error.status = 404;
@@ -149,16 +145,15 @@ router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, 
     return next(error);
   }
 
-  const subtopic = subtopicsDb.findOrCreateSubtopic(req.params.topicId, position, item.title);
-  subtopicsDb.updateSubtopicProgress(subtopic.id, isCompleted);
+  const subtopic = await subtopicsDb.findOrCreateSubtopic(req.params.topicId, position, item.title);
+  await subtopicsDb.updateSubtopicProgress(subtopic.id, isCompleted);
 
-  // Roll up: mark parent topic complete if all subtopics in section are done
   const totalItems = section.items.length;
-  const allDbSubtopics = subtopicsDb.listSubtopicsForTopic(req.params.topicId);
+  const allDbSubtopics = await subtopicsDb.listSubtopicsForTopic(req.params.topicId);
   const completedCount = allDbSubtopics.filter((s) => s.isCompleted).length;
-  topicsDb.updateTopicProgress(req.params.topicId, completedCount >= totalItems);
+  await topicsDb.updateTopicProgress(req.params.topicId, completedCount >= totalItems);
 
-  const guide = guides.findGuideForUser(found.guide.id, req.user.id);
+  const guide = await guides.findGuideForUser(found.guide.id, req.user.id);
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
   const completedSubtopicsCount = guide?.completedSubtopicCount ?? 0;
   const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopicsCount / totalSubtopics) * 100) : 0;
@@ -171,7 +166,7 @@ router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, 
 
 router.post('/:topicId/chat', aiRateLimit, asyncHandler(async (req, res, next) => {
   const { messages } = chatSchema.parse(req.body);
-  const found = topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  const found = await topicsDb.findTopicForUser(req.params.topicId, req.user.id);
 
   if (!found) {
     const error = new Error('Topic not found.');

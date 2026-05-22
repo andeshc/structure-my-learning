@@ -19,26 +19,24 @@ function normalizeProfile(provider, profile) {
   };
 }
 
-function findOrCreateOAuthUser(data, done) {
+async function findOrCreateOAuthUser(data, done) {
   try {
-    const account = users.findOAuthAccount(data.provider, data.providerUserId);
-
+    const account = await users.findOAuthAccount(data.provider, data.providerUserId);
     if (account) {
-      done(null, users.findUserById(account.user_id));
+      done(null, await users.findUserById(account.user_id));
       return;
     }
 
-    let user = users.findUserByEmail(data.email);
-
+    let user = await users.findUserByEmail(data.email);
     if (!user) {
-      user = users.createOAuthUser({
+      user = await users.createOAuthUser({
         name: data.name,
         email: data.email,
         avatarUrl: data.avatarUrl,
       });
     }
 
-    users.linkOAuthAccount({
+    await users.linkOAuthAccount({
       userId: user.id,
       provider: data.provider,
       providerUserId: data.providerUserId,

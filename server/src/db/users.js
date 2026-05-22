@@ -1,11 +1,8 @@
-const db = require('./index');
+const { query, getOne, getAll } = require('./index');
 const ids = require('../utils/ids');
 
 function toUser(row) {
-  if (!row) {
-    return null;
-  }
-
+  if (!row) return null;
   return {
     id: row.id,
     name: row.name,
@@ -17,75 +14,59 @@ function toUser(row) {
   };
 }
 
-function createPasswordUser({ name, email, passwordHash }) {
-  const user = {
-    id: ids.userId(),
-    name,
-    email: email.toLowerCase(),
-    password_hash: passwordHash,
-  };
-
-  db.prepare(`
-    INSERT INTO users (id, name, email, password_hash)
-    VALUES (@id, @name, @email, @password_hash)
-  `).run(user);
-
-  return findUserById(user.id);
+async function createPasswordUser({ name, email, passwordHash }) {
+  const row = await getOne(
+    `INSERT INTO users (id, name, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id`,
+    [ids.userId(), name, email.toLowerCase(), passwordHash]
+  );
+  return findUserById(row.id);
 }
 
-function createOAuthUser({ name, email, avatarUrl }) {
-  const user = {
-    id: ids.userId(),
-    name,
-    email: email.toLowerCase(),
-    avatar_url: avatarUrl || null,
-  };
-
-  db.prepare(`
-    INSERT INTO users (id, name, email, avatar_url)
-    VALUES (@id, @name, @email, @avatar_url)
-  `).run(user);
-
-  return findUserById(user.id);
+async function createOAuthUser({ name, email, avatarUrl }) {
+  const row = await getOne(
+    `INSERT INTO users (id, name, email, avatar_url) VALUES ($1, $2, $3, $4) RETURNING id`,
+    [ids.userId(), name, email.toLowerCase(), avatarUrl || null]
+  );
+  return findUserById(row.id);
 }
 
-function findUserByEmail(email) {
-  return toUser(db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase()));
+async function findUserByEmail(email) {
+  return toUser(await getOne('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]));
 }
 
-function findUserById(id) {
-  return toUser(db.prepare('SELECT * FROM users WHERE id = ?').get(id));
+async function findUserById(id) {
+  return toUser(await getOne('SELECT * FROM users WHERE id = $1', [id]));
 }
 
-function findOAuthAccount(provider, providerUserId) {
-  return db.prepare(`
-    SELECT oa.*, u.name, u.email, u.avatar_url, u.created_at, u.updated_at
-    FROM oauth_accounts oa
-    JOIN users u ON u.id = oa.user_id
-    WHERE oa.provider = ? AND oa.provider_user_id = ?
-  `).get(provider, providerUserId);
+async function findOAuthAccount(provider, providerUserId) {
+  return getOne(
+    `SELECT oa.*, u.name, u.email, u.avatar_url, u.created_at, u.updated_at
+     FROM oauth_accounts oa
+     JOIN users u ON u.id = oa.user_id
+     WHERE oa.provider = $1 AND oa.provider_user_id = $2`,
+    [provider, providerUserId]
+  );
 }
 
-function linkOAuthAccount({ userId, provider, providerUserId, providerEmail }) {
-  db.prepare(`
-    INSERT OR IGNORE INTO oauth_accounts (id, user_id, provider, provider_user_id, provider_email)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(ids.oauthId(), userId, provider, providerUserId, providerEmail || null);
+async function linkOAuthAccount({ userId, provider, providerUserId, providerEmail }) {
+  await query(
+    `INSERT INTO oauth_accounts (id, user_id, provider, provider_user_id, provider_email)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT DO NOTHING`,
+    [ids.oauthId(), userId, provider, providerUserId, providerEmail || null]
+  );
 }
 
-function listProviders(userId) {
+async function listProviders(userId) {
   const providers = [];
-  const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+  const user = await getOne('SELECT password_hash FROM users WHERE id = $1', [userId]);
+  if (user && user.password_hash) providers.push('password');
 
-  if (user && user.password_hash) {
-    providers.push('password');
-  }
-
-  const oauthProviders = db.prepare(`
-    SELECT provider FROM oauth_accounts WHERE user_id = ? ORDER BY provider
-  `).all(userId).map((row) => row.provider);
-
-  return providers.concat(oauthProviders);
+  const oauthProviders = await getAll(
+    `SELECT provider FROM oauth_accounts WHERE user_id = $1 ORDER BY provider`,
+    [userId]
+  );
+  return providers.concat(oauthProviders.map((r) => r.provider));
 }
 
 module.exports = {

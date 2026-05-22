@@ -1,15 +1,38 @@
-const Database = require('better-sqlite3');
+const { Pool, types } = require('pg');
 const config = require('../config');
-const path = require('path');
-const fs = require('fs');
 
-const dbDir = path.dirname(config.databasePath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+types.setTypeParser(types.builtins.TIMESTAMPTZ, (v) => v);
+types.setTypeParser(types.builtins.TIMESTAMP, (v) => v);
+
+const pool = new Pool({ connectionString: config.databaseUrl });
+
+async function query(sql, params = []) {
+  return pool.query(sql, params);
 }
 
-const db = new Database(config.databasePath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+async function getOne(sql, params = []) {
+  const result = await pool.query(sql, params);
+  return result.rows[0] ?? null;
+}
 
-module.exports = db;
+async function getAll(sql, params = []) {
+  const result = await pool.query(sql, params);
+  return result.rows;
+}
+
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { query, getOne, getAll, withTransaction };
