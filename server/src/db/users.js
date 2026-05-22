@@ -9,15 +9,18 @@ function toUser(row) {
     email: row.email,
     passwordHash: row.password_hash,
     avatarUrl: row.avatar_url,
+    referralSource: row.referral_source,
+    referralSourceOther: row.referral_source_other,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-async function createPasswordUser({ name, email, passwordHash }) {
+async function createPasswordUser({ name, email, passwordHash, referralSource, referralSourceOther }) {
   const row = await getOne(
-    `INSERT INTO users (id, name, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id`,
-    [ids.userId(), name, email.toLowerCase(), passwordHash]
+    `INSERT INTO users (id, name, email, password_hash, referral_source, referral_source_other)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [ids.userId(), name, email.toLowerCase(), passwordHash, referralSource || null, referralSourceOther || null]
   );
   return findUserById(row.id);
 }
@@ -69,6 +72,24 @@ async function listProviders(userId) {
   return providers.concat(oauthProviders.map((r) => r.provider));
 }
 
+async function updateUserSetup(id, { name, referralSource, referralSourceOther, passwordHash }) {
+  await query(
+    `UPDATE users SET name=$1, referral_source=$2, referral_source_other=$3,
+      password_hash=COALESCE($4, password_hash), updated_at=NOW() WHERE id=$5`,
+    [name, referralSource, referralSourceOther || null, passwordHash || null, id]
+  );
+  return findUserById(id);
+}
+
+async function updateUserProfile(id, { name, passwordHash }) {
+  await query(
+    `UPDATE users SET name=COALESCE($1, name),
+      password_hash=COALESCE($2, password_hash), updated_at=NOW() WHERE id=$3`,
+    [name || null, passwordHash || null, id]
+  );
+  return findUserById(id);
+}
+
 module.exports = {
   createOAuthUser,
   createPasswordUser,
@@ -77,4 +98,6 @@ module.exports = {
   findUserById,
   linkOAuthAccount,
   listProviders,
+  updateUserSetup,
+  updateUserProfile,
 };

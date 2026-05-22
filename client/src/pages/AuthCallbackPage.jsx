@@ -9,7 +9,7 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     auth.refreshFromCookie()
-      .then(() => navigate('/', { replace: true }))
+      .then((user) => navigate(user.referralSource ? '/' : '/welcome', { replace: true }))
       .catch(() => setMessage('We could not finish sign in. Please try again.'));
   }, [auth, navigate]);
 

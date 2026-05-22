@@ -12,6 +12,12 @@ async function cols(table) {
 async function initDb() {
   await query(schema);
 
+  const uc = await cols('users');
+  if (uc.length && !uc.includes('referral_source')) {
+    await query('ALTER TABLE users ADD COLUMN referral_source TEXT');
+    await query('ALTER TABLE users ADD COLUMN referral_source_other TEXT');
+  }
+
   const gc = await cols('guides');
   if (gc.length && !gc.includes('age_level')) {
     await query(`ALTER TABLE guides ADD COLUMN age_level TEXT NOT NULL DEFAULT 'adult_beginner'

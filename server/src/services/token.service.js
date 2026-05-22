@@ -11,10 +11,10 @@ function createAccessToken(user) {
   );
 }
 
-function createRefreshToken(user) {
+async function createRefreshToken(user) {
   const token = crypto.randomBytes(48).toString('hex');
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  refreshTokens.createRefreshToken({ userId: user.id, token, expiresAt });
+  await refreshTokens.createRefreshToken({ userId: user.id, token, expiresAt });
   return token;
 }
 
@@ -36,9 +36,9 @@ function clearRefreshCookie(res) {
   res.clearCookie('refreshToken', { path: '/' });
 }
 
-function issueAuth(res, user) {
+async function issueAuth(res, user) {
   const accessToken = createAccessToken(user);
-  const refreshToken = createRefreshToken(user);
+  const refreshToken = await createRefreshToken(user);
   setRefreshCookie(res, refreshToken);
   return accessToken;
 }

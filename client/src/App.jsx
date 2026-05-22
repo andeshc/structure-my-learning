@@ -12,6 +12,7 @@ import GuideDetailPage from './pages/GuideDetailPage';
 import NewGuidePage from './pages/NewGuidePage';
 import NotFoundPage from './pages/NotFoundPage';
 import SubtopicDetailPage from './pages/SubtopicDetailPage';
+import WelcomePage from './pages/WelcomePage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
               <Route path="/login" element={<AuthPage mode="login" />} />
               <Route path="/register" element={<AuthPage mode="register" />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/welcome" element={<WelcomePage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppShell />}>
                   <Route index element={<DashboardPage />} />

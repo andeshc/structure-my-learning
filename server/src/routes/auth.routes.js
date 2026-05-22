@@ -11,10 +11,14 @@ const tokenService = require('../services/token.service');
 
 const router = express.Router();
 
+const REFERRAL_SOURCES = ['google','bing','twitter_x','linkedin','reddit','instagram','facebook','tiktok','youtube','blog','newsletter','podcast','friend','employer','school','product_hunt','other'];
+
 const registerSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(180),
   password: z.string().min(8).max(160),
+  referralSource: z.enum(REFERRAL_SOURCES),
+  referralSourceOther: z.string().trim().max(300).optional(),
 });
 
 const loginSchema = z.object({
@@ -28,6 +32,7 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    referralSource: user.referralSource,
     createdAt: user.createdAt,
   };
 }
@@ -50,8 +55,10 @@ router.post('/register', asyncHandler(async (req, res) => {
     name: input.name,
     email: input.email,
     passwordHash,
+    referralSource: input.referralSource,
+    referralSourceOther: input.referralSource === 'other' ? input.referralSourceOther : undefined,
   });
-  const accessToken = tokenService.issueAuth(res, user);
+  const accessToken = await tokenService.issueAuth(res, user);
 
   res.status(201).json({ user: publicUser(user), accessToken });
 }));
@@ -72,7 +79,7 @@ router.post('/login', asyncHandler(async (req, res) => {
     return;
   }
 
-  const accessToken = tokenService.issueAuth(res, user);
+  const accessToken = await tokenService.issueAuth(res, user);
   res.json({ user: publicUser(user), accessToken });
 }));
 
@@ -99,7 +106,7 @@ router.post('/refresh', asyncHandler(async (req, res) => {
   }
 
   await refreshTokens.revokeRefreshToken(token);
-  const accessToken = tokenService.issueAuth(res, user);
+  const accessToken = await tokenService.issueAuth(res, user);
   res.json({ accessToken, user: publicUser(user) });
 }));
 
@@ -125,8 +132,8 @@ router.get('/google/callback',
   config.google.clientId && config.google.clientSecret
     ? passport.authenticate('google', { failureRedirect: `${config.appUrl}/login`, session: false })
     : oauthUnavailable,
-  (req, res) => {
-    tokenService.issueAuth(res, req.user);
+  async (req, res) => {
+    await tokenService.issueAuth(res, req.user);
     res.redirect(`${config.appUrl}/auth/callback?status=success`);
   }
 );
@@ -141,8 +148,8 @@ router.get('/github/callback',
   config.github.clientId && config.github.clientSecret
     ? passport.authenticate('github', { failureRedirect: `${config.appUrl}/login`, session: false })
     : oauthUnavailable,
-  (req, res) => {
-    tokenService.issueAuth(res, req.user);
+  async (req, res) => {
+    await tokenService.issueAuth(res, req.user);
     res.redirect(`${config.appUrl}/auth/callback?status=success`);
   }
 );

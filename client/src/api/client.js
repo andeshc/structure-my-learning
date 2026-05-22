@@ -51,7 +51,7 @@ export async function apiRequest(path, options = {}) {
   if (!response.ok) {
     const message = data.error || 'Request failed.';
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && response.status !== 401) {
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { type: 'error', message },
       }));

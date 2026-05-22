@@ -55,13 +55,19 @@ export function AuthProvider({ children }) {
     setStatus('guest');
   }
 
+  function updateUser(updatedUser) {
+    setUser(updatedUser);
+  }
+
   const value = useMemo(() => ({
     isAuthenticated: status === 'authenticated',
+    needsOnboarding: status === 'authenticated' && !user?.referralSource,
     refreshFromCookie,
     signIn,
     signOut,
     signUp,
     status,
+    updateUser,
     user,
   }), [status, user]);
 
