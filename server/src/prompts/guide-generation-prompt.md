@@ -32,7 +32,13 @@ Define 3-5 **Learning Outcomes** — concrete, measurable skills or knowledge th
 
 Structure the course into modules, ordered in a logical learning progression where each topic builds on the previous one. Always start the guide with prerequisite topics whereever appropriate. For each topic, provide:
 
-- **Topic Title**
+- **Topic Title** — follow these rules:
+  - Use a noun phrase, not a sentence or question ("Memory Management", not "How Does Memory Work?")
+  - 2–5 words; 7 maximum
+  - Title case, no trailing punctuation
+  - Name the specific concept — avoid generic openers like "Introduction to", "Overview of", or "Understanding"
+  - No filler: "All About", "A Look at", "Exploring"
+  - Titles across the guide should read as a logical sequence; someone scanning all topic titles should understand the learning arc
 - **Topic Description** (2-3 sentences): What this topic covers, *why* it matters at this stage of the course, and what the learner should understand or be able to do after completing it. Write this description so a content developer could use it as a brief to create full lesson material.
 
 ### 4. Subtopics
