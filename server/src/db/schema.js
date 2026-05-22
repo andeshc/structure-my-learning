@@ -81,6 +81,14 @@ CREATE TABLE IF NOT EXISTS subtopics (
   FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS contact_submissions (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_guides_user_updated ON guides(user_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_topics_guide_position ON topics(guide_id, position);
 CREATE INDEX IF NOT EXISTS idx_subtopics_topic_position ON subtopics(topic_id, position);

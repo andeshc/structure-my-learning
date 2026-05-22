@@ -11,4 +11,5 @@ module.exports = {
   tokenId: () => makeId('tok'),
   oauthId: () => makeId('oau'),
   subtopicId: () => makeId('sub'),
+  contactId: () => makeId('con'),
 };

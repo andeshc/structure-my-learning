@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 export default function AuthPage({ mode }) {
   const auth = useAuth();
@@ -131,6 +132,7 @@ export default function AuthPage({ mode }) {
           </p>
         </section>
       </div>
+      <Footer className="border-t border-charcoal/10" />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import Footer from './Footer';
 
 function navClass({ isActive }) {
   return [
@@ -24,6 +25,7 @@ export default function AppShell() {
 
   // Hide sidebar on subtopic pages — those have their own full-outline navigation
   const hideSidebar = pathname.startsWith('/topics/');
+  const hideFooter = pathname.startsWith('/topics/') || pathname.startsWith('/guides/');
 
   async function handleLogout() {
     await auth.signOut();
@@ -93,6 +95,7 @@ export default function AppShell() {
           <main className="px-5 py-7 sm:px-8 lg:px-16 lg:py-12">
             <Outlet />
           </main>
+          {!hideFooter && <Footer className="border-t border-slate-200" />}
         </div>
       </div>
     </div>
