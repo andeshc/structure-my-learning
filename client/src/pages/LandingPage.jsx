@@ -38,7 +38,7 @@ const STEPS = [
     n: '02',
     Icon: Sparkles,
     title: 'Get a structured guide instantly',
-    body: 'Within seconds you have a complete learning guide: topics in a logical progression from foundational to advanced, written for your exact query.',
+    body: 'Within seconds you have a complete learning guide — topics in a logical progression from foundational to advanced, written for your exact query.',
   },
   {
     n: '03',
@@ -68,7 +68,7 @@ const FEATURES = [
 ];
 
 const TOPICS = [
-  { title: 'Transformer Architecture', field: 'Computer Science' },
+  { title: 'Transformer Architecture', field: 'Artificial Intelligence' },
   { title: 'The Water Cycle', field: 'Earth Science' },
   { title: 'Options Trading', field: 'Finance' },
   { title: 'How Compilers Work', field: 'Computer Science' },
@@ -76,7 +76,7 @@ const TOPICS = [
   { title: 'Quantum Mechanics', field: 'Physics' },
 ];
 
-const FREE_FEATURES = ['3 lifetime guides', 'AI tutor · 10 messages per guide', 'Permanent library access'];
+const FREE_FEATURES = ['3 free guides', 'AI tutor · 10 messages per guide', 'Permanent library access'];
 const PRO_FEATURES = ['Unlimited guides', 'AI tutor · generous fair use', 'Permanent library access'];
 const PRICES = {
   INR: { annual: '₹299', suffix: '/mo · billed annually' },
@@ -196,12 +196,17 @@ export default function LandingPage() {
               Get started free
             </Link>
           </nav>
-          <Link
-            to="/register"
-            className="rounded-md bg-charcoal px-4 py-2 text-sm font-medium text-white sm:hidden"
-          >
-            Get started
-          </Link>
+          <div className="flex items-center gap-3 sm:hidden">
+            <Link to="/login" className="text-sm text-charcoal-400">
+              Sign in
+            </Link>
+            <Link
+              to="/register"
+              className="rounded-md bg-charcoal px-4 py-2 text-sm font-medium text-white"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -256,6 +261,16 @@ export default function LandingPage() {
               <span className="text-sm text-charcoal">{displayText}</span>
               <span className="inline-block h-4 w-px animate-pulse bg-teal-700" />
             </div>
+          </div>
+
+          {/* Generate button */}
+          <div className="px-5 pb-4">
+            <Link
+              to="/register"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-charcoal py-2.5 text-sm font-medium text-white transition-colors hover:bg-charcoal-600"
+            >
+              Generate my guide <ArrowRight size={14} />
+            </Link>
           </div>
 
           {/* Outline — always rendered at full height; only opacity animates */}
@@ -352,7 +367,7 @@ export default function LandingPage() {
             Learn anything.
           </h2>
           <p className="mt-2 text-center text-sm text-charcoal-400">
-            A few examples of what people are building guides on right now.
+            A few examples of what people are learning about.
           </p>
 
           <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
