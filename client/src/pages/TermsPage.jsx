@@ -30,6 +30,24 @@ export default function TermsPage() {
           <p>You must provide accurate information when creating an account. You are responsible for keeping your credentials secure and for all activity that occurs under your account.</p>
         </Section>
 
+        <Section title="Free Tier">
+          <p>Free accounts include a lifetime limit of three (3) learning guides and access to the AI tutor on those guides subject to a per-guide message cap. These limits exist to ensure service quality for all users. We reserve the right to adjust free-tier limits for new signups with reasonable notice; existing guides created under a free account are not deleted when limits change.</p>
+        </Section>
+
+        <Section title="Subscriptions and Billing">
+          <p><strong className="text-charcoal">Paid plans.</strong> StructureMyLearning offers monthly and annual Pro subscription plans. Prices are displayed in INR for users in India and USD for all other regions. All prices are inclusive of applicable taxes unless stated otherwise.</p>
+          <p><strong className="text-charcoal">Auto-renewal.</strong> Subscriptions renew automatically at the end of each billing period (monthly or annual) at the then-current rate unless you cancel before the renewal date. You authorise us to charge your payment method on file for each renewal.</p>
+          <p><strong className="text-charcoal">Cancellation.</strong> You may cancel your subscription at any time from your account settings. Cancellation takes effect at the end of the current billing period — you retain Pro access until that date and will not be charged again. We do not prorate partial periods.</p>
+          <p><strong className="text-charcoal">Refunds.</strong> Monthly plan payments are non-refundable. For annual plans, you may request a refund within 7 days of the initial purchase or renewal if you have not generated more than three guides during that period. Refund requests outside this window are considered on a case-by-case basis at our discretion.</p>
+          <p><strong className="text-charcoal">Price changes.</strong> We may change subscription prices at any time. We will notify active subscribers at least 30 days before a price increase takes effect. Continued use after the notice period constitutes acceptance of the new price.</p>
+          <p><strong className="text-charcoal">Fair use.</strong> Pro plans are marketed as unlimited but are subject to fair-use limits designed to ensure a good experience for all subscribers. We reserve the right to throttle or restrict access for usage that materially exceeds normal personal use. We will notify affected users before taking action where practicable.</p>
+        </Section>
+
+        <Section title="Lifetime Access">
+          <p>Lifetime deals ("LTD") are offered for a one-time payment during limited promotional windows. An LTD grants permanent Pro-level access to the service, subject to a monthly guide-creation limit disclosed at the time of purchase.</p>
+          <p>Lifetime access is tied to the continued operation of StructureMyLearning. It does not guarantee any specific feature set in perpetuity — features may change as the product evolves. LTD purchases are <strong className="text-charcoal">non-refundable</strong> after the promotional window closes. If we permanently discontinue the service, we will provide at least 60 days' notice and pro-rated compensation where feasible.</p>
+        </Section>
+
         <Section title="Acceptable Use">
           <p>You agree not to use StructureMyLearning to:</p>
           <ul className="list-disc pl-5 space-y-1">
