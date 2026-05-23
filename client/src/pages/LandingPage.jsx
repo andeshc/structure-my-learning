@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Brain, Check, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Brain, Check, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router';
 import Footer from '../components/Footer';
@@ -75,6 +75,15 @@ const TOPICS = [
   { title: 'The Roman Empire', field: 'History' },
   { title: 'Quantum Mechanics', field: 'Physics' },
 ];
+
+const FIELD_STYLES = {
+  'Artificial Intelligence': { pill: 'bg-teal-50 text-teal-700',    accent: 'bg-teal-500'    },
+  'Earth Science':           { pill: 'bg-emerald-50 text-emerald-700', accent: 'bg-emerald-500' },
+  'Finance':                 { pill: 'bg-amber-50 text-amber-700',   accent: 'bg-amber-500'   },
+  'Computer Science':        { pill: 'bg-blue-50 text-blue-700',     accent: 'bg-blue-500'    },
+  'History':                 { pill: 'bg-rose-50 text-rose-700',     accent: 'bg-rose-500'    },
+  'Physics':                 { pill: 'bg-violet-50 text-violet-700', accent: 'bg-violet-500'  },
+};
 
 const FREE_FEATURES = ['3 free guides', 'AI tutor · 10 messages per guide', 'Permanent library access'];
 const PRO_FEATURES = ['Unlimited guides', 'AI tutor · generous fair use', 'Permanent library access'];
@@ -368,7 +377,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Topic examples ── */}
-      <section className="border-t border-charcoal/8 bg-white py-20">
+      <section className="border-t border-charcoal/8 bg-canvas py-20">
         <div className="mx-auto max-w-5xl px-6">
           <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">
             Learn anything.
@@ -377,25 +386,30 @@ export default function LandingPage() {
             A few examples of what people are learning about.
           </p>
 
-          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {TOPICS.map(({ title, field }) => (
-              <Link
-                key={title}
-                to="/register"
-                className="group flex flex-col gap-2 rounded-xl border border-charcoal/8 bg-canvas px-5 py-4 transition-all duration-200 hover:border-teal-700/25 hover:bg-white hover:shadow-card"
-              >
-                <span className="text-xs font-medium uppercase tracking-widest text-charcoal-200">
-                  {field}
-                </span>
-                <span className="text-sm font-medium text-charcoal transition-colors group-hover:text-teal-700">
-                  {title}
-                </span>
-                <ChevronRight
-                  size={13}
-                  className="text-charcoal-200 transition-all duration-200 group-hover:translate-x-1 group-hover:text-teal-700"
-                />
-              </Link>
-            ))}
+          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {TOPICS.map(({ title, field }) => {
+              const style = FIELD_STYLES[field] ?? { pill: 'bg-charcoal/5 text-charcoal-400', accent: 'bg-charcoal/20' };
+              return (
+                <Link
+                  key={title}
+                  to="/register"
+                  className="group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-charcoal/8 bg-white px-5 pb-5 pt-6 transition-all duration-200 hover:shadow-card-hover"
+                >
+                  {/* Colored top accent bar */}
+                  <div className={`absolute inset-x-0 top-0 h-1 ${style.accent}`} />
+                  <span className={`self-start rounded-full px-2.5 py-1 text-xs font-medium ${style.pill}`}>
+                    {field}
+                  </span>
+                  <span className="text-sm font-semibold leading-snug text-charcoal">
+                    {title}
+                  </span>
+                  <ArrowRight
+                    size={14}
+                    className="mt-auto text-charcoal-200 transition-all duration-200 group-hover:translate-x-1 group-hover:text-charcoal-400"
+                  />
+                </Link>
+              );
+            })}
           </div>
 
           <p className="mt-6 text-center text-xs text-charcoal-200">
