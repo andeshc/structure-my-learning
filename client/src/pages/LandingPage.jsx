@@ -200,7 +200,7 @@ export default function LandingPage() {
             </Link>
             <Link
               to="/register"
-              className="rounded-md bg-charcoal px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-charcoal-600"
+              className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
             >
               Get started free
             </Link>
@@ -220,7 +220,13 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="mx-auto w-full max-w-4xl px-6 pb-20 pt-16 text-center">
+      <section className="relative w-full overflow-hidden">
+        {/* Teal atmospheric glow */}
+        <div
+          className="pointer-events-none absolute inset-x-0 -top-20 h-[480px]"
+          style={{ background: 'radial-gradient(ellipse 80% 100% at 50% 0%, rgba(15,118,110,0.07) 0%, transparent 70%)' }}
+        />
+      <div className="relative mx-auto w-full max-w-4xl px-6 pb-20 pt-16 text-center">
         <span className="inline-block rounded-full border border-teal-700/25 bg-teal-700/6 px-4 py-1.5 text-xs font-medium tracking-wide text-teal-700">
           AI-powered structured learning
         </span>
@@ -238,7 +244,7 @@ export default function LandingPage() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/register"
-            className="flex items-center gap-2 rounded-md bg-charcoal px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-charcoal-600"
+            className="flex items-center gap-2 rounded-md bg-teal-700 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800"
           >
             Get started free <ArrowRight size={15} />
           </Link>
@@ -252,6 +258,7 @@ export default function LandingPage() {
         <p className="mt-3 text-xs text-charcoal-200">No credit card required · 3 free guides to start</p>
 
         {/* ── Animated demo ── */}
+
         <div className="mx-auto mt-14 max-w-2xl overflow-hidden rounded-xl border border-charcoal/10 bg-white text-left shadow-card">
           {/* Window chrome */}
           <div className="flex items-center gap-1.5 border-b border-charcoal/8 bg-canvas/60 px-4 py-3">
@@ -276,7 +283,7 @@ export default function LandingPage() {
           <div className="px-5 pb-4">
             <Link
               to="/register"
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-charcoal py-2.5 text-sm font-medium text-white transition-colors hover:bg-charcoal-600"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800"
             >
               Generate my guide <ArrowRight size={14} />
             </Link>
@@ -317,11 +324,13 @@ export default function LandingPage() {
         <p className="mt-6 text-sm text-charcoal-400">
           Join learners building real knowledge — not just watching videos.
         </p>
+      </div>
       </section>
 
       {/* ── How it works ── */}
       <section className="border-t border-charcoal/8 bg-canvas py-20">
         <div className="mx-auto max-w-5xl px-6">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-teal-700" />
           <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">
             How it works
           </h2>
@@ -354,6 +363,7 @@ export default function LandingPage() {
       {/* ── Feature highlights ── */}
       <section className="py-20">
         <div className="mx-auto max-w-5xl px-6">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-teal-700" />
           <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">
             Built differently.
           </h2>
@@ -367,7 +377,7 @@ export default function LandingPage() {
                 key={title}
                 className="group rounded-xl border border-charcoal/10 bg-white p-7 transition-shadow hover:shadow-card-hover"
               >
-                <div className="h-0.5 w-8 rounded-full bg-teal-700 transition-all duration-300 group-hover:w-14" />
+                <div className="h-0.5 w-10 rounded-full bg-teal-700 transition-all duration-300 group-hover:w-16" />
                 <h3 className="mt-5 text-base font-semibold text-charcoal">{title}</h3>
                 <p className="mt-2 text-sm leading-7 text-charcoal-400">{body}</p>
               </div>
@@ -379,6 +389,7 @@ export default function LandingPage() {
       {/* ── Topic examples ── */}
       <section className="border-t border-charcoal/8 bg-canvas py-20">
         <div className="mx-auto max-w-5xl px-6">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-teal-700" />
           <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">
             Learn anything.
           </h2>
@@ -421,8 +432,9 @@ export default function LandingPage() {
       {/* ── Pricing teaser ── */}
       <section className="py-20">
         <div className="mx-auto max-w-4xl px-6">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-teal-700" />
           <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">
-            Start free. Go deeper when you're ready.
+            Start free. <span className="text-teal-700">Go deeper</span> when you're ready.
           </h2>
           <p className="mt-2 text-center text-sm text-charcoal-400">
             Three full guides before you ever see a paywall. No trials. No tricks.
@@ -484,7 +496,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="bg-charcoal py-24">
+      <section className="relative overflow-hidden bg-charcoal py-24">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-teal-700/40" />
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             The best time to learn something<br className="hidden sm:block" /> properly was yesterday.
