@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { resendVerification } from '../api/auth';
 import Footer from '../components/Footer';
 
 export default function AuthPage({ mode }) {
@@ -9,6 +10,9 @@ export default function AuthPage({ mode }) {
   const location = useLocation();
   const [form, setForm] = useState({ name: '', email: '', password: '', referralSource: '', referralSourceOther: '' });
   const [error, setError] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isRegister = mode === 'register';
 
@@ -23,17 +27,30 @@ export default function AuthPage({ mode }) {
 
     try {
       if (isRegister) {
-        await auth.signUp(form);
+        const result = await auth.signUp(form);
+        if (result?.pendingVerification) {
+          setPendingVerification(true);
+          return;
+        }
       } else {
         await auth.signIn({ email: form.email, password: form.password });
       }
-
       navigate(location.state?.from || '/', { replace: true });
     } catch (submitError) {
+      if (submitError.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(form.email);
+      }
       setError(submitError.message);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function handleResend() {
+    setResendSent(false);
+    const email = unverifiedEmail || form.email;
+    await resendVerification(email).catch(() => null);
+    setResendSent(true);
   }
 
   return (
@@ -50,6 +67,22 @@ export default function AuthPage({ mode }) {
         </section>
 
         <section className="rounded-lg border border-charcoal/10 bg-white p-6">
+          {pendingVerification ? (
+            <div className="text-center py-4">
+              <p className="text-2xl font-semibold text-charcoal">Check your email</p>
+              <p className="mt-3 text-sm text-charcoal-400">
+                We sent a verification link to <strong>{form.email}</strong>. Click it to activate your account.
+              </p>
+              <p className="mt-6 text-sm text-charcoal-400">
+                Didn't receive it?{' '}
+                {resendSent
+                  ? <span className="text-teal-700">Sent! Check your inbox.</span>
+                  : <button className="font-medium text-teal-700 hover:underline" onClick={handleResend}>Resend email</button>
+                }
+              </p>
+            </div>
+          ) : (
+          <>
           <h2 className="text-2xl font-semibold">{isRegister ? 'Create account' : 'Welcome back'}</h2>
           <p className="mt-2 text-sm text-charcoal-400">
             {isRegister ? 'Start building your learning library.' : 'Sign in to continue learning.'}
@@ -113,7 +146,19 @@ export default function AuthPage({ mode }) {
                 <input className="mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700" name="referralSourceOther" value={form.referralSourceOther} onChange={updateField} maxLength={300} required />
               </label>
             )}
-            {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            {error && (
+              <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p>{error}</p>
+                {unverifiedEmail && (
+                  <p className="mt-1">
+                    {resendSent
+                      ? 'Email sent — check your inbox.'
+                      : <button className="font-medium underline" onClick={handleResend}>Resend verification email</button>
+                    }
+                  </p>
+                )}
+              </div>
+            )}
             <button className="w-full rounded-md bg-charcoal px-4 py-2.5 font-medium text-white disabled:opacity-60" disabled={isSubmitting}>
               {isSubmitting ? 'Working...' : isRegister ? 'Create account' : 'Log in'}
             </button>
@@ -130,6 +175,8 @@ export default function AuthPage({ mode }) {
               {isRegister ? 'Log in' : 'Create one'}
             </Link>
           </p>
+          </>
+          )}
         </section>
       </div>
       <Footer className="border-t border-charcoal/10" />

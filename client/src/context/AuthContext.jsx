@@ -34,6 +34,15 @@ export function AuthProvider({ children }) {
 
   async function signUp(payload) {
     const data = await authApi.register(payload);
+    if (data.pendingVerification) return data;
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    setStatus('authenticated');
+    return data.user;
+  }
+
+  async function verifyEmail(token) {
+    const data = await authApi.verifyEmail(token);
     setAccessToken(data.accessToken);
     setUser(data.user);
     setStatus('authenticated');
@@ -68,6 +77,7 @@ export function AuthProvider({ children }) {
     signUp,
     status,
     updateUser,
+    verifyEmail,
     user,
   }), [status, user]);
 

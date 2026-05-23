@@ -34,3 +34,17 @@ export function logout() {
 export function fetchMe() {
   return apiRequest('/api/auth/me');
 }
+
+export function verifyEmail(token) {
+  return apiRequest('/api/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+export function resendVerification(email) {
+  return apiRequest('/api/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}

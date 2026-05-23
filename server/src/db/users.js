@@ -9,6 +9,7 @@ function toUser(row) {
     email: row.email,
     passwordHash: row.password_hash,
     avatarUrl: row.avatar_url,
+    emailVerified: row.email_verified,
     signupProvider: row.signup_provider,
     referralSource: row.referral_source,
     referralSourceOther: row.referral_source_other,
@@ -28,10 +29,14 @@ async function createPasswordUser({ name, email, passwordHash, referralSource, r
 
 async function createOAuthUser({ provider, name, email, avatarUrl }) {
   const row = await getOne(
-    `INSERT INTO users (id, name, email, avatar_url, signup_provider) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    `INSERT INTO users (id, name, email, avatar_url, signup_provider, email_verified) VALUES ($1, $2, $3, $4, $5, TRUE) RETURNING id`,
     [ids.userId(), name, email.toLowerCase(), avatarUrl || null, provider]
   );
   return findUserById(row.id);
+}
+
+async function markUserVerified(id) {
+  await query(`UPDATE users SET email_verified = TRUE, updated_at = NOW() WHERE id = $1`, [id]);
 }
 
 async function findUserByEmail(email) {
@@ -99,6 +104,7 @@ module.exports = {
   findUserById,
   linkOAuthAccount,
   listProviders,
+  markUserVerified,
   updateUserSetup,
   updateUserProfile,
 };

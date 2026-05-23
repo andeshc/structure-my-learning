@@ -50,8 +50,9 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     const message = data.error || 'Request failed.';
+    const code = data.code;
 
-    if (typeof window !== 'undefined' && response.status !== 401) {
+    if (typeof window !== 'undefined' && response.status !== 401 && code !== 'EMAIL_NOT_VERIFIED') {
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { type: 'error', message },
       }));
@@ -59,6 +60,7 @@ export async function apiRequest(path, options = {}) {
 
     const err = new Error(message);
     err.status = response.status;
+    err.code = code;
     throw err;
   }
 

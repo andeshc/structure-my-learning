@@ -14,6 +14,7 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    emailVerified: user.emailVerified,
     signupProvider: user.signupProvider,
     referralSource: user.referralSource,
     createdAt: user.createdAt,

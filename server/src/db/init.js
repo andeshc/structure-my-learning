@@ -13,6 +13,17 @@ async function initDb() {
   await query(schema);
 
   const uc = await cols('users');
+  if (uc.length && !uc.includes('email_verified')) {
+    await query(`ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE`);
+    // Existing OAuth users are already verified via their provider
+    await query(`
+      UPDATE users SET email_verified = TRUE
+      WHERE id IN (SELECT user_id FROM oauth_accounts)
+    `);
+    // Existing password users who are already in the system: treat as verified
+    // (only new signups after this migration go through verification)
+    await query(`UPDATE users SET email_verified = TRUE WHERE signup_provider = 'password'`);
+  }
   if (uc.length && !uc.includes('referral_source')) {
     await query('ALTER TABLE users ADD COLUMN referral_source TEXT');
     await query('ALTER TABLE users ADD COLUMN referral_source_other TEXT');
