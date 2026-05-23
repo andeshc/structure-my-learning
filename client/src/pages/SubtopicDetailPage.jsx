@@ -31,7 +31,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getSubtopic, updateSubtopicProgress } from '../api/guides';
 import { getAccessToken } from '../api/client';
-import LoadingPanel from '../components/LoadingPanel';
 
 const PURIFY_CONFIG = {
   USE_PROFILES: { html: true, svg: true, svgFilters: true },
@@ -179,6 +178,7 @@ export default function SubtopicDetailPage() {
   const position = parseInt(positionParam, 10);
 
   const [data, setData] = useState(null);
+  const [loadingContent, setLoadingContent] = useState(false);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
@@ -197,12 +197,12 @@ export default function SubtopicDetailPage() {
   useEffect(() => {
     const controller = new AbortController();
     setReadingProgress(0);
-    setData(null);
+    setLoadingContent(true);
     setError('');
 
     getSubtopic(topicId, position)
-      .then((res) => { if (!controller.signal.aborted) setData(res); })
-      .catch((err) => { if (!controller.signal.aborted) setError(err.message); });
+      .then((res) => { if (!controller.signal.aborted) { setData(res); setLoadingContent(false); } })
+      .catch((err) => { if (!controller.signal.aborted) { setError(err.message); setLoadingContent(false); } });
 
     return () => controller.abort();
   }, [topicId, positionParam]);
@@ -276,7 +276,71 @@ export default function SubtopicDetailPage() {
   }
 
   if (!data) {
-    return <LoadingPanel title="Loading lesson" detail="Fetching subtopic details…" />;
+    return (
+      <>
+        <div className="fixed left-0 right-0 top-0 z-[70] h-1 bg-slate-100" />
+        <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)] animate-pulse">
+          {/* Sidebar skeleton — xl only */}
+          <aside className="hidden xl:flex xl:flex-col gap-4">
+            <div className="h-4 w-32 rounded bg-slate-200" />
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="h-3 w-24 rounded bg-slate-200" />
+              <div className="mt-3 h-7 w-16 rounded bg-slate-200" />
+              <div className="mt-2 h-2 w-full rounded-full bg-slate-200" />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+              <div className="h-3 w-20 rounded bg-slate-200" />
+              <div className="mt-1 space-y-1.5">
+                {[75, 90, 60, 80, 55, 70].map((w, i) => (
+                  <div key={i} className="h-8 rounded-lg bg-slate-100" />
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* Main content skeleton */}
+          <div>
+            {/* Mobile breadcrumb */}
+            <div className="mb-5 flex items-center gap-2 xl:hidden">
+              <div className="h-4 w-24 rounded bg-slate-200" />
+              <div className="h-4 w-2 rounded bg-slate-200" />
+              <div className="h-4 w-32 rounded bg-slate-200" />
+            </div>
+
+            {/* Header */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-28 rounded bg-slate-200" />
+                <div className="h-8 w-3/4 rounded bg-slate-200" />
+                <div className="h-8 w-1/2 rounded bg-slate-200" />
+                <div className="mt-1 h-4 w-full max-w-lg rounded bg-slate-200" />
+                <div className="h-4 w-2/3 rounded bg-slate-200" />
+              </div>
+              <div className="h-10 w-36 shrink-0 rounded-lg bg-slate-200" />
+            </div>
+
+            {/* Content card */}
+            <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 space-y-3">
+              <div className="h-4 w-full rounded bg-slate-100" />
+              <div className="h-4 w-5/6 rounded bg-slate-100" />
+              <div className="h-4 w-4/5 rounded bg-slate-100" />
+              <div className="h-4 w-full rounded bg-slate-100" />
+              <div className="h-4 w-3/4 rounded bg-slate-100" />
+              <div className="mt-4 h-36 w-full rounded-lg bg-slate-100" />
+              <div className="h-4 w-full rounded bg-slate-100" />
+              <div className="h-4 w-5/6 rounded bg-slate-100" />
+              <div className="h-4 w-2/3 rounded bg-slate-100" />
+            </div>
+
+            {/* Prev / Next nav */}
+            <div className="mt-8 flex items-center gap-3 border-t border-slate-200 pt-6">
+              <div className="h-10 w-32 rounded-lg bg-slate-200" />
+              <div className="ml-auto h-10 w-32 rounded-lg bg-slate-200" />
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   const { subtopic, item, sectionItems, prevItem, nextItem, nextTopic, fullOutline, topic, guide } = data;
@@ -403,7 +467,19 @@ export default function SubtopicDetailPage() {
 
           {/* Lesson content */}
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
-            {displayedHtml ? (
+            {loadingContent ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-4 w-full rounded bg-slate-100" />
+                <div className="h-4 w-5/6 rounded bg-slate-100" />
+                <div className="h-4 w-4/5 rounded bg-slate-100" />
+                <div className="h-4 w-full rounded bg-slate-100" />
+                <div className="h-4 w-3/4 rounded bg-slate-100" />
+                <div className="mt-4 h-36 w-full rounded-lg bg-slate-100" />
+                <div className="h-4 w-full rounded bg-slate-100" />
+                <div className="h-4 w-5/6 rounded bg-slate-100" />
+                <div className="h-4 w-2/3 rounded bg-slate-100" />
+              </div>
+            ) : displayedHtml ? (
               <div
                 ref={contentRef}
                 className="lesson-content"
