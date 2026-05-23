@@ -270,19 +270,19 @@ export default function LandingPage() {
               {outline.map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-3 rounded-lg border border-charcoal/8 px-4 py-3 transition-all duration-300"
+                  className="flex h-[62px] items-center gap-3 overflow-hidden rounded-lg border border-charcoal/8 px-4 transition-all duration-300"
                   style={{
                     opacity: showOutline && i < visibleTopics ? 1 : 0,
                     transform: showOutline && i < visibleTopics ? 'translateY(0)' : 'translateY(6px)',
                     transitionDelay: `${i * 50}ms`,
                   }}
                 >
-                  <span className="mt-0.5 shrink-0 font-mono text-xs font-semibold text-teal-700">
+                  <span className="shrink-0 font-mono text-xs font-semibold text-teal-700">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <div>
-                    <p className="text-sm font-medium text-charcoal">{item.title}</p>
-                    <p className="mt-0.5 text-xs text-charcoal-400">{item.desc}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-charcoal">{item.title}</p>
+                    <p className="truncate text-xs text-charcoal-400">{item.desc}</p>
                   </div>
                 </div>
               ))}
