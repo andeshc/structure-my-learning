@@ -311,7 +311,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="border-t border-charcoal/8 bg-white py-20">
+      <section className="border-t border-charcoal/8 bg-canvas py-20">
         <div className="mx-auto max-w-5xl px-6">
           <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">
             How it works
@@ -320,14 +320,21 @@ export default function LandingPage() {
             Three steps from curious to knowledgeable.
           </p>
 
-          <div className="mt-12 grid gap-10 sm:grid-cols-3">
+          <div className="mt-12 grid gap-5 sm:grid-cols-3">
             {STEPS.map(({ n, Icon, title, body }) => (
-              <div key={n}>
-                <p className="font-mono text-5xl font-bold text-charcoal/8 leading-none">{n}</p>
-                <div className="mt-3 flex h-9 w-9 items-center justify-center rounded-lg border border-teal-700/20 bg-teal-700/6">
-                  <Icon size={16} className="text-teal-700" />
+              <div key={n} className="relative overflow-hidden rounded-xl border border-charcoal/10 bg-white p-7 shadow-card">
+                {/* Teal top accent */}
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-teal-700" />
+                {/* Header row */}
+                <div className="mb-6 flex items-center justify-between">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 font-mono text-xs font-bold text-white">
+                    {n.replace('0', '')}
+                  </span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-teal-700/20 bg-teal-700/6">
+                    <Icon size={17} className="text-teal-700" />
+                  </div>
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-charcoal">{title}</h3>
+                <h3 className="text-base font-semibold text-charcoal">{title}</h3>
                 <p className="mt-2 text-sm leading-7 text-charcoal-400">{body}</p>
               </div>
             ))}
