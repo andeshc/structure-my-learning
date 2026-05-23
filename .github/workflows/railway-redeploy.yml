@@ -1,0 +1,21 @@
+name: Railway Redeploy
+
+on:
+  workflow_run:
+    workflows: ["Docker Image CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  redeploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Redeploy on Railway
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/railwayapp/cli/main/install.sh | sh
+          railway redeploy --service ${{ secrets.RAILWAY_SERVICE_ID }} --yes
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

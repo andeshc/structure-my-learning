@@ -195,6 +195,24 @@ export default function SubtopicDetailPage() {
   }, []);
 
   useEffect(() => {
+    function getScrollContainer(el) {
+      let node = el?.parentElement;
+      while (node && node !== document.body) {
+        const { overflowY } = window.getComputedStyle(node);
+        if (overflowY === 'auto' || overflowY === 'scroll') return node;
+        node = node.parentElement;
+      }
+      return window;
+    }
+    const container = articleRef.current ? getScrollContainer(articleRef.current) : window;
+    if (container === window) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      container.scrollTop = 0;
+    }
+  }, [topicId, positionParam]);
+
+  useEffect(() => {
     const controller = new AbortController();
     setReadingProgress(0);
     setLoadingContent(true);
