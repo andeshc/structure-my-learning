@@ -37,8 +37,8 @@ export default function AuthPage({ mode }) {
   }
 
   return (
-    <div className="min-h-screen bg-canvas px-4 py-10">
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-10 md:grid-cols-[1fr_420px]">
+    <div className="flex min-h-screen flex-col bg-canvas px-4 py-10">
+      <div className="mx-auto grid flex-1 max-w-6xl w-full items-center gap-10 md:grid-cols-[1fr_420px]">
         <section>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-charcoal md:text-6xl">

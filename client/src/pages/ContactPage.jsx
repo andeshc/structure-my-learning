@@ -30,8 +30,8 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <div className="mx-auto max-w-xl px-6 py-12">
+    <div className="flex min-h-screen flex-col bg-canvas">
+      <div className="mx-auto w-full max-w-xl flex-1 px-6 py-12">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
           <Link className="text-sm text-charcoal-400 hover:text-charcoal" to="/">← Back</Link>
@@ -78,7 +78,7 @@ export default function ContactPage() {
         )}
       </div>
 
-      <Footer className="border-t border-charcoal/10 mt-12" />
+      <Footer className="border-t border-charcoal/10" />
     </div>
   );
 }

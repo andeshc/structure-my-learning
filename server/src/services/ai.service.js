@@ -197,7 +197,7 @@ Additional output rules:
 - Do not include content lessons yet.
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.
-- For each subtopic, set "illustrationPrompts" to null unless a visual would provide clear pedagogical value that text alone cannot. Most subtopics should be null. Use a single prompt for subtopics where one diagram, chart, or process flow genuinely aids understanding (e.g. system architecture, data structures, biological processes, step-by-step flows). Use two prompts only when there are two genuinely distinct visuals that each serve a different pedagogical purpose — this should be rare. When you do include a prompt, make it detailed: describe the visual composition, key elements, labels, annotations, and layout in full.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
+- For each subtopic where a diagram, chart, process flow, or visual would meaningfully aid comprehension, populate "illustrationPrompts" with 1–2 detailed image-generation prompts (describe the visual composition, key elements, labels, and layout in full). Set the field to null for subtopics that are purely conceptual or text-only.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
 
   const userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
