@@ -38,7 +38,7 @@ const STEPS = [
     n: '02',
     Icon: Sparkles,
     title: 'Get a structured guide instantly',
-    body: 'Within seconds you have a complete learning guide: 5–12 topics in a logical progression from foundational to advanced, written for your exact query.',
+    body: 'Within seconds you have a complete learning guide: topics in a logical progression from foundational to advanced, written for your exact query.',
   },
   {
     n: '03',
