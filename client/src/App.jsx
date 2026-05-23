@@ -13,6 +13,7 @@ import NewGuidePage from './pages/NewGuidePage';
 import NotFoundPage from './pages/NotFoundPage';
 import SubtopicDetailPage from './pages/SubtopicDetailPage';
 import WelcomePage from './pages/WelcomePage';
+import PricingPage from './pages/PricingPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import ContactPage from './pages/ContactPage';
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/register" element={<AuthPage mode="register" />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/welcome" element={<WelcomePage />} />
+              <Route path="/pricing" element={<PricingPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/contact" element={<ContactPage />} />
