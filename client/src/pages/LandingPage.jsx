@@ -4,13 +4,27 @@ import { Link, Navigate } from 'react-router';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 
-const DEMO_QUERY = 'teach me about transformer architecture';
-const DEMO_OUTLINE = [
-  { title: 'What is a Transformer?', desc: 'The architecture that changed AI forever' },
-  { title: 'Self-Attention Explained', desc: 'How models decide what to focus on' },
-  { title: 'Positional Encoding', desc: 'Giving the model a sense of sequence' },
-  { title: 'Multi-Head Attention', desc: 'Parallel attention streams for richer context' },
-  { title: 'Training & Fine-tuning', desc: 'From pre-training to your specific use case' },
+const DEMOS = [
+  {
+    query: 'teach me about transformer architecture',
+    outline: [
+      { title: 'What is a Transformer?', desc: 'The architecture that changed AI forever' },
+      { title: 'Self-Attention Explained', desc: 'How models decide what to focus on' },
+      { title: 'Positional Encoding', desc: 'Giving the model a sense of sequence' },
+      { title: 'Multi-Head Attention', desc: 'Parallel attention streams for richer context' },
+      { title: 'Training & Fine-tuning', desc: 'From pre-training to your specific use case' },
+    ],
+  },
+  {
+    query: 'I want to learn about flower parts',
+    outline: [
+      { title: 'Flower Anatomy Overview', desc: 'The key structures that make up a flower' },
+      { title: 'Petals & Sepals', desc: 'Colour, attraction, and protection' },
+      { title: 'Stamens & Pistils', desc: 'The male and female reproductive organs' },
+      { title: 'Pollination', desc: 'How pollen travels and fertilises the ovule' },
+      { title: 'Fruit & Seed Formation', desc: 'From fertilised flower to the next generation' },
+    ],
+  },
 ];
 
 const STEPS = [
@@ -75,6 +89,9 @@ function useDemoAnimation() {
   const [visibleTopics, setVisibleTopics] = useState(0);
   const [animKey, setAnimKey] = useState(0);
 
+  const demoIndex = animKey % DEMOS.length;
+  const { query, outline } = DEMOS[demoIndex];
+
   useEffect(() => {
     let cancelled = false;
     const timers = [];
@@ -83,8 +100,8 @@ function useDemoAnimation() {
     const typeInterval = setInterval(() => {
       if (cancelled) return;
       i++;
-      setDisplayText(DEMO_QUERY.slice(0, i));
-      if (i >= DEMO_QUERY.length) {
+      setDisplayText(query.slice(0, i));
+      if (i >= query.length) {
         clearInterval(typeInterval);
         const t1 = setTimeout(() => {
           if (cancelled) return;
@@ -94,7 +111,7 @@ function useDemoAnimation() {
             if (cancelled) return;
             topicIdx++;
             setVisibleTopics(topicIdx);
-            if (topicIdx >= DEMO_OUTLINE.length) {
+            if (topicIdx >= outline.length) {
               clearInterval(topicInterval);
               const t2 = setTimeout(() => {
                 if (cancelled) return;
@@ -125,14 +142,14 @@ function useDemoAnimation() {
     };
   }, [animKey]);
 
-  return { displayText, showOutline, visibleTopics };
+  return { displayText, showOutline, visibleTopics, outline };
 }
 
 export default function LandingPage() {
   const { status, isAuthenticated } = useAuth();
   const [currency, setCurrency] = useState('USD');
   const [scrolled, setScrolled] = useState(false);
-  const { displayText, showOutline, visibleTopics } = useDemoAnimation();
+  const { displayText, showOutline, visibleTopics, outline } = useDemoAnimation();
 
   useEffect(() => {
     fetch('/api/geo')
@@ -247,10 +264,10 @@ export default function LandingPage() {
               className="mb-3 pt-4 text-xs font-medium uppercase tracking-widest text-charcoal-200 transition-opacity duration-300"
               style={{ opacity: showOutline ? 1 : 0 }}
             >
-              Your learning guide — 5 topics
+              Your learning guide — {outline.length} topics
             </p>
             <div className="space-y-2">
-              {DEMO_OUTLINE.map((item, i) => (
+              {outline.map((item, i) => (
                 <div
                   key={i}
                   className="flex items-start gap-3 rounded-lg border border-charcoal/8 px-4 py-3 transition-all duration-300"
