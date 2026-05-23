@@ -1,6 +1,6 @@
 const express = require('express');
 const { z } = require('zod');
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const { query } = require('../db/index');
 const ids = require('../utils/ids');
 const config = require('../config');
@@ -14,6 +14,16 @@ const contactSchema = z.object({
   message: z.string().trim().min(10).max(2000),
 });
 
+function createTransporter() {
+  if (!config.smtpUser || !config.smtpPass) return null;
+  return nodemailer.createTransport({
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: config.smtpPort === 465,
+    auth: { user: config.smtpUser, pass: config.smtpPass },
+  });
+}
+
 router.post('/', asyncHandler(async (req, res) => {
   const input = contactSchema.parse(req.body);
 
@@ -22,17 +32,18 @@ router.post('/', asyncHandler(async (req, res) => {
     [ids.contactId(), input.name, input.email, input.message]
   );
 
-  if (config.resendApiKey) {
+  const transporter = createTransporter();
+  if (transporter && config.contactEmail) {
     try {
-      const resend = new Resend(config.resendApiKey);
-      await resend.emails.send({
-        from: config.contactFromEmail,
+      await transporter.sendMail({
+        from: config.contactFromEmail || config.smtpUser,
         to: config.contactEmail,
         subject: `Contact form: ${input.name}`,
         text: `Name: ${input.name}\nEmail: ${input.email}\n\n${input.message}`,
+        replyTo: input.email,
       });
     } catch (err) {
-      console.error('Resend error:', err.message);
+      console.error('SMTP error:', err.message);
     }
   }
 
