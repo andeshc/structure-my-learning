@@ -23,8 +23,8 @@ async function sendVerificationEmail(email, name, token) {
       from: config.contactFromEmail || config.smtpUser,
       to: email,
       subject: 'Verify your email — StructureMyLearning',
-      text: `Hi ${name},\n\nPlease verify your email address by clicking the link below:\n\n${link}\n\nThe link expires in 24 hours. If you didn't create an account, you can ignore this email.`,
-      html: `<p>Hi ${name},</p><p>Please verify your email address by clicking the link below:</p><p><a href="${link}">${link}</a></p><p>The link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>`,
+      text: `Hi ${name},\n\nPlease verify your email address by clicking the link below:\n\n${link}\n\nThe link expires in 7 days. If you didn't create an account, you can ignore this email.`,
+      html: `<p>Hi ${name},</p><p>Please verify your email address by clicking the link below:</p><p><a href="${link}">${link}</a></p><p>The link expires in 7 days. If you didn't create an account, you can ignore this email.</p>`,
     });
   } catch (err) {
     console.error('[email] Failed to send verification email:', err.message);

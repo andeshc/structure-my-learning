@@ -1,7 +1,7 @@
 const { randomBytes } = require('crypto');
 const { query, getOne } = require('./index');
 
-const EXPIRY_HOURS = 24;
+const EXPIRY_HOURS = 24 * 7;
 
 async function createVerificationToken(userId) {
   await query(
