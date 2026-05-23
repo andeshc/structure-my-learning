@@ -47,7 +47,7 @@ export default function AppShell() {
               hideSidebar ? 'opacity-0' : 'opacity-100'
             } h-full`}
           >
-            <Link to="/" className="flex items-center gap-3">
+            <Link to="/dashboard" className="flex items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
                 <BookOpenCheck size={24} strokeWidth={2.1} />
               </span>
@@ -58,7 +58,7 @@ export default function AppShell() {
             </Link>
 
             <nav className="mt-14 grid gap-4">
-              <NavLink className={navClass} to="/">
+              <NavLink className={navClass} to="/dashboard">
                 <Home size={27} fill="currentColor" strokeWidth={2.2} />
                 Dashboard
               </NavLink>
@@ -86,7 +86,7 @@ export default function AppShell() {
 
         <div className="flex min-w-0 flex-col lg:flex-1 lg:overflow-y-auto">
           <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
-            <Link to="/" className="flex items-center gap-2 font-bold">
+            <Link to="/dashboard" className="flex items-center gap-2 font-bold">
               <BookOpenCheck className="text-blue-700" size={28} />
               Structure<span className="text-blue-700">My</span>Learning
             </Link>

@@ -8,6 +8,7 @@ import AccountPage from './pages/AccountPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import LandingPage from './pages/LandingPage';
 import GuideDetailPage from './pages/GuideDetailPage';
 import NewGuidePage from './pages/NewGuidePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -26,6 +27,7 @@ export default function App() {
         <ToastProvider>
           <AuthProvider>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<AuthPage mode="login" />} />
               <Route path="/register" element={<AuthPage mode="register" />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
@@ -37,7 +39,7 @@ export default function App() {
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppShell />}>
-                  <Route index element={<DashboardPage />} />
+                  <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="guides/new" element={<NewGuidePage />} />
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />
                   <Route path="topics/:topicId/subtopics/:position" element={<SubtopicDetailPage />} />
