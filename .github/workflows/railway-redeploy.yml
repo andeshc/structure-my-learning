@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Redeploy on Railway
         run: |
-          curl -fsSL https://raw.githubusercontent.com/railwayapp/cli/main/install.sh | sh
+          npm install -g @railway/cli
           railway redeploy --service ${{ secrets.RAILWAY_SERVICE_ID }} --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
