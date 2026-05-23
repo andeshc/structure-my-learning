@@ -55,7 +55,7 @@ const FEATURES = [
   },
   {
     title: 'AI that teaches, not just answers',
-    body: 'Every topic gets 800+ words of real educational content: clear explanations, real-world analogies, worked examples, and concise summaries.',
+    body: 'Every topic gets real educational content: clear explanations, real-world analogies, worked examples, and concise summaries.',
   },
   {
     title: 'Your library, always there',
