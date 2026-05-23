@@ -241,13 +241,12 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Outline */}
-          <div
-            className={`border-t border-charcoal/8 px-5 pb-5 transition-all duration-300 ${
-              showOutline ? 'max-h-[500px] opacity-100' : 'max-h-0 overflow-hidden opacity-0'
-            }`}
-          >
-            <p className="mb-3 pt-4 text-xs font-medium uppercase tracking-widest text-charcoal-200">
+          {/* Outline — always rendered at full height; only opacity animates */}
+          <div className="border-t border-charcoal/8 px-5 pb-5">
+            <p
+              className="mb-3 pt-4 text-xs font-medium uppercase tracking-widest text-charcoal-200 transition-opacity duration-300"
+              style={{ opacity: showOutline ? 1 : 0 }}
+            >
               Your learning guide — 5 topics
             </p>
             <div className="space-y-2">
@@ -256,8 +255,8 @@ export default function LandingPage() {
                   key={i}
                   className="flex items-start gap-3 rounded-lg border border-charcoal/8 px-4 py-3 transition-all duration-300"
                   style={{
-                    opacity: i < visibleTopics ? 1 : 0,
-                    transform: i < visibleTopics ? 'translateY(0)' : 'translateY(6px)',
+                    opacity: showOutline && i < visibleTopics ? 1 : 0,
+                    transform: showOutline && i < visibleTopics ? 'translateY(0)' : 'translateY(6px)',
                     transitionDelay: `${i * 50}ms`,
                   }}
                 >
