@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* AI-generated lesson content container — kept outside @layer to win over Tailwind CDN preflight */
 .lesson-content {
   overflow-x: hidden;

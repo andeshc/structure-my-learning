@@ -13,8 +13,8 @@ function navClass({ isActive }) {
   return [
     'flex h-14 items-center gap-4 rounded-lg px-5 text-[15px] font-medium transition',
     isActive
-      ? 'border border-blue-200 bg-blue-50 text-blue-700'
-      : 'text-slate-700 hover:bg-slate-50 hover:text-blue-700',
+      ? 'border border-teal-200 bg-teal-100/60 text-teal-800'
+      : 'text-slate-600 hover:bg-teal-50 hover:text-teal-800',
   ].join(' ');
 }
 
@@ -37,9 +37,10 @@ export default function AppShell() {
       <div className="w-full bg-white lg:flex lg:h-screen lg:overflow-hidden">
         {/* Sidebar — animates out on guide/subtopic pages */}
         <aside
-          className={`hidden shrink-0 border-r border-slate-200 bg-[#fffdfa] lg:flex lg:flex-col lg:overflow-hidden transition-[width] duration-300 ease-in-out ${
+          className={`hidden shrink-0 border-r border-teal-100 lg:flex lg:flex-col lg:overflow-hidden transition-[width] duration-300 ease-in-out ${
             hideSidebar ? 'lg:w-0' : 'lg:w-60'
           }`}
+          style={{ backgroundColor: '#f0fdfa' }}
         >
           {/* Fixed-width inner panel so content clips cleanly during width animation */}
           <div
@@ -48,12 +49,12 @@ export default function AppShell() {
             } h-full`}
           >
             <Link to="/dashboard" className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-700/10 text-teal-700">
                 <BookOpenCheck size={24} strokeWidth={2.1} />
               </span>
               <span className="leading-snug">
-                <span className="block text-base font-bold">Structure</span>
-                <span className="block text-base font-bold"><span className="text-blue-700">My</span>Learning</span>
+                <span className="block text-base font-bold text-charcoal">Structure</span>
+                <span className="block text-base font-bold text-charcoal"><span className="text-teal-700">My</span>Learning</span>
               </span>
             </Link>
 
@@ -72,9 +73,9 @@ export default function AppShell() {
               </NavLink>
             </nav>
 
-            <div className="mt-auto border-t border-slate-200 pt-5">
+            <div className="mt-auto border-t border-teal-100 pt-5">
               <button
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:border-red-200 hover:text-red-700"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-teal-100 px-4 py-3 text-sm font-semibold text-slate-500 transition hover:border-red-200 hover:text-red-600"
                 onClick={handleLogout}
               >
                 <LogOut size={18} />
@@ -85,12 +86,12 @@ export default function AppShell() {
         </aside>
 
         <div className="flex min-w-0 flex-col lg:flex-1 lg:overflow-y-auto">
-          <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
-            <Link to="/dashboard" className="flex items-center gap-2 font-bold">
-              <BookOpenCheck className="text-blue-700" size={28} />
-              Structure<span className="text-blue-700">My</span>Learning
+          <header className="flex items-center justify-between border-b border-teal-100 px-5 py-4 lg:hidden" style={{ backgroundColor: '#f0fdfa' }}>
+            <Link to="/dashboard" className="flex items-center gap-2 font-bold text-charcoal">
+              <BookOpenCheck className="text-teal-700" size={28} />
+              Structure<span className="text-teal-700">My</span>Learning
             </Link>
-            <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold" onClick={handleLogout}>Log out</button>
+            <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>
           </header>
           <main className="flex-1 px-5 py-7 sm:px-8 lg:px-16 lg:py-12">
             <Outlet />

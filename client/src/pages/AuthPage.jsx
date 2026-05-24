@@ -54,15 +54,43 @@ export default function AuthPage({ mode }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas px-4 py-10">
-      <div className="mx-auto grid flex-1 max-w-6xl w-full items-center gap-10 md:grid-cols-[1fr_420px]">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-canvas px-4 py-10">
+      {/* Fine-line grid */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: [
+            'linear-gradient(rgba(15,118,110,0.12) 1px, transparent 1px)',
+            'linear-gradient(90deg, rgba(15,118,110,0.12) 1px, transparent 1px)',
+          ].join(', '),
+          backgroundSize: '40px 40px',
+          WebkitMaskImage: 'linear-gradient(to bottom right, black 30%, transparent 80%)',
+          maskImage: 'linear-gradient(to bottom right, black 30%, transparent 80%)',
+        }}
+      />
+      {/* Color blooms */}
+      <div
+        className="pointer-events-none absolute inset-x-0 -top-20 h-[560px]"
+        style={{
+          background: [
+            'radial-gradient(ellipse 55% 70% at 10% 0%, rgba(99,102,241,0.11) 0%, transparent 60%)',
+            'radial-gradient(ellipse 70% 90% at 40% 0%, rgba(15,118,110,0.10) 0%, transparent 65%)',
+            'radial-gradient(ellipse 40% 55% at 75% 5%, rgba(251,146,60,0.08) 0%, transparent 55%)',
+          ].join(', '),
+        }}
+      />
+
+      <div className="relative mx-auto grid flex-1 max-w-6xl w-full items-center gap-10 md:grid-cols-[1fr_420px]">
         <section>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-charcoal md:text-6xl">
-            Build a personal course from a single learning goal.
+            Turn any learning goal into{' '}
+            <span className="bg-gradient-to-r from-teal-600 via-cyan-500 to-indigo-500 bg-clip-text text-transparent">
+              a guide built just for you.
+            </span>
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-charcoal-400">
-            Create structured guides, read generated lessons, and track progress through each topic.
+            Type what you're curious about. Get a complete, structured learning guide — with real depth on every topic. Like a tutor who wrote a mini-course, just for you.
           </p>
         </section>
 
@@ -85,7 +113,7 @@ export default function AuthPage({ mode }) {
           <>
           <h2 className="text-2xl font-semibold">{isRegister ? 'Create account' : 'Welcome back'}</h2>
           <p className="mt-2 text-sm text-charcoal-400">
-            {isRegister ? 'Start building your learning library.' : 'Sign in to continue learning.'}
+            {isRegister ? 'Three free guides to start. No credit card required.' : 'Welcome back. Pick up where you left off.'}
           </p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>

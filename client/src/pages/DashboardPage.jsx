@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { deleteGuide, listGuides } from '../api/guides';
 import LoadingPanel from '../components/LoadingPanel';
+import { useAuth } from '../context/AuthContext';
 
 const tagThemes = [
   'bg-blue-50 text-blue-700',
@@ -19,6 +20,15 @@ const tagThemes = [
   'bg-emerald-50 text-emerald-700',
   'bg-amber-50 text-amber-700',
   'bg-rose-50 text-rose-700',
+];
+
+// Paired card tint + illustration gradient overlay per theme index
+const CARD_THEMES = [
+  { cardBg: 'rgba(239,246,255,0.55)',  overlay: 'linear-gradient(135deg, rgba(96,165,250,0.28) 0%, transparent 65%)' },
+  { cardBg: 'rgba(245,243,255,0.55)',  overlay: 'linear-gradient(135deg, rgba(167,139,250,0.28) 0%, transparent 65%)' },
+  { cardBg: 'rgba(240,253,244,0.55)',  overlay: 'linear-gradient(135deg, rgba(52,211,153,0.28) 0%, transparent 65%)' },
+  { cardBg: 'rgba(255,251,235,0.55)',  overlay: 'linear-gradient(135deg, rgba(251,191,36,0.28) 0%, transparent 65%)' },
+  { cardBg: 'rgba(255,241,242,0.55)',  overlay: 'linear-gradient(135deg, rgba(251,113,133,0.28) 0%, transparent 65%)' },
 ];
 
 function minutesForGuide(guide) {
@@ -237,13 +247,37 @@ function GuideCard({ guide, index, onDelete }) {
     return () => document.removeEventListener('pointerdown', closeMenu);
   }, []);
 
+  const statusBadge = isFinished
+    ? { label: 'Complete',    cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' }
+    : isNotStarted
+    ? { label: 'Not started', cls: 'bg-slate-100 text-slate-500 border-slate-200' }
+    : { label: 'In progress', cls: 'bg-amber-100 text-amber-700 border-amber-200' };
+
+  const ctaCls = isFinished
+    ? 'bg-emerald-600 hover:bg-emerald-700'
+    : 'bg-teal-700 hover:bg-teal-800';
+
+  const theme = CARD_THEMES[index % CARD_THEMES.length];
+
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-blue-200">
+    <article
+      className="overflow-hidden rounded-xl border border-slate-200 transition-all hover:border-teal-200 hover:shadow-[0_0_0_3px_rgba(15,118,110,0.07)]"
+      style={{ backgroundColor: theme.cardBg }}
+    >
       <div className="relative border-b border-slate-100">
         <GuideIllustration guide={guide} index={index} title={title} />
+        {/* Gradient band overlay — tints the illustration with the card's colour */}
+        <div className="pointer-events-none absolute inset-0" style={{ background: theme.overlay }} />
+
+        {/* Status badge — bottom-left of illustration */}
+        <span className={`absolute bottom-2 left-2 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusBadge.cls}`}>
+          {statusBadge.label}
+        </span>
+
+        {/* Menu button */}
         <div ref={menuRef} className="absolute right-2 top-2">
           <button
-            className="grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-700"
+            className="grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-950 transition-colors hover:border-teal-200 hover:text-teal-700"
             type="button"
             aria-label={`Open menu for ${title}`}
             aria-expanded={isMenuOpen}
@@ -273,9 +307,15 @@ function GuideCard({ guide, index, onDelete }) {
       </div>
 
       <div className="p-4">
-        <Link to={`/guides/${guide.id}`} className="block min-h-[2.5rem] line-clamp-2 text-base font-bold leading-tight text-slate-950 transition-colors hover:text-blue-700">
+        <Link to={`/guides/${guide.id}`} className="block min-h-[2.5rem] line-clamp-2 text-base font-bold leading-tight text-slate-950 transition-colors hover:text-teal-700">
           {title}
         </Link>
+
+        {/* Topic count chip */}
+        <p className="mt-1.5 text-xs font-medium text-slate-400">
+          {topics} topic{topics !== 1 ? 's' : ''}
+        </p>
+
         <div className="mt-3 flex flex-wrap gap-1.5">
           {tags.map((tag, tagIndex) => (
             <span key={tag} className={`rounded px-2 py-0.5 text-xs font-semibold ${tagThemes[(index + tagIndex) % tagThemes.length]}`}>
@@ -292,36 +332,42 @@ function GuideCard({ guide, index, onDelete }) {
         </div>
       </div>
 
+      {/* Bolder CTA footer */}
       <Link
         to={`/guides/${guide.id}`}
-        className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 transition-colors hover:bg-slate-50"
+        className={`flex items-center justify-between px-4 py-3 text-sm font-semibold text-white transition-colors ${ctaCls}`}
       >
-        <span className="text-xs text-slate-500">{progressText}</span>
-        <span className="text-xs font-semibold text-blue-600">{actionLabel} →</span>
+        <span className="text-xs font-medium opacity-75">{progressText}</span>
+        <span>{actionLabel} →</span>
       </Link>
     </article>
   );
 }
 
-function StatPill({ icon, value, label, color }) {
+function StatCard({ icon, value, label, iconBg, bar }) {
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${color}`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-xl font-bold">{value}</p>
-        <p className="text-xs text-slate-500">{label}</p>
+    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5">
+      <div className={`absolute inset-x-0 top-0 h-0.5 ${bar}`} />
+      <div className="flex items-center gap-3">
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${iconBg}`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-xl font-bold text-slate-950">{value}</p>
+          <p className="text-xs text-slate-500">{label}</p>
+        </div>
       </div>
     </div>
   );
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [guides, setGuides] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   useEffect(() => {
     let cancelled = false;
@@ -383,17 +429,50 @@ export default function DashboardPage() {
 
   return (
     <section>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-slate-950">Dashboard</h1>
-        <Link className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700" to="/guides/new">
-          <Plus size={16} />
-          New guide
-        </Link>
+      {/* Full-bleed branded header — negative margins escape AppShell's padding */}
+      <div className="relative -mx-5 -mt-7 mb-8 overflow-hidden sm:-mx-8 sm:-mt-7 lg:-mx-16 lg:-mt-12">
+        {/* Fine-line teal grid */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: [
+              'linear-gradient(rgba(15,118,110,0.10) 1px, transparent 1px)',
+              'linear-gradient(90deg, rgba(15,118,110,0.10) 1px, transparent 1px)',
+            ].join(', '),
+            backgroundSize: '40px 40px',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+          }}
+        />
+        {/* Color blooms */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: [
+              'radial-gradient(ellipse 60% 120% at 0% 0%, rgba(99,102,241,0.10) 0%, transparent 60%)',
+              'radial-gradient(ellipse 60% 120% at 50% 0%, rgba(15,118,110,0.09) 0%, transparent 60%)',
+              'radial-gradient(ellipse 40% 80% at 100% 0%, rgba(251,146,60,0.07) 0%, transparent 55%)',
+            ].join(', '),
+          }}
+        />
+        <div className="relative px-5 py-8 sm:px-8 lg:px-16">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">My library</p>
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl font-bold text-slate-950">
+              Welcome back, <span className="bg-gradient-to-r from-teal-600 via-cyan-500 to-indigo-500 bg-clip-text text-transparent">{firstName}.</span>
+            </h1>
+            <Link className="inline-flex h-9 w-fit items-center gap-2 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800" to="/guides/new">
+              <Plus size={16} />
+              New guide
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="mt-8">
         <div className="flex items-center gap-3">
-          <BookOpen className="text-blue-700" size={20} />
+          <div className="h-5 w-0.5 rounded-full bg-teal-700" />
+          <BookOpen className="text-teal-700" size={20} />
           <h2 className="text-lg font-bold">Your learning guides</h2>
         </div>
 
@@ -408,14 +487,14 @@ export default function DashboardPage() {
                 <p className="mt-2 max-w-2xl text-sm text-slate-600">
                   Turn any topic into a structured roadmap with detailed sections, required concepts, optional depth, and generated lessons.
                 </p>
-                <Link className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white" to="/guides/new">
+                <Link className="mt-4 inline-flex rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800" to="/guides/new">
                   New guide
                 </Link>
               </div>
             </div>
           </div>
         ) : (
-          <div className="mt-6 grid justify-start gap-5 sm:grid-cols-[repeat(auto-fill,minmax(260px,340px))]">
+          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-[repeat(auto-fill,minmax(260px,340px))] sm:justify-start">
             {guides.map((guide, index) => (
               <GuideCard key={guide.id} guide={guide} index={index} onDelete={setDeleteTarget} />
             ))}
@@ -423,19 +502,11 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-slate-200">
-          <StatPill icon={<BookOpen className="text-emerald-600" size={20} />} value={totals.completed} label="Lessons completed" color="bg-emerald-100" />
-          <div className="xl:pl-6">
-            <StatPill icon={<CheckCircle2 className="text-amber-600" size={20} />} value={totals.activities} label="Activities completed" color="bg-amber-100" />
-          </div>
-          <div className="xl:pl-6">
-            <StatPill icon={<Clock3 className="text-blue-600" size={20} />} value={totals.duration} label="Total study time" color="bg-blue-100" />
-          </div>
-          <div className="xl:pl-6">
-            <StatPill icon={<TrendingUp className="text-orange-600" size={20} />} value={`${totals.progress}%`} label="Overall progress" color="bg-orange-100" />
-          </div>
-        </div>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={<BookOpen className="text-emerald-600" size={20} />} value={totals.completed} label="Lessons completed" iconBg="bg-emerald-100" bar="bg-emerald-500" />
+        <StatCard icon={<CheckCircle2 className="text-amber-600" size={20} />} value={totals.activities} label="Activities completed" iconBg="bg-amber-100" bar="bg-amber-500" />
+        <StatCard icon={<Clock3 className="text-teal-600" size={20} />} value={totals.duration} label="Total study time" iconBg="bg-teal-100" bar="bg-teal-600" />
+        <StatCard icon={<TrendingUp className="text-indigo-600" size={20} />} value={`${totals.progress}%`} label="Overall progress" iconBg="bg-indigo-100" bar="bg-indigo-500" />
       </div>
 
       {deleteTarget && (
