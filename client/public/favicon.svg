@@ -1,0 +1,16 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StructureMyLearning">
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="160" y1="160" x2="864" y2="864">
+      <stop offset="0" stop-color="#115E59"/>
+      <stop offset="1" stop-color="#0D9488"/>
+    </linearGradient>
+    <linearGradient id="pill" gradientUnits="userSpaceOnUse" x1="300" y1="720" x2="724" y2="304">
+      <stop offset="0" stop-color="#CCFBF1"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="229" fill="url(#bg)"/>
+  <rect x="436" y="300" width="288" height="118" rx="59" fill="url(#pill)"/>
+  <rect x="368" y="453" width="288" height="118" rx="59" fill="url(#pill)"/>
+  <rect x="300" y="606" width="288" height="118" rx="59" fill="url(#pill)"/>
+</svg>

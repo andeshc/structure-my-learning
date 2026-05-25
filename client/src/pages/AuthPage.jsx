@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { resendVerification } from '../api/auth';
 import Footer from '../components/Footer';
+import Logo from '../components/Logo';
 
 export default function AuthPage({ mode }) {
   const auth = useAuth();
@@ -82,7 +83,7 @@ export default function AuthPage({ mode }) {
 
       <div className="relative mx-auto grid flex-1 max-w-6xl w-full items-center gap-10 md:grid-cols-[1fr_420px]">
         <section>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
+          <Link to="/"><Logo className="h-10 w-auto" /></Link>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-charcoal md:text-6xl">
             Turn any learning goal into{' '}
             <span className="bg-gradient-to-r from-teal-600 via-cyan-500 to-indigo-500 bg-clip-text text-transparent">

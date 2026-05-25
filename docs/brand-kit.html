@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structure My Learning — Brand Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F3EE;
+    --card: #FFFFFF;
+    --ink: #16211F;
+    --muted: #6A736F;
+    --line: rgba(22,33,31,0.10);
+    --teal-deepest: #115E59;
+    --teal-deep: #0F766E;
+    --teal-core: #0D9488;
+    --teal-bright: #2DD4BF;
+    --teal-glow: #5EEAD4;
+    --paper: #F8FAFC;
+    --dark: #0B1220;
+    --display: 'Bricolage Grotesque', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* structured dot-grid backdrop */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image: radial-gradient(rgba(15,118,110,0.07) 1px, transparent 1px);
+    background-size: 26px 26px;
+    mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+  }
+
+  .wrap { max-width: 1120px; margin:0 auto; padding: 0 32px; position:relative; z-index:1; }
+
+  /* ---- hero ---- */
+  header.hero { padding: 76px 0 54px; }
+  .eyebrow {
+    font-size: 12px; font-weight:600; letter-spacing: 0.22em; text-transform:uppercase;
+    color: var(--teal-deep); margin-bottom: 30px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .eyebrow::after { content:""; height:1px; flex:1; background: var(--line); }
+  .hero-logo { max-width: 430px; width: 70%; height:auto; display:block; margin-bottom: 34px; }
+  .hero h1 {
+    font-family: var(--display); font-weight: 800; font-size: clamp(38px, 6vw, 68px);
+    line-height: 1.02; letter-spacing: -0.02em; max-width: 13ch;
+  }
+  .hero p {
+    margin-top: 20px; font-size: 17px; color: var(--muted); max-width: 52ch;
+  }
+
+  /* ---- sections ---- */
+  section { padding: 50px 0; border-top: 1px solid var(--line); }
+  .sec-head { display:flex; align-items:baseline; gap:18px; margin-bottom: 34px; }
+  .sec-num {
+    font-family: var(--display); font-weight:700; font-size: 15px;
+    color: var(--teal-bright); letter-spacing: 0.04em;
+  }
+  .sec-head h2 {
+    font-family: var(--display); font-weight:700; font-size: clamp(24px, 3.4vw, 34px);
+    letter-spacing: -0.015em;
+  }
+  .sec-head .note { margin-left:auto; font-size:14px; color:var(--muted); max-width: 34ch; text-align:right; }
+
+  /* ---- logo display cards ---- */
+  .stage {
+    background: var(--card); border:1px solid var(--line); border-radius: 18px;
+    display:flex; align-items:center; justify-content:center;
+    padding: 64px 40px; min-height: 240px;
+  }
+  .stage.dark { background: var(--dark); border-color: transparent; }
+  .stage svg { width: 100%; max-width: 420px; height:auto; }
+  .stage.mark svg { max-width: 150px; }
+  .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display:grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .caption { font-size: 13px; color: var(--muted); margin-top: 12px; }
+  .caption b { color: var(--ink); font-weight:600; }
+
+  /* ---- logomark concept ---- */
+  .concept { display:grid; grid-template-columns: 320px 1fr; gap: 40px; align-items:center; }
+  .concept .stage { min-height: 260px; }
+  .concept h3 { font-family:var(--display); font-size: 21px; font-weight:700; margin-bottom: 12px; }
+  .concept p { color: var(--muted); font-size: 15px; margin-bottom: 16px; }
+  .tags { display:flex; flex-wrap:wrap; gap: 8px; }
+  .tag {
+    font-size: 12px; font-weight:600; padding: 6px 12px; border-radius: 999px;
+    background: rgba(15,118,110,0.08); color: var(--teal-deep);
+  }
+
+  /* ---- color ---- */
+  .swatches { display:grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .swatch {
+    border:1px solid var(--line); border-radius: 14px; overflow:hidden;
+    background: var(--card); cursor:pointer; transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .swatch:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(22,33,31,0.10); }
+  .swatch .chip { height: 92px; }
+  .swatch .meta { padding: 12px 14px; }
+  .swatch .nm { font-weight:600; font-size: 14px; }
+  .swatch .hex { font-size: 12px; color: var(--muted); font-family: var(--body);
+    letter-spacing: 0.04em; margin-top: 2px; display:flex; align-items:center; gap:6px; }
+  .swatch .hex .copied { color: var(--teal-deep); font-weight:600; opacity:0; transition:opacity .2s; }
+  .swatch.is-copied .hex .copied { opacity:1; }
+
+  /* ---- typography ---- */
+  .type-card {
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding: 36px 38px;
+  }
+  .type-card + .type-card { margin-top: 16px; }
+  .type-label {
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size: 13px; color: var(--muted); margin-bottom: 18px;
+  }
+  .type-label b { color: var(--ink); font-weight:600; font-size: 15px; }
+  .specimen-display { font-family: var(--display); font-weight:700; font-size: clamp(40px,7vw,76px);
+    letter-spacing: -0.02em; line-height:1; }
+  .specimen-sub { font-family: var(--body); font-weight:600; font-size: clamp(20px,3vw,30px);
+    letter-spacing: 0.34em; text-transform:uppercase; color: var(--teal-deep); }
+  .glyphs { margin-top: 16px; font-size: 15px; color: var(--muted); letter-spacing: 0.02em;
+    border-top:1px solid var(--line); padding-top:16px; }
+
+  /* ---- usage do/dont ---- */
+  .rules { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .rule { background:var(--card); border:1px solid var(--line); border-radius:16px; padding: 24px 26px; }
+  .rule .rh { display:flex; align-items:center; gap:10px; font-family:var(--display);
+    font-weight:700; font-size:16px; margin-bottom:14px; }
+  .rule .badge { width:22px; height:22px; border-radius:6px; display:grid; place-items:center;
+    font-size:14px; font-weight:700; color:#fff; }
+  .rule.do .badge { background: var(--teal-core); }
+  .rule.dont .badge { background: #B4453C; }
+  .rule ul { list-style:none; }
+  .rule li { font-size:14px; color:var(--muted); padding: 6px 0 6px 20px; position:relative; }
+  .rule li::before { content:""; position:absolute; left:0; top:13px; width:6px; height:6px;
+    border-radius:50%; background: var(--line); }
+  .rule.do li::before { background: var(--teal-bright); }
+
+  /* ---- specs strip ---- */
+  .specs { display:grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .spec { background:var(--card); border:1px solid var(--line); border-radius:16px; padding: 24px 26px; }
+  .spec .k { font-size:12px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
+    color: var(--teal-deep); margin-bottom: 10px; }
+  .spec .v { font-family:var(--display); font-weight:700; font-size: 19px; }
+  .spec .s { font-size:13px; color:var(--muted); margin-top: 6px; }
+
+  footer { padding: 46px 0 64px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+  footer .fl { font-family:var(--display); font-weight:700; }
+  footer .fr { font-size:13px; color:var(--muted); }
+
+  /* ---- entrance animation ---- */
+  .reveal { opacity:0; transform: translateY(16px); animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
+  @keyframes rise { to { opacity:1; transform:none; } }
+
+  @media (max-width: 820px) {
+    .grid-2, .grid-3, .swatches, .rules, .specs { grid-template-columns: 1fr; }
+    .swatches { grid-template-columns: 1fr 1fr; }
+    .concept { grid-template-columns: 1fr; }
+    .sec-head { flex-direction:column; gap:6px; }
+    .sec-head .note { margin-left:0; text-align:left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero reveal">
+    <div class="eyebrow">Brand Kit</div>
+    <svg class="hero-logo" viewBox="0 0 429 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning logo">
+  <defs>
+    <linearGradient id="u1-p-smlGrad" gradientUnits="userSpaceOnUse" x1="41" y1="156" x2="127" y2="90">
+      <stop offset="0" stop-color="#0F766E"/>
+      <stop offset="0.55" stop-color="#0D9488"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <rect x="85" y="86" width="50" height="21" rx="10.5" fill="url(#u1-p-smlGrad)"/>
+  <rect x="58" y="112" width="50" height="21" rx="10.5" fill="url(#u1-p-smlGrad)"/>
+  <rect x="31" y="138" width="50" height="21" rx="10.5" fill="url(#u1-p-smlGrad)"/>
+  <!-- "Structure" - Bricolage Grotesque 700, outlined -->
+  <g>
+    <path fill="#16211F" d="M299 -14Q229 -14 176.5 2.0Q124 18 89.0 48.0Q54 78 37.5 120.5Q21 163 23 215L173 248Q175 202 192.5 173.5Q210 145 240.0 131.5Q270 118 307 118Q337 118 360.0 125.5Q383 133 396.5 146.5Q410 160 410 178Q410 202 392.0 217.5Q374 233 342.5 244.0Q311 255 271 266Q228 278 185.5 292.5Q143 307 108.0 329.0Q73 351 51.5 386.0Q30 421 30 473Q30 537 62.5 582.0Q95 627 152.5 650.5Q210 674 284 674Q362 674 423.0 647.5Q484 621 517.0 570.0Q550 519 543 445L395 421Q396 451 389.0 474.0Q382 497 367.5 513.0Q353 529 331.0 537.5Q309 546 279 546Q248 546 227.5 538.0Q207 530 196.5 516.0Q186 502 186 484Q186 463 202.0 449.0Q218 435 248.0 424.5Q278 414 319 403Q362 391 405.5 376.5Q449 362 486.0 338.5Q523 315 545.5 278.0Q568 241 568 184Q568 118 533.5 74.0Q499 30 438.5 8.0Q378 -14 299 -14Z" transform="translate(165.000,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(196.845,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(216.321,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(237.906,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M289 -14Q218 -14 167.0 7.5Q116 29 84.0 67.0Q52 105 37.0 154.0Q22 203 22 258Q22 314 37.0 364.5Q52 415 83.5 455.5Q115 496 165.5 519.0Q216 542 287 542Q371 542 422.5 510.5Q474 479 494.5 429.0Q515 379 506 321L366 310Q368 346 358.5 369.5Q349 393 330.0 404.5Q311 416 284 416Q260 416 241.5 407.0Q223 398 210.5 379.5Q198 361 191.5 333.0Q185 305 185 266Q185 216 196.5 180.0Q208 144 231.5 125.0Q255 106 291 106Q328 106 347.0 124.0Q366 142 372.0 169.5Q378 197 374 224L523 217Q529 173 519.0 131.5Q509 90 480.5 57.0Q452 24 404.5 5.0Q357 -14 289 -14Z" transform="translate(268.155,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(297.378,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(316.854,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(347.103,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" transform="translate(367.719,124.000) scale(0.057000,-0.057000)"/>
+  </g>
+  <!-- "MY LEARNING" - Inter 600, outlined -->
+  <g>
+    <path fill="#0F766E" d="M180 0V1490H450L817 550Q830 517 846.5 467.5Q863 418 881.5 360.0Q900 302 917.0 244.5Q934 187 947 138H905Q919 184 936.0 240.5Q953 297 971.5 355.5Q990 414 1007.0 465.0Q1024 516 1037 550L1399 1490H1670V0H1483V851Q1483 897 1483.5 956.0Q1484 1015 1485.5 1080.0Q1487 1145 1488.5 1212.0Q1490 1279 1491 1342H1507Q1486 1273 1462.5 1201.5Q1439 1130 1416.5 1063.5Q1394 997 1374.0 942.0Q1354 887 1340 851L1007 0H842L504 851Q490 886 471.0 939.5Q452 993 429.5 1058.5Q407 1124 383.0 1196.5Q359 1269 334 1342H352Q354 1286 355.5 1221.0Q357 1156 358.0 1089.5Q359 1023 360.0 961.5Q361 900 361 851V0Z" transform="translate(168.000,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M600 0V610L52 1490H272L567 1009Q617 928 655.5 854.5Q694 781 735 669H659Q700 783 739.0 857.5Q778 932 825 1009L1119 1490H1338L790 610V0Z" transform="translate(191.566,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H370V168H1060V0Z" transform="translate(221.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H1088V1322H370V836H1039V668H370V168H1097V0Z" transform="translate(238.574,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M52 0 593 1490H813L1361 0H1161L845 884Q816 966 777.5 1088.5Q739 1211 684 1401H720Q666 1209 626.5 1084.5Q587 960 561 884L254 0ZM324 416V582H1089V416Z" transform="translate(256.096,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H690Q864 1490 976.5 1430.5Q1089 1371 1143.5 1267.0Q1198 1163 1198 1030Q1198 897 1143.5 795.0Q1089 693 977.0 635.5Q865 578 691 578H286V747H682Q800 747 871.5 781.5Q943 816 976.0 879.5Q1009 943 1009 1030Q1009 1119 976.0 1184.5Q943 1250 871.0 1286.5Q799 1323 680 1323H370V0ZM1036 0 676 671H890L1256 0Z" transform="translate(275.395,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(293.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M370 1490V0H180V1490Z" transform="translate(314.334,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(325.205,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M789 -20Q590 -20 440.0 73.0Q290 166 206.0 337.5Q122 509 122 744Q122 981 206.0 1152.5Q290 1324 438.0 1417.0Q586 1510 777 1510Q895 1510 997.5 1475.0Q1100 1440 1181.0 1375.0Q1262 1310 1315.5 1220.5Q1369 1131 1389 1023H1193Q1170 1095 1132.0 1152.0Q1094 1209 1041.5 1250.0Q989 1291 923.0 1312.5Q857 1334 778 1334Q647 1334 540.0 1266.5Q433 1199 370.0 1067.5Q307 936 307 744Q307 554 370.5 423.0Q434 292 543.0 224.0Q652 156 789 156Q915 156 1011.0 209.5Q1107 263 1160.5 361.5Q1214 460 1214 594L1271 583H828V749H1400V586Q1400 401 1321.0 265.0Q1242 129 1104.5 54.5Q967 -20 789 -20Z" transform="translate(345.773,159.000) scale(0.009766,-0.009766)"/>
+  </g>
+</svg>
+
+    <h1>The identity system, in one place.</h1>
+    <p>Everything needed to represent Structure My Learning consistently —
+       the logo, the mark, color, type, and the rules that keep it coherent.</p>
+  </header>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">01</span><h2>The Logo</h2>
+      <span class="note">Primary lockup. Use this everywhere it fits.</span>
+    </div>
+    <div class="stage"><svg viewBox="0 0 429 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning logo">
+  <defs>
+    <linearGradient id="u2-p-smlGrad" gradientUnits="userSpaceOnUse" x1="41" y1="156" x2="127" y2="90">
+      <stop offset="0" stop-color="#0F766E"/>
+      <stop offset="0.55" stop-color="#0D9488"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <rect x="85" y="86" width="50" height="21" rx="10.5" fill="url(#u2-p-smlGrad)"/>
+  <rect x="58" y="112" width="50" height="21" rx="10.5" fill="url(#u2-p-smlGrad)"/>
+  <rect x="31" y="138" width="50" height="21" rx="10.5" fill="url(#u2-p-smlGrad)"/>
+  <!-- "Structure" - Bricolage Grotesque 700, outlined -->
+  <g>
+    <path fill="#16211F" d="M299 -14Q229 -14 176.5 2.0Q124 18 89.0 48.0Q54 78 37.5 120.5Q21 163 23 215L173 248Q175 202 192.5 173.5Q210 145 240.0 131.5Q270 118 307 118Q337 118 360.0 125.5Q383 133 396.5 146.5Q410 160 410 178Q410 202 392.0 217.5Q374 233 342.5 244.0Q311 255 271 266Q228 278 185.5 292.5Q143 307 108.0 329.0Q73 351 51.5 386.0Q30 421 30 473Q30 537 62.5 582.0Q95 627 152.5 650.5Q210 674 284 674Q362 674 423.0 647.5Q484 621 517.0 570.0Q550 519 543 445L395 421Q396 451 389.0 474.0Q382 497 367.5 513.0Q353 529 331.0 537.5Q309 546 279 546Q248 546 227.5 538.0Q207 530 196.5 516.0Q186 502 186 484Q186 463 202.0 449.0Q218 435 248.0 424.5Q278 414 319 403Q362 391 405.5 376.5Q449 362 486.0 338.5Q523 315 545.5 278.0Q568 241 568 184Q568 118 533.5 74.0Q499 30 438.5 8.0Q378 -14 299 -14Z" transform="translate(165.000,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(196.845,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(216.321,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(237.906,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M289 -14Q218 -14 167.0 7.5Q116 29 84.0 67.0Q52 105 37.0 154.0Q22 203 22 258Q22 314 37.0 364.5Q52 415 83.5 455.5Q115 496 165.5 519.0Q216 542 287 542Q371 542 422.5 510.5Q474 479 494.5 429.0Q515 379 506 321L366 310Q368 346 358.5 369.5Q349 393 330.0 404.5Q311 416 284 416Q260 416 241.5 407.0Q223 398 210.5 379.5Q198 361 191.5 333.0Q185 305 185 266Q185 216 196.5 180.0Q208 144 231.5 125.0Q255 106 291 106Q328 106 347.0 124.0Q366 142 372.0 169.5Q378 197 374 224L523 217Q529 173 519.0 131.5Q509 90 480.5 57.0Q452 24 404.5 5.0Q357 -14 289 -14Z" transform="translate(268.155,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(297.378,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(316.854,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(347.103,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#16211F" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" transform="translate(367.719,124.000) scale(0.057000,-0.057000)"/>
+  </g>
+  <!-- "MY LEARNING" - Inter 600, outlined -->
+  <g>
+    <path fill="#0F766E" d="M180 0V1490H450L817 550Q830 517 846.5 467.5Q863 418 881.5 360.0Q900 302 917.0 244.5Q934 187 947 138H905Q919 184 936.0 240.5Q953 297 971.5 355.5Q990 414 1007.0 465.0Q1024 516 1037 550L1399 1490H1670V0H1483V851Q1483 897 1483.5 956.0Q1484 1015 1485.5 1080.0Q1487 1145 1488.5 1212.0Q1490 1279 1491 1342H1507Q1486 1273 1462.5 1201.5Q1439 1130 1416.5 1063.5Q1394 997 1374.0 942.0Q1354 887 1340 851L1007 0H842L504 851Q490 886 471.0 939.5Q452 993 429.5 1058.5Q407 1124 383.0 1196.5Q359 1269 334 1342H352Q354 1286 355.5 1221.0Q357 1156 358.0 1089.5Q359 1023 360.0 961.5Q361 900 361 851V0Z" transform="translate(168.000,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M600 0V610L52 1490H272L567 1009Q617 928 655.5 854.5Q694 781 735 669H659Q700 783 739.0 857.5Q778 932 825 1009L1119 1490H1338L790 610V0Z" transform="translate(191.566,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H370V168H1060V0Z" transform="translate(221.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H1088V1322H370V836H1039V668H370V168H1097V0Z" transform="translate(238.574,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M52 0 593 1490H813L1361 0H1161L845 884Q816 966 777.5 1088.5Q739 1211 684 1401H720Q666 1209 626.5 1084.5Q587 960 561 884L254 0ZM324 416V582H1089V416Z" transform="translate(256.096,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H690Q864 1490 976.5 1430.5Q1089 1371 1143.5 1267.0Q1198 1163 1198 1030Q1198 897 1143.5 795.0Q1089 693 977.0 635.5Q865 578 691 578H286V747H682Q800 747 871.5 781.5Q943 816 976.0 879.5Q1009 943 1009 1030Q1009 1119 976.0 1184.5Q943 1250 871.0 1286.5Q799 1323 680 1323H370V0ZM1036 0 676 671H890L1256 0Z" transform="translate(275.395,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(293.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M370 1490V0H180V1490Z" transform="translate(314.334,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(325.205,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M789 -20Q590 -20 440.0 73.0Q290 166 206.0 337.5Q122 509 122 744Q122 981 206.0 1152.5Q290 1324 438.0 1417.0Q586 1510 777 1510Q895 1510 997.5 1475.0Q1100 1440 1181.0 1375.0Q1262 1310 1315.5 1220.5Q1369 1131 1389 1023H1193Q1170 1095 1132.0 1152.0Q1094 1209 1041.5 1250.0Q989 1291 923.0 1312.5Q857 1334 778 1334Q647 1334 540.0 1266.5Q433 1199 370.0 1067.5Q307 936 307 744Q307 554 370.5 423.0Q434 292 543.0 224.0Q652 156 789 156Q915 156 1011.0 209.5Q1107 263 1160.5 361.5Q1214 460 1214 594L1271 583H828V749H1400V586Q1400 401 1321.0 265.0Q1242 129 1104.5 54.5Q967 -20 789 -20Z" transform="translate(345.773,159.000) scale(0.009766,-0.009766)"/>
+  </g>
+</svg>
+</div>
+    <p class="caption"><b>Primary lockup</b> — "Structure" in Bricolage Grotesque, "MY LEARNING" in Inter.
+       The pill stack aligns to the cap line and the baseline of the wordmark.</p>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">02</span><h2>The Logomark</h2>
+      <span class="note">For favicons, avatars, and tight spaces.</span>
+    </div>
+    <div class="concept">
+      <div class="stage mark"><svg viewBox="0 0 104 73" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning mark">
+  <defs>
+    <linearGradient id="u3-m-mk" gradientUnits="userSpaceOnUse" x1="10" y1="70" x2="96" y2="4">
+      <stop offset="0" stop-color="#0F766E"/>
+      <stop offset="0.55" stop-color="#0D9488"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <rect x="54" y="0" width="50" height="21" rx="10.5" fill="url(#u3-m-mk)"/>
+  <rect x="27" y="26" width="50" height="21" rx="10.5" fill="url(#u3-m-mk)"/>
+  <rect x="0" y="52" width="50" height="21" rx="10.5" fill="url(#u3-m-mk)"/>
+</svg>
+</div>
+      <div>
+        <h3>Three steps, one idea.</h3>
+        <p>Three rounded modules ascending left to right. The modularity reads
+           as <em>structure</em>; the upward climb reads as <em>learning progression</em> —
+           a course, a path, a roadmap. The gradient deepens toward the base, so
+           the climb visibly brightens as it rises.</p>
+        <div class="tags">
+          <span class="tag">Structure</span>
+          <span class="tag">Progression</span>
+          <span class="tag">Modular</span>
+          <span class="tag">Pathway</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">03</span><h2>App Icon</h2>
+      <span class="note">Mark rebuilt with thicker pills for small-size clarity.</span>
+    </div>
+    <div class="grid-3">
+      <div>
+        <div class="stage" style="padding:40px">
+          <div style="width:150px"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning app icon">
+  <defs>
+    <linearGradient id="u4-ic-iconBg" gradientUnits="userSpaceOnUse" x1="160" y1="160" x2="864" y2="864">
+      <stop offset="0" stop-color="#115E59"/>
+      <stop offset="1" stop-color="#0D9488"/>
+    </linearGradient>
+    <linearGradient id="u4-ic-iconPill" gradientUnits="userSpaceOnUse" x1="300" y1="720" x2="724" y2="304">
+      <stop offset="0" stop-color="#CCFBF1"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded-square background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="229" fill="url(#u4-ic-iconBg)"/>
+  <!-- three ascending pills, thickened for icon scale -->
+  <rect x="436" y="300" width="288" height="118" rx="59" fill="url(#u4-ic-iconPill)"/>
+  <rect x="368" y="453" width="288" height="118" rx="59" fill="url(#u4-ic-iconPill)"/>
+  <rect x="300" y="606" width="288" height="118" rx="59" fill="url(#u4-ic-iconPill)"/>
+</svg>
+</div>
+        </div>
+        <p class="caption"><b>App icon</b> — solid teal, light pills.</p>
+      </div>
+      <div>
+        <div class="stage" style="padding:40px">
+          <div style="width:64px"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning app icon">
+  <defs>
+    <linearGradient id="u5-ic-iconBg" gradientUnits="userSpaceOnUse" x1="160" y1="160" x2="864" y2="864">
+      <stop offset="0" stop-color="#115E59"/>
+      <stop offset="1" stop-color="#0D9488"/>
+    </linearGradient>
+    <linearGradient id="u5-ic-iconPill" gradientUnits="userSpaceOnUse" x1="300" y1="720" x2="724" y2="304">
+      <stop offset="0" stop-color="#CCFBF1"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded-square background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="229" fill="url(#u5-ic-iconBg)"/>
+  <!-- three ascending pills, thickened for icon scale -->
+  <rect x="436" y="300" width="288" height="118" rx="59" fill="url(#u5-ic-iconPill)"/>
+  <rect x="368" y="453" width="288" height="118" rx="59" fill="url(#u5-ic-iconPill)"/>
+  <rect x="300" y="606" width="288" height="118" rx="59" fill="url(#u5-ic-iconPill)"/>
+</svg>
+</div>
+        </div>
+        <p class="caption"><b>At 64px</b> — still legible.</p>
+      </div>
+      <div>
+        <div class="stage" style="padding:40px">
+          <div style="width:32px"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning app icon">
+  <defs>
+    <linearGradient id="u6-ic-iconBg" gradientUnits="userSpaceOnUse" x1="160" y1="160" x2="864" y2="864">
+      <stop offset="0" stop-color="#115E59"/>
+      <stop offset="1" stop-color="#0D9488"/>
+    </linearGradient>
+    <linearGradient id="u6-ic-iconPill" gradientUnits="userSpaceOnUse" x1="300" y1="720" x2="724" y2="304">
+      <stop offset="0" stop-color="#CCFBF1"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded-square background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="229" fill="url(#u6-ic-iconBg)"/>
+  <!-- three ascending pills, thickened for icon scale -->
+  <rect x="436" y="300" width="288" height="118" rx="59" fill="url(#u6-ic-iconPill)"/>
+  <rect x="368" y="453" width="288" height="118" rx="59" fill="url(#u6-ic-iconPill)"/>
+  <rect x="300" y="606" width="288" height="118" rx="59" fill="url(#u6-ic-iconPill)"/>
+</svg>
+</div>
+        </div>
+        <p class="caption"><b>At 32px</b> — favicon scale.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">04</span><h2>Color</h2>
+      <span class="note">Click any swatch to copy its hex.</span>
+    </div>
+    <div class="swatches" id="swatches"></div>
+    <p class="caption" style="margin-top:16px">The mark gradient runs
+       <b>Teal Deep → Teal Core → Teal Bright</b>, bottom-left to top-right.</p>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">05</span><h2>Typography</h2>
+      <span class="note">A characterful display face, a neutral workhorse.</span>
+    </div>
+    <div class="type-card">
+      <div class="type-label"><b>Bricolage Grotesque</b><span>Display · Bold 700 · headlines &amp; the wordmark</span></div>
+      <div class="specimen-display">Structure</div>
+      <div class="glyphs">ABCDEFGHIJKLMNOPQRSTUVWXYZ&nbsp; abcdefghijklmnopqrstuvwxyz&nbsp; 0123456789</div>
+    </div>
+    <div class="type-card">
+      <div class="type-label"><b>Inter</b><span>Body &amp; UI · SemiBold 600 · the "MY LEARNING" line</span></div>
+      <div class="specimen-sub">My Learning</div>
+      <div class="glyphs">ABCDEFGHIJKLMNOPQRSTUVWXYZ&nbsp; abcdefghijklmnopqrstuvwxyz&nbsp; 0123456789</div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">06</span><h2>Variants</h2>
+      <span class="note">For dark surfaces and single-color contexts.</span>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="stage dark"><svg viewBox="0 0 429 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning logo">
+  <defs>
+    <linearGradient id="u7-d-smlGrad" gradientUnits="userSpaceOnUse" x1="41" y1="156" x2="127" y2="90">
+      <stop offset="0" stop-color="#14B8A6"/>
+      <stop offset="0.55" stop-color="#2DD4BF"/>
+      <stop offset="1" stop-color="#5EEAD4"/>
+    </linearGradient>
+  </defs>
+  <rect x="85" y="86" width="50" height="21" rx="10.5" fill="url(#u7-d-smlGrad)"/>
+  <rect x="58" y="112" width="50" height="21" rx="10.5" fill="url(#u7-d-smlGrad)"/>
+  <rect x="31" y="138" width="50" height="21" rx="10.5" fill="url(#u7-d-smlGrad)"/>
+  <!-- "Structure" - Bricolage Grotesque 700, outlined -->
+  <g>
+    <path fill="#F8FAFC" d="M299 -14Q229 -14 176.5 2.0Q124 18 89.0 48.0Q54 78 37.5 120.5Q21 163 23 215L173 248Q175 202 192.5 173.5Q210 145 240.0 131.5Q270 118 307 118Q337 118 360.0 125.5Q383 133 396.5 146.5Q410 160 410 178Q410 202 392.0 217.5Q374 233 342.5 244.0Q311 255 271 266Q228 278 185.5 292.5Q143 307 108.0 329.0Q73 351 51.5 386.0Q30 421 30 473Q30 537 62.5 582.0Q95 627 152.5 650.5Q210 674 284 674Q362 674 423.0 647.5Q484 621 517.0 570.0Q550 519 543 445L395 421Q396 451 389.0 474.0Q382 497 367.5 513.0Q353 529 331.0 537.5Q309 546 279 546Q248 546 227.5 538.0Q207 530 196.5 516.0Q186 502 186 484Q186 463 202.0 449.0Q218 435 248.0 424.5Q278 414 319 403Q362 391 405.5 376.5Q449 362 486.0 338.5Q523 315 545.5 278.0Q568 241 568 184Q568 118 533.5 74.0Q499 30 438.5 8.0Q378 -14 299 -14Z" transform="translate(165.000,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(196.845,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(216.321,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(237.906,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M289 -14Q218 -14 167.0 7.5Q116 29 84.0 67.0Q52 105 37.0 154.0Q22 203 22 258Q22 314 37.0 364.5Q52 415 83.5 455.5Q115 496 165.5 519.0Q216 542 287 542Q371 542 422.5 510.5Q474 479 494.5 429.0Q515 379 506 321L366 310Q368 346 358.5 369.5Q349 393 330.0 404.5Q311 416 284 416Q260 416 241.5 407.0Q223 398 210.5 379.5Q198 361 191.5 333.0Q185 305 185 266Q185 216 196.5 180.0Q208 144 231.5 125.0Q255 106 291 106Q328 106 347.0 124.0Q366 142 372.0 169.5Q378 197 374 224L523 217Q529 173 519.0 131.5Q509 90 480.5 57.0Q452 24 404.5 5.0Q357 -14 289 -14Z" transform="translate(268.155,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(297.378,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(316.854,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(347.103,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#F8FAFC" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" transform="translate(367.719,124.000) scale(0.057000,-0.057000)"/>
+  </g>
+  <!-- "MY LEARNING" - Inter 600, outlined -->
+  <g>
+    <path fill="#5EEAD4" d="M180 0V1490H450L817 550Q830 517 846.5 467.5Q863 418 881.5 360.0Q900 302 917.0 244.5Q934 187 947 138H905Q919 184 936.0 240.5Q953 297 971.5 355.5Q990 414 1007.0 465.0Q1024 516 1037 550L1399 1490H1670V0H1483V851Q1483 897 1483.5 956.0Q1484 1015 1485.5 1080.0Q1487 1145 1488.5 1212.0Q1490 1279 1491 1342H1507Q1486 1273 1462.5 1201.5Q1439 1130 1416.5 1063.5Q1394 997 1374.0 942.0Q1354 887 1340 851L1007 0H842L504 851Q490 886 471.0 939.5Q452 993 429.5 1058.5Q407 1124 383.0 1196.5Q359 1269 334 1342H352Q354 1286 355.5 1221.0Q357 1156 358.0 1089.5Q359 1023 360.0 961.5Q361 900 361 851V0Z" transform="translate(168.000,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M600 0V610L52 1490H272L567 1009Q617 928 655.5 854.5Q694 781 735 669H659Q700 783 739.0 857.5Q778 932 825 1009L1119 1490H1338L790 610V0Z" transform="translate(191.566,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M180 0V1490H370V168H1060V0Z" transform="translate(221.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M180 0V1490H1088V1322H370V836H1039V668H370V168H1097V0Z" transform="translate(238.574,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M52 0 593 1490H813L1361 0H1161L845 884Q816 966 777.5 1088.5Q739 1211 684 1401H720Q666 1209 626.5 1084.5Q587 960 561 884L254 0ZM324 416V582H1089V416Z" transform="translate(256.096,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M180 0V1490H690Q864 1490 976.5 1430.5Q1089 1371 1143.5 1267.0Q1198 1163 1198 1030Q1198 897 1143.5 795.0Q1089 693 977.0 635.5Q865 578 691 578H286V747H682Q800 747 871.5 781.5Q943 816 976.0 879.5Q1009 943 1009 1030Q1009 1119 976.0 1184.5Q943 1250 871.0 1286.5Q799 1323 680 1323H370V0ZM1036 0 676 671H890L1256 0Z" transform="translate(275.395,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(293.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M370 1490V0H180V1490Z" transform="translate(314.334,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(325.205,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#5EEAD4" d="M789 -20Q590 -20 440.0 73.0Q290 166 206.0 337.5Q122 509 122 744Q122 981 206.0 1152.5Q290 1324 438.0 1417.0Q586 1510 777 1510Q895 1510 997.5 1475.0Q1100 1440 1181.0 1375.0Q1262 1310 1315.5 1220.5Q1369 1131 1389 1023H1193Q1170 1095 1132.0 1152.0Q1094 1209 1041.5 1250.0Q989 1291 923.0 1312.5Q857 1334 778 1334Q647 1334 540.0 1266.5Q433 1199 370.0 1067.5Q307 936 307 744Q307 554 370.5 423.0Q434 292 543.0 224.0Q652 156 789 156Q915 156 1011.0 209.5Q1107 263 1160.5 361.5Q1214 460 1214 594L1271 583H828V749H1400V586Q1400 401 1321.0 265.0Q1242 129 1104.5 54.5Q967 -20 789 -20Z" transform="translate(345.773,159.000) scale(0.009766,-0.009766)"/>
+  </g>
+</svg>
+</div>
+        <p class="caption"><b>Dark background</b> — light wordmark, brighter pill gradient.</p>
+      </div>
+      <div>
+        <div class="stage"><svg viewBox="0 0 429 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning logo">
+<rect x="85" y="86" width="50" height="21" rx="10.5" fill="#0F766E"/>
+  <rect x="58" y="112" width="50" height="21" rx="10.5" fill="#0F766E"/>
+  <rect x="31" y="138" width="50" height="21" rx="10.5" fill="#0F766E"/>
+  <!-- "Structure" - Bricolage Grotesque 700, outlined -->
+  <g>
+    <path fill="#0F766E" d="M299 -14Q229 -14 176.5 2.0Q124 18 89.0 48.0Q54 78 37.5 120.5Q21 163 23 215L173 248Q175 202 192.5 173.5Q210 145 240.0 131.5Q270 118 307 118Q337 118 360.0 125.5Q383 133 396.5 146.5Q410 160 410 178Q410 202 392.0 217.5Q374 233 342.5 244.0Q311 255 271 266Q228 278 185.5 292.5Q143 307 108.0 329.0Q73 351 51.5 386.0Q30 421 30 473Q30 537 62.5 582.0Q95 627 152.5 650.5Q210 674 284 674Q362 674 423.0 647.5Q484 621 517.0 570.0Q550 519 543 445L395 421Q396 451 389.0 474.0Q382 497 367.5 513.0Q353 529 331.0 537.5Q309 546 279 546Q248 546 227.5 538.0Q207 530 196.5 516.0Q186 502 186 484Q186 463 202.0 449.0Q218 435 248.0 424.5Q278 414 319 403Q362 391 405.5 376.5Q449 362 486.0 338.5Q523 315 545.5 278.0Q568 241 568 184Q568 118 533.5 74.0Q499 30 438.5 8.0Q378 -14 299 -14Z" transform="translate(165.000,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(196.845,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(216.321,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(237.906,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M289 -14Q218 -14 167.0 7.5Q116 29 84.0 67.0Q52 105 37.0 154.0Q22 203 22 258Q22 314 37.0 364.5Q52 415 83.5 455.5Q115 496 165.5 519.0Q216 542 287 542Q371 542 422.5 510.5Q474 479 494.5 429.0Q515 379 506 321L366 310Q368 346 358.5 369.5Q349 393 330.0 404.5Q311 416 284 416Q260 416 241.5 407.0Q223 398 210.5 379.5Q198 361 191.5 333.0Q185 305 185 266Q185 216 196.5 180.0Q208 144 231.5 125.0Q255 106 291 106Q328 106 347.0 124.0Q366 142 372.0 169.5Q378 197 374 224L523 217Q529 173 519.0 131.5Q509 90 480.5 57.0Q452 24 404.5 5.0Q357 -14 289 -14Z" transform="translate(268.155,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(297.378,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(316.854,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(347.103,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#0F766E" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" transform="translate(367.719,124.000) scale(0.057000,-0.057000)"/>
+  </g>
+  <!-- "MY LEARNING" - Inter 600, outlined -->
+  <g>
+    <path fill="#0F766E" d="M180 0V1490H450L817 550Q830 517 846.5 467.5Q863 418 881.5 360.0Q900 302 917.0 244.5Q934 187 947 138H905Q919 184 936.0 240.5Q953 297 971.5 355.5Q990 414 1007.0 465.0Q1024 516 1037 550L1399 1490H1670V0H1483V851Q1483 897 1483.5 956.0Q1484 1015 1485.5 1080.0Q1487 1145 1488.5 1212.0Q1490 1279 1491 1342H1507Q1486 1273 1462.5 1201.5Q1439 1130 1416.5 1063.5Q1394 997 1374.0 942.0Q1354 887 1340 851L1007 0H842L504 851Q490 886 471.0 939.5Q452 993 429.5 1058.5Q407 1124 383.0 1196.5Q359 1269 334 1342H352Q354 1286 355.5 1221.0Q357 1156 358.0 1089.5Q359 1023 360.0 961.5Q361 900 361 851V0Z" transform="translate(168.000,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M600 0V610L52 1490H272L567 1009Q617 928 655.5 854.5Q694 781 735 669H659Q700 783 739.0 857.5Q778 932 825 1009L1119 1490H1338L790 610V0Z" transform="translate(191.566,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H370V168H1060V0Z" transform="translate(221.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H1088V1322H370V836H1039V668H370V168H1097V0Z" transform="translate(238.574,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M52 0 593 1490H813L1361 0H1161L845 884Q816 966 777.5 1088.5Q739 1211 684 1401H720Q666 1209 626.5 1084.5Q587 960 561 884L254 0ZM324 416V582H1089V416Z" transform="translate(256.096,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H690Q864 1490 976.5 1430.5Q1089 1371 1143.5 1267.0Q1198 1163 1198 1030Q1198 897 1143.5 795.0Q1089 693 977.0 635.5Q865 578 691 578H286V747H682Q800 747 871.5 781.5Q943 816 976.0 879.5Q1009 943 1009 1030Q1009 1119 976.0 1184.5Q943 1250 871.0 1286.5Q799 1323 680 1323H370V0ZM1036 0 676 671H890L1256 0Z" transform="translate(275.395,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(293.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M370 1490V0H180V1490Z" transform="translate(314.334,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(325.205,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#0F766E" d="M789 -20Q590 -20 440.0 73.0Q290 166 206.0 337.5Q122 509 122 744Q122 981 206.0 1152.5Q290 1324 438.0 1417.0Q586 1510 777 1510Q895 1510 997.5 1475.0Q1100 1440 1181.0 1375.0Q1262 1310 1315.5 1220.5Q1369 1131 1389 1023H1193Q1170 1095 1132.0 1152.0Q1094 1209 1041.5 1250.0Q989 1291 923.0 1312.5Q857 1334 778 1334Q647 1334 540.0 1266.5Q433 1199 370.0 1067.5Q307 936 307 744Q307 554 370.5 423.0Q434 292 543.0 224.0Q652 156 789 156Q915 156 1011.0 209.5Q1107 263 1160.5 361.5Q1214 460 1214 594L1271 583H828V749H1400V586Q1400 401 1321.0 265.0Q1242 129 1104.5 54.5Q967 -20 789 -20Z" transform="translate(345.773,159.000) scale(0.009766,-0.009766)"/>
+  </g>
+</svg>
+</div>
+        <p class="caption"><b>Monochrome teal</b> — single-color brand uses.</p>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:20px">
+      <div>
+        <div class="stage"><svg viewBox="0 0 429 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning logo">
+<rect x="85" y="86" width="50" height="21" rx="10.5" fill="#000000"/>
+  <rect x="58" y="112" width="50" height="21" rx="10.5" fill="#000000"/>
+  <rect x="31" y="138" width="50" height="21" rx="10.5" fill="#000000"/>
+  <!-- "Structure" - Bricolage Grotesque 700, outlined -->
+  <g>
+    <path fill="#000000" d="M299 -14Q229 -14 176.5 2.0Q124 18 89.0 48.0Q54 78 37.5 120.5Q21 163 23 215L173 248Q175 202 192.5 173.5Q210 145 240.0 131.5Q270 118 307 118Q337 118 360.0 125.5Q383 133 396.5 146.5Q410 160 410 178Q410 202 392.0 217.5Q374 233 342.5 244.0Q311 255 271 266Q228 278 185.5 292.5Q143 307 108.0 329.0Q73 351 51.5 386.0Q30 421 30 473Q30 537 62.5 582.0Q95 627 152.5 650.5Q210 674 284 674Q362 674 423.0 647.5Q484 621 517.0 570.0Q550 519 543 445L395 421Q396 451 389.0 474.0Q382 497 367.5 513.0Q353 529 331.0 537.5Q309 546 279 546Q248 546 227.5 538.0Q207 530 196.5 516.0Q186 502 186 484Q186 463 202.0 449.0Q218 435 248.0 424.5Q278 414 319 403Q362 391 405.5 376.5Q449 362 486.0 338.5Q523 315 545.5 278.0Q568 241 568 184Q568 118 533.5 74.0Q499 30 438.5 8.0Q378 -14 299 -14Z" transform="translate(165.000,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(196.845,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(216.321,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(237.906,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M289 -14Q218 -14 167.0 7.5Q116 29 84.0 67.0Q52 105 37.0 154.0Q22 203 22 258Q22 314 37.0 364.5Q52 415 83.5 455.5Q115 496 165.5 519.0Q216 542 287 542Q371 542 422.5 510.5Q474 479 494.5 429.0Q515 379 506 321L366 310Q368 346 358.5 369.5Q349 393 330.0 404.5Q311 416 284 416Q260 416 241.5 407.0Q223 398 210.5 379.5Q198 361 191.5 333.0Q185 305 185 266Q185 216 196.5 180.0Q208 144 231.5 125.0Q255 106 291 106Q328 106 347.0 124.0Q366 142 372.0 169.5Q378 197 374 224L523 217Q529 173 519.0 131.5Q509 90 480.5 57.0Q452 24 404.5 5.0Q357 -14 289 -14Z" transform="translate(268.155,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(297.378,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(316.854,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(347.103,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" transform="translate(367.719,124.000) scale(0.057000,-0.057000)"/>
+  </g>
+  <!-- "MY LEARNING" - Inter 600, outlined -->
+  <g>
+    <path fill="#000000" d="M180 0V1490H450L817 550Q830 517 846.5 467.5Q863 418 881.5 360.0Q900 302 917.0 244.5Q934 187 947 138H905Q919 184 936.0 240.5Q953 297 971.5 355.5Q990 414 1007.0 465.0Q1024 516 1037 550L1399 1490H1670V0H1483V851Q1483 897 1483.5 956.0Q1484 1015 1485.5 1080.0Q1487 1145 1488.5 1212.0Q1490 1279 1491 1342H1507Q1486 1273 1462.5 1201.5Q1439 1130 1416.5 1063.5Q1394 997 1374.0 942.0Q1354 887 1340 851L1007 0H842L504 851Q490 886 471.0 939.5Q452 993 429.5 1058.5Q407 1124 383.0 1196.5Q359 1269 334 1342H352Q354 1286 355.5 1221.0Q357 1156 358.0 1089.5Q359 1023 360.0 961.5Q361 900 361 851V0Z" transform="translate(168.000,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M600 0V610L52 1490H272L567 1009Q617 928 655.5 854.5Q694 781 735 669H659Q700 783 739.0 857.5Q778 932 825 1009L1119 1490H1338L790 610V0Z" transform="translate(191.566,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H370V168H1060V0Z" transform="translate(221.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H1088V1322H370V836H1039V668H370V168H1097V0Z" transform="translate(238.574,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M52 0 593 1490H813L1361 0H1161L845 884Q816 966 777.5 1088.5Q739 1211 684 1401H720Q666 1209 626.5 1084.5Q587 960 561 884L254 0ZM324 416V582H1089V416Z" transform="translate(256.096,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H690Q864 1490 976.5 1430.5Q1089 1371 1143.5 1267.0Q1198 1163 1198 1030Q1198 897 1143.5 795.0Q1089 693 977.0 635.5Q865 578 691 578H286V747H682Q800 747 871.5 781.5Q943 816 976.0 879.5Q1009 943 1009 1030Q1009 1119 976.0 1184.5Q943 1250 871.0 1286.5Q799 1323 680 1323H370V0ZM1036 0 676 671H890L1256 0Z" transform="translate(275.395,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(293.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M370 1490V0H180V1490Z" transform="translate(314.334,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(325.205,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M789 -20Q590 -20 440.0 73.0Q290 166 206.0 337.5Q122 509 122 744Q122 981 206.0 1152.5Q290 1324 438.0 1417.0Q586 1510 777 1510Q895 1510 997.5 1475.0Q1100 1440 1181.0 1375.0Q1262 1310 1315.5 1220.5Q1369 1131 1389 1023H1193Q1170 1095 1132.0 1152.0Q1094 1209 1041.5 1250.0Q989 1291 923.0 1312.5Q857 1334 778 1334Q647 1334 540.0 1266.5Q433 1199 370.0 1067.5Q307 936 307 744Q307 554 370.5 423.0Q434 292 543.0 224.0Q652 156 789 156Q915 156 1011.0 209.5Q1107 263 1160.5 361.5Q1214 460 1214 594L1271 583H828V749H1400V586Q1400 401 1321.0 265.0Q1242 129 1104.5 54.5Q967 -20 789 -20Z" transform="translate(345.773,159.000) scale(0.009766,-0.009766)"/>
+  </g>
+</svg>
+</div>
+        <p class="caption"><b>Monochrome black</b> — print, watermarks, embossing.</p>
+      </div>
+      <div>
+        <div class="stage" style="background:var(--ink)">
+          <div style="filter:invert(1)"><svg viewBox="0 0 429 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structure My Learning logo">
+<rect x="85" y="86" width="50" height="21" rx="10.5" fill="#000000"/>
+  <rect x="58" y="112" width="50" height="21" rx="10.5" fill="#000000"/>
+  <rect x="31" y="138" width="50" height="21" rx="10.5" fill="#000000"/>
+  <!-- "Structure" - Bricolage Grotesque 700, outlined -->
+  <g>
+    <path fill="#000000" d="M299 -14Q229 -14 176.5 2.0Q124 18 89.0 48.0Q54 78 37.5 120.5Q21 163 23 215L173 248Q175 202 192.5 173.5Q210 145 240.0 131.5Q270 118 307 118Q337 118 360.0 125.5Q383 133 396.5 146.5Q410 160 410 178Q410 202 392.0 217.5Q374 233 342.5 244.0Q311 255 271 266Q228 278 185.5 292.5Q143 307 108.0 329.0Q73 351 51.5 386.0Q30 421 30 473Q30 537 62.5 582.0Q95 627 152.5 650.5Q210 674 284 674Q362 674 423.0 647.5Q484 621 517.0 570.0Q550 519 543 445L395 421Q396 451 389.0 474.0Q382 497 367.5 513.0Q353 529 331.0 537.5Q309 546 279 546Q248 546 227.5 538.0Q207 530 196.5 516.0Q186 502 186 484Q186 463 202.0 449.0Q218 435 248.0 424.5Q278 414 319 403Q362 391 405.5 376.5Q449 362 486.0 338.5Q523 315 545.5 278.0Q568 241 568 184Q568 118 533.5 74.0Q499 30 438.5 8.0Q378 -14 299 -14Z" transform="translate(165.000,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(196.845,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(216.321,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(237.906,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M289 -14Q218 -14 167.0 7.5Q116 29 84.0 67.0Q52 105 37.0 154.0Q22 203 22 258Q22 314 37.0 364.5Q52 415 83.5 455.5Q115 496 165.5 519.0Q216 542 287 542Q371 542 422.5 510.5Q474 479 494.5 429.0Q515 379 506 321L366 310Q368 346 358.5 369.5Q349 393 330.0 404.5Q311 416 284 416Q260 416 241.5 407.0Q223 398 210.5 379.5Q198 361 191.5 333.0Q185 305 185 266Q185 216 196.5 180.0Q208 144 231.5 125.0Q255 106 291 106Q328 106 347.0 124.0Q366 142 372.0 169.5Q378 197 374 224L523 217Q529 173 519.0 131.5Q509 90 480.5 57.0Q452 24 404.5 5.0Q357 -14 289 -14Z" transform="translate(268.155,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M247 -12Q154 -12 108.5 35.5Q63 83 63 183V402H5V504H8Q70 512 96.0 545.5Q122 579 128 647V649H223V528H344V398H223V198Q223 160 241.5 144.0Q260 128 287 128Q301 128 316.0 132.0Q331 136 344 143V2Q313 -7 289.0 -9.5Q265 -12 247 -12Z" transform="translate(297.378,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M200 -14Q114 -14 72.5 46.0Q31 106 31 230V528H193V232Q193 174 209.5 151.0Q226 128 257 128Q279 128 297.5 139.5Q316 151 330.0 174.5Q344 198 351.5 235.0Q359 272 359 324V528H521V238V0H383V206H376Q370 129 349.0 80.5Q328 32 291.0 9.0Q254 -14 200 -14Z" transform="translate(316.854,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M36 0V287V528H176V318H184Q190 402 207.5 450.5Q225 499 251.5 519.5Q278 540 311 540Q329 540 348.5 535.0Q368 530 387 519L379 339Q357 352 336.0 358.5Q315 365 296 365Q264 365 242.0 347.0Q220 329 208.5 294.0Q197 259 197 209V0Z" transform="translate(347.103,124.000) scale(0.057000,-0.057000)"/>
+    <path fill="#000000" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" transform="translate(367.719,124.000) scale(0.057000,-0.057000)"/>
+  </g>
+  <!-- "MY LEARNING" - Inter 600, outlined -->
+  <g>
+    <path fill="#000000" d="M180 0V1490H450L817 550Q830 517 846.5 467.5Q863 418 881.5 360.0Q900 302 917.0 244.5Q934 187 947 138H905Q919 184 936.0 240.5Q953 297 971.5 355.5Q990 414 1007.0 465.0Q1024 516 1037 550L1399 1490H1670V0H1483V851Q1483 897 1483.5 956.0Q1484 1015 1485.5 1080.0Q1487 1145 1488.5 1212.0Q1490 1279 1491 1342H1507Q1486 1273 1462.5 1201.5Q1439 1130 1416.5 1063.5Q1394 997 1374.0 942.0Q1354 887 1340 851L1007 0H842L504 851Q490 886 471.0 939.5Q452 993 429.5 1058.5Q407 1124 383.0 1196.5Q359 1269 334 1342H352Q354 1286 355.5 1221.0Q357 1156 358.0 1089.5Q359 1023 360.0 961.5Q361 900 361 851V0Z" transform="translate(168.000,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M600 0V610L52 1490H272L567 1009Q617 928 655.5 854.5Q694 781 735 669H659Q700 783 739.0 857.5Q778 932 825 1009L1119 1490H1338L790 610V0Z" transform="translate(191.566,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H370V168H1060V0Z" transform="translate(221.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H1088V1322H370V836H1039V668H370V168H1097V0Z" transform="translate(238.574,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M52 0 593 1490H813L1361 0H1161L845 884Q816 966 777.5 1088.5Q739 1211 684 1401H720Q666 1209 626.5 1084.5Q587 960 561 884L254 0ZM324 416V582H1089V416Z" transform="translate(256.096,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H690Q864 1490 976.5 1430.5Q1089 1371 1143.5 1267.0Q1198 1163 1198 1030Q1198 897 1143.5 795.0Q1089 693 977.0 635.5Q865 578 691 578H286V747H682Q800 747 871.5 781.5Q943 816 976.0 879.5Q1009 943 1009 1030Q1009 1119 976.0 1184.5Q943 1250 871.0 1286.5Q799 1323 680 1323H370V0ZM1036 0 676 671H890L1256 0Z" transform="translate(275.395,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(293.766,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M370 1490V0H180V1490Z" transform="translate(314.334,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M180 0V1490H404L1010 537Q1034 500 1068.0 442.0Q1102 384 1141.5 311.0Q1181 238 1219 155H1192Q1183 241 1179.0 319.5Q1175 398 1174.0 464.0Q1173 530 1173 576V1490H1363V0H1137L597 848Q560 907 522.5 969.5Q485 1032 437.0 1117.5Q389 1203 318 1329H353Q358 1218 362.0 1124.0Q366 1030 368.5 960.0Q371 890 371 850V0Z" transform="translate(325.205,159.000) scale(0.009766,-0.009766)"/>
+    <path fill="#000000" d="M789 -20Q590 -20 440.0 73.0Q290 166 206.0 337.5Q122 509 122 744Q122 981 206.0 1152.5Q290 1324 438.0 1417.0Q586 1510 777 1510Q895 1510 997.5 1475.0Q1100 1440 1181.0 1375.0Q1262 1310 1315.5 1220.5Q1369 1131 1389 1023H1193Q1170 1095 1132.0 1152.0Q1094 1209 1041.5 1250.0Q989 1291 923.0 1312.5Q857 1334 778 1334Q647 1334 540.0 1266.5Q433 1199 370.0 1067.5Q307 936 307 744Q307 554 370.5 423.0Q434 292 543.0 224.0Q652 156 789 156Q915 156 1011.0 209.5Q1107 263 1160.5 361.5Q1214 460 1214 594L1271 583H828V749H1400V586Q1400 401 1321.0 265.0Q1242 129 1104.5 54.5Q967 -20 789 -20Z" transform="translate(345.773,159.000) scale(0.009766,-0.009766)"/>
+  </g>
+</svg>
+</div>
+        </div>
+        <p class="caption"><b>Knockout</b> — monochrome reversed out of a solid field.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">07</span><h2>Specs</h2>
+      <span class="note">Non-negotiables for correct reproduction.</span>
+    </div>
+    <div class="specs">
+      <div class="spec">
+        <div class="k">Clear space</div>
+        <div class="v">1 pill height</div>
+        <div class="s">Keep that much padding clear on all sides. Nothing intrudes.</div>
+      </div>
+      <div class="spec">
+        <div class="k">Minimum size</div>
+        <div class="v">120px wide</div>
+        <div class="s">Below this, switch to the standalone logomark.</div>
+      </div>
+      <div class="spec">
+        <div class="k">File format</div>
+        <div class="v">SVG, outlined</div>
+        <div class="s">Text is converted to paths — no font dependency, renders anywhere.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head">
+      <span class="sec-num">08</span><h2>Usage</h2>
+      <span class="note">Keep it consistent — the system only works if it's respected.</span>
+    </div>
+    <div class="rules">
+      <div class="rule do">
+        <div class="rh"><span class="badge">&check;</span> Do</div>
+        <ul>
+          <li>Use the primary lockup wherever space allows.</li>
+          <li>Give the logo its full clear space.</li>
+          <li>Switch to the mark for favicons and tight spots.</li>
+          <li>Use the dark variant on dark surfaces.</li>
+          <li>Keep the supplied colors exact.</li>
+        </ul>
+      </div>
+      <div class="rule dont">
+        <div class="rh"><span class="badge">&times;</span> Don't</div>
+        <ul>
+          <li>Recolor outside the palette or re-gradient the mark.</li>
+          <li>Stretch, squash, rotate, or skew any part.</li>
+          <li>Add drop shadows, glows, or outlines.</li>
+          <li>Change spacing between the mark and wordmark.</li>
+          <li>Place the logo on a busy or low-contrast background.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="reveal">
+    <div class="fl">Structure My Learning</div>
+    <div class="fr">Brand Kit · v1 · Bricolage Grotesque + Inter</div>
+  </footer>
+
+</div>
+
+<script>
+  const COLORS = [
+    ["Teal Deepest", "#115E59", "App-icon background"],
+    ["Teal Deep",    "#0F766E", "Gradient start · accent"],
+    ["Teal Core",    "#0D9488", "Gradient mid"],
+    ["Teal Bright",  "#2DD4BF", "Gradient end"],
+    ["Teal Glow",    "#5EEAD4", "Dark-bg accent"],
+    ["Ink",          "#16211F", "Wordmark on light"],
+    ["Paper",        "#F8FAFC", "Wordmark on dark"],
+    ["Night",        "#0B1220", "Dark surface"],
+  ];
+  const host = document.getElementById("swatches");
+  COLORS.forEach(([name, hex, use]) => {
+    const el = document.createElement("div");
+    el.className = "swatch";
+    const light = ["#5EEAD4","#F8FAFC"].includes(hex);
+    el.innerHTML = `
+      <div class="chip" style="background:${hex}; ${light ? 'border-bottom:1px solid var(--line)' : ''}"></div>
+      <div class="meta">
+        <div class="nm">${name}</div>
+        <div class="hex"><span class="code">${hex}</span><span class="copied">copied</span></div>
+        <div class="hex" style="margin-top:2px">${use}</div>
+      </div>`;
+    el.addEventListener("click", () => {
+      navigator.clipboard && navigator.clipboard.writeText(hex);
+      el.classList.add("is-copied");
+      setTimeout(() => el.classList.remove("is-copied"), 1400);
+    });
+    host.appendChild(el);
+  });
+</script>
+</body>
+</html>

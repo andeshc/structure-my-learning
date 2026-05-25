@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { apiRequest } from '../api/client';
 import Footer from '../components/Footer';
+import Logo from '../components/Logo';
 
 const INPUT = 'mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 text-sm outline-none focus:border-teal-700';
 
@@ -33,7 +34,7 @@ export default function ContactPage() {
     <div className="flex min-h-screen flex-col bg-canvas">
       <div className="mx-auto w-full max-w-xl flex-1 px-6 py-12">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
+          <Link to="/"><Logo className="h-9 w-auto" /></Link>
           <Link className="text-sm text-charcoal-400 hover:text-charcoal" to="/">← Back</Link>
         </div>
 

@@ -1,5 +1,4 @@
 import {
-  BookOpenCheck,
   Home,
   LogOut,
   PlusCircle,
@@ -8,6 +7,8 @@ import {
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import Footer from './Footer';
+import Logo from './Logo';
+import LogoMark from './LogoMark';
 
 function navClass({ isActive }) {
   return [
@@ -48,14 +49,8 @@ export default function AppShell() {
               hideSidebar ? 'opacity-0' : 'opacity-100'
             } h-full`}
           >
-            <Link to="/dashboard" className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-700/10 text-teal-700">
-                <BookOpenCheck size={24} strokeWidth={2.1} />
-              </span>
-              <span className="leading-snug">
-                <span className="block text-base font-bold text-charcoal">Structure</span>
-                <span className="block text-base font-bold text-charcoal"><span className="text-teal-700">My</span>Learning</span>
-              </span>
+            <Link to="/dashboard">
+              <Logo className="w-full" />
             </Link>
 
             <nav className="mt-14 grid gap-4">
@@ -88,7 +83,7 @@ export default function AppShell() {
         <div className="flex min-w-0 flex-col lg:flex-1 lg:overflow-y-auto">
           <header className="flex items-center justify-between border-b border-teal-100 px-5 py-4 lg:hidden" style={{ backgroundColor: '#f0fdfa' }}>
             <Link to="/dashboard" className="flex items-center gap-2 font-bold text-charcoal">
-              <BookOpenCheck className="text-teal-700" size={28} />
+              <LogoMark className="h-7 w-auto" />
               Structure<span className="text-teal-700">My</span>Learning
             </Link>
             <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>

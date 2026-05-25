@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import Footer from '../components/Footer';
+import Logo from '../components/Logo';
 
 function Section({ title, children }) {
   return (
@@ -15,7 +16,7 @@ export default function TermsPage() {
     <div className="flex min-h-screen flex-col bg-canvas">
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
+          <Link to="/"><Logo className="h-9 w-auto" /></Link>
           <Link className="text-sm text-charcoal-400 hover:text-charcoal" to="/">← Back</Link>
         </div>
 

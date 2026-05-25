@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import Logo from '../components/Logo';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -31,7 +32,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-sm rounded-lg border border-charcoal/10 bg-white p-8 text-center">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
+        <Link to="/"><Logo className="mx-auto h-9 w-auto" /></Link>
 
         {status === 'verifying' && (
           <>

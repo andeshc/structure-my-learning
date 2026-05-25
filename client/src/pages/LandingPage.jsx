@@ -2,6 +2,7 @@ import { ArrowRight, BookOpen, Brain, Check, Sparkles } from 'lucide-react';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router';
 import Footer from '../components/Footer';
+import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -335,8 +336,8 @@ export default function LandingPage() {
         }`}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">
-            StructureMyLearning
+          <Link to="/">
+            <Logo className="h-8 w-auto" />
           </Link>
           <nav className="hidden items-center gap-7 sm:flex">
             <Link to="/pricing" className="text-sm text-charcoal-400 transition-colors hover:text-charcoal">Pricing</Link>

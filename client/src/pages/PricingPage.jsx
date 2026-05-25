@@ -2,6 +2,7 @@ import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import Footer from '../components/Footer';
+import Logo from '../components/Logo';
 
 const PRICES = {
   INR: { annual: '₹299', monthly: '₹399' },
@@ -51,7 +52,7 @@ export default function PricingPage() {
       <div className="mx-auto w-full max-w-4xl flex-1 px-6 py-12">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
+          <Link to="/"><Logo className="h-9 w-auto" /></Link>
           <Link className="text-sm text-charcoal-400 hover:text-charcoal" to="/">← Back</Link>
         </div>
 

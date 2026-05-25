@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import * as accountApi from '../api/account';
 import { useAuth } from '../context/AuthContext';
+import Logo from '../components/Logo';
 
 const INPUT = 'mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 outline-none focus:border-teal-700';
 
@@ -59,7 +60,7 @@ export default function WelcomePage() {
   return (
     <div className="min-h-screen bg-canvas px-4 py-10 flex items-center justify-center">
       <div className="w-full max-w-md">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">StructureMyLearning</p>
+        <Link to="/"><Logo className="h-10 w-auto" /></Link>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-charcoal">
           Welcome, {auth.user?.name?.split(' ')[0]}!
         </h1>
