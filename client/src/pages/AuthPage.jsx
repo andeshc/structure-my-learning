@@ -81,6 +81,14 @@ export default function AuthPage({ mode }) {
         }}
       />
 
+      {/* Decorative pill stack — brand motif, top-right */}
+      <div className="pointer-events-none absolute -right-10 -top-6 opacity-[0.07]">
+        <svg viewBox="0 0 104 73" className="w-80" aria-hidden="true">
+          <rect x="54" y="0"  width="50" height="21" rx="10.5" fill="#0F766E"/>
+          <rect x="27" y="26" width="50" height="21" rx="10.5" fill="#0F766E"/>
+          <rect x="0"  y="52" width="50" height="21" rx="10.5" fill="#0F766E"/>
+        </svg>
+      </div>
       <div className="relative mx-auto grid flex-1 max-w-6xl w-full items-center gap-10 md:grid-cols-[1fr_420px]">
         <section>
           <Link to="/"><Logo className="h-10 w-auto" /></Link>

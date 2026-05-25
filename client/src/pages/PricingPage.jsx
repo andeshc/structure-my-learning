@@ -48,8 +48,20 @@ export default function PricingPage() {
   const price = PRICES[currency][billingCycle];
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas">
-      <div className="mx-auto w-full max-w-4xl flex-1 px-6 py-12">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-canvas">
+      {/* Fine-line grid fading downward */}
+      <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: ['linear-gradient(rgba(15,118,110,0.10) 1px, transparent 1px)', 'linear-gradient(90deg, rgba(15,118,110,0.10) 1px, transparent 1px)'].join(', '), backgroundSize: '40px 40px', maskImage: 'linear-gradient(to bottom, black 30%, transparent 75%)', WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 75%)' }} />
+      {/* Colour blooms */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72" style={{ background: ['radial-gradient(ellipse 60% 80% at 15% 0%, rgba(99,102,241,0.08) 0%, transparent 60%)', 'radial-gradient(ellipse 70% 90% at 50% 0%, rgba(15,118,110,0.09) 0%, transparent 65%)', 'radial-gradient(ellipse 50% 70% at 85% 0%, rgba(251,146,60,0.07) 0%, transparent 55%)'].join(', ') }} />
+      {/* Decorative pill stack — brand motif, top-right */}
+      <div className="pointer-events-none absolute -right-10 -top-6 opacity-[0.07]">
+        <svg viewBox="0 0 104 73" className="w-80" aria-hidden="true">
+          <rect x="54" y="0"  width="50" height="21" rx="10.5" fill="#0F766E"/>
+          <rect x="27" y="26" width="50" height="21" rx="10.5" fill="#0F766E"/>
+          <rect x="0"  y="52" width="50" height="21" rx="10.5" fill="#0F766E"/>
+        </svg>
+      </div>
+      <div className="relative mx-auto w-full max-w-4xl flex-1 px-6 py-12">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link to="/"><Logo className="h-9 w-auto" /></Link>
