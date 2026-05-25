@@ -8,7 +8,6 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import Footer from './Footer';
 import Logo from './Logo';
-import LogoMark from './LogoMark';
 
 function navClass({ isActive }) {
   return [
@@ -80,9 +79,8 @@ export default function AppShell() {
 
         <div className="flex min-w-0 flex-col lg:flex-1 lg:overflow-y-auto">
           <header className="flex items-center justify-between border-b border-teal-100 px-5 py-4 lg:hidden" style={{ backgroundColor: '#f0fdfa' }}>
-            <Link to="/dashboard" className="flex items-center gap-2 font-bold text-charcoal">
-              <LogoMark className="h-7 w-auto" />
-              Structure<span className="text-teal-700">My</span>Learning
+            <Link to="/dashboard">
+              <Logo className="h-7 w-auto" />
             </Link>
             <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>
           </header>
