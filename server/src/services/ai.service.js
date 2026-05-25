@@ -256,7 +256,8 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
       model: config.guideIllustrationModel,
       prompt: guideIllustrationPrompt({ outline, prompt }),
       key: `guide-illustrations/${guideId}.png`,
-      aspectRatio: '3:2'
+      aspectRatio: '3:2',
+      size: { width: 1200, height: 800 }
     });
     return url;
   } catch (error) {
