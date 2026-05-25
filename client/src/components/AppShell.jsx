@@ -30,7 +30,7 @@ export default function AppShell() {
 
   async function handleLogout() {
     await auth.signOut();
-    navigate('/login');
+    navigate('/');
   }
 
   return (
