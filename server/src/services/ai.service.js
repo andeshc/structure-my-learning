@@ -238,10 +238,11 @@ Scene and style:
 Subject requirements:
 - Make the visual semantically match this exact guide's core theme.
 - For math topics, show mathematical objects such as matrices, grids, graphs, vectors, highlighted rows/columns, or equations.
-- For science topics, show simple scientific theme of the guide.
+- For science topics, show simple scientific theme of the guide. Draw only one subject.
 - For AI/software topics, show model architecture, tokens, nodes, code windows, or system diagrams.
 - For business topics, show plans, targets, workflows, charts, or strategy artifacts.
 - Avoid generic education imagery unless the guide is genuinely broad.
+- Since this is going to be a cover or thumbnail, dont make it too detailed or too crowded, keep it simple.
 - Use only tiny labels, symbols, or single letters when needed. Avoid long readable text.`;
 }
 
@@ -255,10 +256,7 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
       model: config.guideIllustrationModel,
       prompt: guideIllustrationPrompt({ outline, prompt }),
       key: `guide-illustrations/${guideId}.png`,
-      size: {
-        "width": 1200,
-        "height": 800
-      }
+      aspectRatio: '3:2'
     });
     return url;
   } catch (error) {
