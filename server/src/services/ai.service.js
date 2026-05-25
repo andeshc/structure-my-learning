@@ -236,9 +236,9 @@ Scene and style:
 - No shadows, no photorealism, no watermark, no logos.
 
 Subject requirements:
-- Make the visual semantically match this exact guide.
+- Make the visual semantically match this exact guide's core theme.
 - For math topics, show mathematical objects such as matrices, grids, graphs, vectors, highlighted rows/columns, or equations.
-- For science topics, show simple scientific processes, natural systems, diagrams, or labeled parts.
+- For science topics, show simple scientific theme of the guide.
 - For AI/software topics, show model architecture, tokens, nodes, code windows, or system diagrams.
 - For business topics, show plans, targets, workflows, charts, or strategy artifacts.
 - Avoid generic education imagery unless the guide is genuinely broad.
@@ -255,7 +255,10 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
       model: config.guideIllustrationModel,
       prompt: guideIllustrationPrompt({ outline, prompt }),
       key: `guide-illustrations/${guideId}.png`,
-      aspectRatio: '3:2',
+      size: {
+        "width": 1200,
+        "height": 800
+      }
     });
     return url;
   } catch (error) {
@@ -424,6 +427,28 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
   return _streamLesson({ baseContext, onEvent });
 }
 
+async function generateAdditionalSections({ guideTitle, existingSections, userPrompt, ageLevel }) {
+  const existingTitles = existingSections.map((s) => s.title).join('\n- ');
+
+  const { object } = await generateObject({
+    model: getGuideModel(),
+    schema: z.object({ sections: z.array(outlineSectionSchema).min(1).max(3) }),
+    mode: getObjectMode(),
+    system: `You are StructureMyLearning's curriculum designer. Generate 1–3 additional learning guide sections based on a user's request. The new sections must complement the existing outline without duplicating any topic already covered.`,
+    prompt: `Guide title: "${guideTitle}"
+Learner level: ${ageLevel} — ${ageGuidance[ageLevel]}
+
+Existing sections (do not duplicate):
+- ${existingTitles}
+
+User request: "${userPrompt}"
+
+Generate 1–3 new guide sections that fulfill the user's request. Each section must be distinct from existing sections and add genuine value to the guide.`,
+  });
+
+  return object.sections;
+}
+
 async function chatWithTutor({ guide, topic, messages }) {
   try {
     return streamText({
@@ -443,6 +468,7 @@ async function chatWithTutor({ guide, topic, messages }) {
 module.exports = {
   ageGuidance,
   chatWithTutor,
+  generateAdditionalSections,
   generateGuideIllustration,
   streamOutline,
   streamSubtopicContent,
