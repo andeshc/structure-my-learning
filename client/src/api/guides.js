@@ -33,3 +33,21 @@ export function updateSubtopicProgress(topicId, position, isCompleted) {
 export function developGuide(guideId) {
   return apiRequest(`/api/guides/${guideId}/develop`, { method: 'POST' });
 }
+
+export function getGuideOutlineStatus(guideId) {
+  return apiRequest(`/api/guides/${guideId}/outline-status`);
+}
+
+export function extendGuide(guideId, userPrompt) {
+  return apiRequest(`/api/guides/${guideId}/extend`, {
+    method: 'POST',
+    body: JSON.stringify({ userPrompt }),
+  });
+}
+
+export function finalizeGuide(guideId, extraSections) {
+  return apiRequest(`/api/guides/${guideId}/finalize`, {
+    method: 'POST',
+    body: JSON.stringify({ extraSections }),
+  });
+}

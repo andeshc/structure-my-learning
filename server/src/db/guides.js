@@ -9,6 +9,7 @@ function toGuide(row) {
     prompt: row.prompt,
     ageLevel: row.age_level,
     status: row.status || 'ready',
+    needsReview: Boolean(row.needs_review),
     outline: row.outline_json ? JSON.parse(row.outline_json) : null,
     illustrationUrl: row.illustration_path || null,
     topicCount: Number(row.topic_count || 0),
@@ -71,6 +72,35 @@ async function completeGuide({ id, title, outlineJson, illustrationPath, topics 
   });
 }
 
+async function updatePartialOutline(id, outlineJson) {
+  await query(
+    `UPDATE guides SET outline_json = $1, updated_at = NOW() WHERE id = $2`,
+    [outlineJson, id]
+  );
+}
+
+async function setNeedsReview(id, value) {
+  await query(
+    `UPDATE guides SET needs_review = $1, updated_at = NOW() WHERE id = $2`,
+    [value, id]
+  );
+}
+
+async function appendSectionsToGuide({ id, outlineJson, topics }) {
+  await withTransaction(async (client) => {
+    await client.query(
+      `UPDATE guides SET outline_json = $1, updated_at = NOW() WHERE id = $2`,
+      [outlineJson, id]
+    );
+    for (const topic of topics) {
+      await client.query(
+        `INSERT INTO topics (id, guide_id, position, title, description) VALUES ($1, $2, $3, $4, $5)`,
+        [topic.id, topic.guideId, topic.position, topic.title, topic.description]
+      );
+    }
+  });
+}
+
 async function setGuideIllustration(id, illustrationPath) {
   await query(
     `UPDATE guides SET illustration_path = $1, updated_at = NOW() WHERE id = $2`,
@@ -115,7 +145,10 @@ async function touchGuide(guideId) {
 }
 
 module.exports = {
+  appendSectionsToGuide,
   completeGuide,
+  updatePartialOutline,
+  setNeedsReview,
   createGuideWithTopics,
   createPendingGuide,
   deleteGuideForUser,

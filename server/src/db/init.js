@@ -52,6 +52,9 @@ async function initDb() {
     await query(`ALTER TABLE guides ADD COLUMN status TEXT NOT NULL DEFAULT 'ready'
       CHECK (status IN ('pending', 'ready', 'failed'))`);
   }
+  if (gc.length && !gc.includes('needs_review')) {
+    await query(`ALTER TABLE guides ADD COLUMN needs_review BOOLEAN NOT NULL DEFAULT FALSE`);
+  }
 
   const tc = await cols('topics');
   if (tc.length && !tc.includes('content_html')) {

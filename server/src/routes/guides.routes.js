@@ -16,6 +16,18 @@ const createGuideSchema = z.object({
   ageLevel: z.enum(['ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced']),
 });
 
+const extendGuideSchema = z.object({
+  userPrompt: z.string().trim().min(3).max(300),
+});
+
+const finalizeGuideSchema = z.object({
+  extraSections: z.array(z.object({
+    title: z.string().min(1),
+    description: z.string(),
+    items: z.array(z.any()).default([]),
+  })).max(9).default([]),
+});
+
 async function guideWithTopics(guide) {
   const topics = await topicsDb.listTopicsForGuide(guide.id);
   const statuses = await subtopicsDb.listSubtopicStatusesForGuide(guide.id);
@@ -53,33 +65,20 @@ async function guideWithTopics(guide) {
   };
 }
 
-router.get('/', asyncHandler(async (req, res) => {
-  res.json({ guides: await guides.listGuidesForUser(req.user.id) });
-}));
-
-router.post('/', asyncHandler(async (req, res) => {
-  const input = createGuideSchema.parse(req.body);
-  const guideId = ids.guideId();
-  await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, ageLevel: input.ageLevel });
-
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Transfer-Encoding', 'chunked');
-
-  let aborted = false;
-  req.on('close', () => { aborted = true; });
-
+async function generateOutlineInBackground({ guideId, prompt, ageLevel }) {
   try {
-    const result = ai.streamOutline({ prompt: input.prompt, ageLevel: input.ageLevel });
+    const result = ai.streamOutline({ prompt, ageLevel });
+    let lastSavedCount = 0;
 
     for await (const partial of result.partialObjectStream) {
-      if (aborted) break;
-      res.write(JSON.stringify({ type: 'partial', outline: partial }) + '\n');
+      const count = partial?.sections?.length ?? 0;
+      if (count > lastSavedCount) {
+        lastSavedCount = count;
+        await guides.updatePartialOutline(guideId, JSON.stringify(partial));
+      }
     }
 
-    if (aborted) { await guides.markGuideFailed(guideId); return; }
-
     const outline = await result.object;
-
     const topicObjects = outline.sections.map((section, index) => ({
       id: ids.topicId(),
       guideId,
@@ -99,24 +98,37 @@ router.post('/', asyncHandler(async (req, res) => {
     const topicsByPosition = {};
     topicObjects.forEach((t) => { topicsByPosition[t.position] = t.id; });
     await subtopicsDb.initSubtopicsForGuide(outline.sections, topicsByPosition);
-    guideDeveloper.developGuide(guideId).catch((err) => {
-      if (config.nodeEnv !== 'test') console.error('[guide-developer]', err.message);
-    });
 
-    ai.generateGuideIllustration({ guideId, outline, prompt: input.prompt })
+    ai.generateGuideIllustration({ guideId, outline, prompt })
       .then((path) => guides.setGuideIllustration(guideId, path))
       .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
-
-    const completedGuide = await guides.findGuideForUser(guideId, req.user.id);
-    res.write(JSON.stringify({ type: 'done', guide: await guideWithTopics(completedGuide) }) + '\n');
-    res.end();
   } catch (err) {
-    if (!aborted) await guides.markGuideFailed(guideId);
-    if (!res.writableEnded) {
-      res.write(JSON.stringify({ type: 'error', message: 'Guide generation failed.' }) + '\n');
-      res.end();
-    }
+    if (config.nodeEnv !== 'test') console.error('[outline-background]', err.message);
+    await guides.markGuideFailed(guideId);
   }
+}
+
+router.get('/', asyncHandler(async (req, res) => {
+  res.json({ guides: await guides.listGuidesForUser(req.user.id) });
+}));
+
+router.post('/', asyncHandler(async (req, res) => {
+  const input = createGuideSchema.parse(req.body);
+  const guideId = ids.guideId();
+  await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, ageLevel: input.ageLevel });
+  await guides.setNeedsReview(guideId, true);
+  generateOutlineInBackground({ guideId, prompt: input.prompt, ageLevel: input.ageLevel });
+  res.json({ guideId });
+}));
+
+router.get('/:guideId/outline-status', asyncHandler(async (req, res, next) => {
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+  res.json({ status: guide.status, outline: guide.outline });
 }));
 
 router.get('/:guideId', asyncHandler(async (req, res, next) => {
@@ -146,6 +158,75 @@ router.post('/:guideId/develop', asyncHandler(async (req, res, next) => {
   });
 
   res.json({ guide: await guideWithTopics(guide) });
+}));
+
+router.post('/:guideId/extend', asyncHandler(async (req, res, next) => {
+  const { guideId } = req.params;
+  const input = extendGuideSchema.parse(req.body);
+
+  const guide = await guides.findGuideForUser(guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  const sections = await ai.generateAdditionalSections({
+    guideTitle: guide.title,
+    existingSections: guide.outline?.sections ?? [],
+    userPrompt: input.userPrompt,
+    ageLevel: guide.ageLevel,
+  });
+
+  res.json({ sections });
+}));
+
+router.post('/:guideId/finalize', asyncHandler(async (req, res, next) => {
+  const { guideId } = req.params;
+  const input = finalizeGuideSchema.parse(req.body);
+
+  const guide = await guides.findGuideForUser(guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+
+  if (input.extraSections.length > 0) {
+    const existingTopics = await topicsDb.listTopicsForGuide(guideId);
+    const startPosition = existingTopics.length + 1;
+
+    const newTopicObjects = input.extraSections.map((section, index) => ({
+      id: ids.topicId(),
+      guideId,
+      position: startPosition + index,
+      title: section.title,
+      description: section.description,
+    }));
+
+    const updatedOutline = {
+      ...(guide.outline ?? {}),
+      sections: [...(guide.outline?.sections ?? []), ...input.extraSections],
+    };
+
+    await guides.appendSectionsToGuide({
+      id: guideId,
+      outlineJson: JSON.stringify(updatedOutline),
+      topics: newTopicObjects,
+    });
+
+    const topicsByPosition = {};
+    newTopicObjects.forEach((t, index) => { topicsByPosition[index + 1] = t.id; });
+    await subtopicsDb.initSubtopicsForGuide(input.extraSections, topicsByPosition);
+  }
+
+  await guides.setNeedsReview(guideId, false);
+  guideDeveloper.developGuide(guideId).catch((err) => {
+    if (config.nodeEnv !== 'test') console.error('[guide-developer]', err.message);
+  });
+
+  const completedGuide = await guides.findGuideForUser(guideId, req.user.id);
+  res.json({ guide: await guideWithTopics(completedGuide) });
 }));
 
 router.delete('/:guideId', asyncHandler(async (req, res, next) => {

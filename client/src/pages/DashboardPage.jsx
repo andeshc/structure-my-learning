@@ -76,7 +76,7 @@ function displayGuideTitle(title) {
 
 function EmptyIllustration() {
   return (
-    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="New learning guide illustration">
+    <svg className="h-full w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="New learning guide illustration">
       <rect width="420" height="220" className="fill-blue-50" />
       <circle cx="88" cy="72" r="32" className="fill-blue-200" />
       <circle cx="320" cy="74" r="42" className="fill-amber-200" />
@@ -89,7 +89,7 @@ function EmptyIllustration() {
 
 function TransformerIllustration() {
   return (
-    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Transformer architecture illustration">
+    <svg className="h-full w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Transformer architecture illustration">
       <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <g className="stroke-slate-700" strokeWidth="3" fill="none" strokeLinecap="round">
         <path d="M98 92h56M98 144h56M268 92h56M268 144h56" />
@@ -116,7 +116,7 @@ function TransformerIllustration() {
 
 function MatrixIllustration() {
   return (
-    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Matrix multiplication illustration">
+    <svg className="h-full w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Matrix multiplication illustration">
       <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <g className="fill-amber-200">
         <circle cx="26" cy="32" r="3" /><circle cx="42" cy="32" r="3" /><circle cx="58" cy="32" r="3" />
@@ -151,7 +151,7 @@ function MatrixIllustration() {
 
 function WaterIllustration() {
   return (
-    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Water cycle illustration">
+    <svg className="h-full w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Water cycle illustration">
       <rect width="420" height="220" className="fill-sky-50" />
       <path d="M0 168c70-42 118-42 180-12 62 30 120 22 240-10v74H0z" className="fill-cyan-300" />
       <path d="M0 178c70-22 120-12 180 8 72 24 132 8 240-16v50H0z" className="fill-teal-500" opacity=".75" />
@@ -175,7 +175,7 @@ function WaterIllustration() {
 
 function StrategyIllustration() {
   return (
-    <svg className="h-32 w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Strategy illustration">
+    <svg className="h-full w-full" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Strategy illustration">
       <rect width="420" height="220" className="fill-[#fbf4e8]" />
       <circle cx="105" cy="112" r="67" className="fill-red-100 stroke-slate-800" strokeWidth="3" />
       <circle cx="105" cy="112" r="48" className="fill-white stroke-red-300" strokeWidth="12" />
@@ -195,7 +195,7 @@ function StrategyIllustration() {
 
 function GuideIllustration({ guide, index, title }) {
   if (guide.illustrationUrl) {
-    return <img className="h-32 w-full object-cover" src={guide.illustrationUrl} alt={`${title} illustration`} />;
+    return <img className="h-full w-full object-cover" src={guide.illustrationUrl} alt={`${title} illustration`} />;
   }
 
   const lower = title.toLowerCase();
@@ -264,7 +264,7 @@ function GuideCard({ guide, index, onDelete }) {
       className="overflow-hidden rounded-xl border border-slate-200 transition-all hover:border-teal-200 hover:shadow-[0_0_0_3px_rgba(15,118,110,0.07)]"
       style={{ backgroundColor: theme.cardBg }}
     >
-      <div className="relative border-b border-slate-100">
+      <div className="relative aspect-[3/2] overflow-hidden border-b border-slate-100">
         <GuideIllustration guide={guide} index={index} title={title} />
         {/* Gradient band overlay — tints the illustration with the card's colour */}
         <div className="pointer-events-none absolute inset-0" style={{ background: theme.overlay }} />
