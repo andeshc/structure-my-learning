@@ -4,7 +4,7 @@ import {
   PlusCircle,
   UserRound,
 } from 'lucide-react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import Footer from './Footer';
 import Logo from './Logo';
@@ -21,7 +21,6 @@ function navClass({ isActive }) {
 
 export default function AppShell() {
   const auth = useAuth();
-  const navigate = useNavigate();
   const { pathname } = useLocation();
 
   // Hide sidebar on subtopic pages — those have their own full-outline navigation
@@ -30,7 +29,6 @@ export default function AppShell() {
 
   async function handleLogout() {
     await auth.signOut();
-    navigate('/');
   }
 
   return (
