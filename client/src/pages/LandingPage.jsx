@@ -256,9 +256,9 @@ const HeroDemo = memo(function HeroDemo() {
         <p className="mb-2 text-xs font-medium uppercase tracking-widest text-charcoal-200">
           What do you want to learn?
         </p>
-        <div className="flex min-h-10 items-center gap-1 rounded-lg border border-charcoal/10 bg-canvas px-4 py-2.5">
-          <span className="text-sm text-charcoal">{displayText}</span>
-          <span className="inline-block h-4 w-px animate-pulse bg-teal-700" />
+        <div className="flex h-10 items-center gap-1 overflow-hidden rounded-lg border border-charcoal/10 bg-canvas px-4">
+          <span className="truncate text-sm text-charcoal">{displayText}</span>
+          <span className="inline-block h-4 w-px shrink-0 animate-pulse bg-teal-700" />
         </div>
       </div>
 
