@@ -465,7 +465,7 @@ export default function LandingPage() {
             {STEPS.map(({ n, Icon, title, body, color }, i) => (
               <Reveal key={n} delay={i * 100}>
                 <div className="relative h-full overflow-hidden rounded-xl border border-charcoal/10 bg-white p-7 shadow-card">
-                  <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: color.bar }} />
+                  <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 55%, #2DD4BF 100%)' }} />
                   <div className="mb-6 flex items-center justify-between">
                     {/* Gradient pill badge — brand mark */}
                     <span
