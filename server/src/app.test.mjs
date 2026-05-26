@@ -100,7 +100,7 @@ describe('API', () => {
     const guideResponse = await request(app)
       .post('/api/guides')
       .set('Authorization', `Bearer ${token}`)
-      .send({ prompt: 'teach me mocked learning', ageLevel: 'adult_beginner' });
+      .send({ prompt: 'teach me mocked learning', learningLevel: 'adult_beginner', coverage: 'balanced' });
 
     expect(guideResponse.status).toBe(200);
 
@@ -144,7 +144,7 @@ describe('API', () => {
     const response = await request(app)
       .post('/api/guides')
       .set('Authorization', `Bearer ${token}`)
-      .send({ prompt: 'teach me fallback illustration behavior', ageLevel: 'adult_beginner' });
+      .send({ prompt: 'teach me fallback illustration behavior', learningLevel: 'adult_beginner', coverage: 'balanced' });
 
     expect(response.status).toBe(200);
     const lines = response.text.trim().split('\n').filter(Boolean);

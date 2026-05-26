@@ -35,7 +35,7 @@ const STEPS = [
     n: '01',
     Icon: BookOpen,
     title: 'Describe what you want to learn',
-    body: 'Type it in plain English — as specific or as open-ended as you like. "Teach me about transformers" or "How does a compiler turn code into machine instructions?"',
+    body: <>Type it in plain English — as specific or as open-ended as you like. <em className="not-italic font-medium text-charcoal">"Teach me about transformers"</em> or <em className="not-italic font-medium text-charcoal">"I want to learn about photosynthesis"</em></>,
     color: { bar: '#0f766e', chip: '#0f766e', icon: 'rgba(15,118,110,0.09)', iconBorder: 'rgba(15,118,110,0.2)', iconText: '#0f766e' },
   },
   {

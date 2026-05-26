@@ -38,9 +38,20 @@ async function initDb() {
   }
 
   const gc = await cols('guides');
-  if (gc.length && !gc.includes('age_level')) {
-    await query(`ALTER TABLE guides ADD COLUMN age_level TEXT NOT NULL DEFAULT 'adult_beginner'
-      CHECK (age_level IN ('ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced'))`);
+  if (gc.length && gc.includes('age_level') && !gc.includes('learning_level')) {
+    await query(`ALTER TABLE guides RENAME COLUMN age_level TO learning_level`);
+    await query(`ALTER TABLE guides DROP CONSTRAINT IF EXISTS guides_age_level_check`);
+    await query(`UPDATE guides SET learning_level = CASE learning_level
+      WHEN 'ages_8_10'  THEN 'young_child'
+      WHEN 'ages_11_13' THEN 'middle_schooler'
+      WHEN 'ages_14_17' THEN 'high_schooler'
+      ELSE learning_level END`);
+    await query(`ALTER TABLE guides ADD CONSTRAINT guides_learning_level_check
+      CHECK (learning_level IN ('early_learner','young_child','middle_schooler','high_schooler','adult_beginner','adult_intermediate','adult_advanced'))`);
+  }
+  if (gc.length && !gc.includes('coverage')) {
+    await query(`ALTER TABLE guides ADD COLUMN coverage TEXT NOT NULL DEFAULT 'balanced'
+      CHECK (coverage IN ('overview', 'balanced', 'comprehensive'))`);
   }
   if (gc.length && !gc.includes('outline_json')) {
     await query('ALTER TABLE guides ADD COLUMN outline_json TEXT');

@@ -1,6 +1,6 @@
 const { generateText, tool, jsonSchema, stepCountIs } = require('ai');
 const { getContentModel, clampTokens } = require('./llm');
-const { ageGuidance, TOPIC_HTML_SYSTEM, generateTopicIllustrationTool } = require('./ai.service');
+const { learningLevelGuidance, TOPIC_HTML_SYSTEM, generateTopicIllustrationTool } = require('./ai.service');
 
 const verifyContentPlanTool = tool({
   description: 'Review planned claims for a lesson before writing. Returns a per-claim verdict.',
@@ -34,7 +34,7 @@ ${planned_claims.map((c, i) => `${i + 1}. ${c}`).join('\n')}`,
 function buildBaseContext({ guide, outline, topic, item }) {
   return `Guide: "${guide.title}"
 Goal: "${guide.prompt}"
-Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
+Level: ${guide.learningLevel} — ${learningLevelGuidance[guide.learningLevel]}
 Full outline: ${JSON.stringify(outline)}
 Parent section: "${topic.title}" — ${topic.description ?? ''}
 Subtopic: "${item.title}"${item.overview ? ` — ${item.overview}` : ''}
@@ -70,11 +70,11 @@ async function runDraftPhase(baseContext, researchNotes, illustrationContext) {
   return text;
 }
 
-async function runQualityCheckPhase(draft, ageLevel, topicTitle) {
+async function runQualityCheckPhase(draft, learningLevel, topicTitle) {
   const { text } = await generateText({
     model: getContentModel(),
     maxTokens: clampTokens(600),
-    system: `You are a lesson quality reviewer for a ${ageLevel.replace(/_/g, ' ')} learner.
+    system: `You are a lesson quality reviewer for a ${learningLevel.replace(/_/g, ' ')} learner.
 Evaluate the lesson on:
 - Factual accuracy (any incorrect or misleading claims)
 - Conceptual completeness (key ideas missing)
@@ -134,7 +134,7 @@ async function generateSubtopicContent({ guide, outline, topic, item }) {
   const draft = await runDraftPhase(baseContext, researchNotes, illustrationContext);
 
   console.log(`[subtopic-agent] phase 3: quality check — "${item.title}"`);
-  const feedback = await runQualityCheckPhase(draft, guide.ageLevel, item.title);
+  const feedback = await runQualityCheckPhase(draft, guide.learningLevel, item.title);
 
   console.log(`[subtopic-agent] phase 4: refine — "${item.title}"`);
   const finalHtml = await runRefinePhase(baseContext, draft, feedback, illustrationContext);

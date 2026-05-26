@@ -18,7 +18,7 @@ function guideTags(guide) {
     return guide.outline.tags.slice(0, 2);
   }
   const words = guide.title.split(/\s+/).filter((word) => word.length > 3);
-  return [words[0] || 'Learning', words[1] || guide.ageLevel.replaceAll('_', ' ')].slice(0, 2);
+  return [words[0] || 'Learning', words[1] || guide.learningLevel.replaceAll('_', ' ')].slice(0, 2);
 }
 
 function formatDuration(minutes) {
@@ -28,16 +28,18 @@ function formatDuration(minutes) {
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
-const ageLevelLabels = {
-  ages_8_10: 'Ages 8–10',
-  ages_11_13: 'Ages 11–13',
-  ages_14_17: 'Ages 14–17',
-  adult_beginner: 'Adult Beginner',
-  adult_advanced: 'Adult Advanced',
+const learningLevelLabels = {
+  early_learner:      'Early Learner',
+  young_child:        'Young Child',
+  middle_schooler:    'Middle Schooler',
+  high_schooler:      'High Schooler',
+  adult_beginner:     'Adult Beginner',
+  adult_intermediate: 'Adult Intermediate',
+  adult_advanced:     'Adult Advanced',
 };
 
-function formatAgeLevel(ageLevel) {
-  return ageLevelLabels[ageLevel] ?? ageLevel.replaceAll('_', ' ');
+function formatLearningLevel(level) {
+  return learningLevelLabels[level] ?? level.replaceAll('_', ' ');
 }
 
 function estimatedMinutes(subtopicCount) {
@@ -600,8 +602,13 @@ export default function GuideDetailPage() {
           <div className="p-5 lg:p-7">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
-                {formatAgeLevel(guide.ageLevel)}
+                {formatLearningLevel(guide.learningLevel)}
               </span>
+              {guide.coverage && guide.coverage !== 'balanced' && (
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                  {guide.coverage.charAt(0).toUpperCase() + guide.coverage.slice(1)}
+                </span>
+              )}
               {summary.tags.map((tag) => (
                 <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {tag}

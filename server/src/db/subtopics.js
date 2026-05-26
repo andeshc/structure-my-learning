@@ -39,7 +39,7 @@ async function findSubtopicForUser(topicId, position, userId) {
     `SELECT s.*, t.guide_id, t.title AS topic_title, t.description AS topic_description,
             t.position AS topic_position,
             g.user_id, g.title AS guide_title, g.prompt AS guide_prompt,
-            g.age_level, g.outline_json
+            g.learning_level, g.coverage, g.outline_json
      FROM subtopics s
      JOIN topics t ON t.id = s.topic_id
      JOIN guides g ON g.id = t.guide_id
@@ -59,7 +59,8 @@ async function findSubtopicForUser(topicId, position, userId) {
       id: row.guide_id,
       title: row.guide_title,
       prompt: row.guide_prompt,
-      ageLevel: row.age_level,
+      learningLevel: row.learning_level,
+      coverage: row.coverage,
       outline: row.outline_json ? JSON.parse(row.outline_json) : null,
     },
   };
@@ -143,7 +144,7 @@ async function findSubtopicContext(id) {
   const row = await getOne(
     `SELECT s.*, t.id AS t_id, t.title AS t_title, t.description AS t_desc,
             t.position AS t_pos, g.id AS g_id, g.title AS g_title,
-            g.prompt AS g_prompt, g.age_level, g.outline_json
+            g.prompt AS g_prompt, g.learning_level, g.coverage, g.outline_json
      FROM subtopics s
      JOIN topics t ON t.id = s.topic_id
      JOIN guides g ON g.id = t.guide_id
@@ -156,7 +157,7 @@ async function findSubtopicContext(id) {
   return {
     subtopic: toSubtopic(row),
     topic: { id: row.t_id, title: row.t_title, description: row.t_desc },
-    guide: { id: row.g_id, title: row.g_title, prompt: row.g_prompt, ageLevel: row.age_level },
+    guide: { id: row.g_id, title: row.g_title, prompt: row.g_prompt, learningLevel: row.learning_level, coverage: row.coverage },
     outline,
     item,
   };

@@ -30,7 +30,7 @@ async function listTopicsForGuide(guideId) {
 async function findTopicForUser(topicId, userId) {
   const row = await getOne(
     `SELECT t.*, g.user_id, g.id AS guide_id, g.title AS guide_title,
-            g.prompt AS guide_prompt, g.age_level, g.outline_json
+            g.prompt AS guide_prompt, g.learning_level, g.coverage, g.outline_json
      FROM topics t
      JOIN guides g ON g.id = t.guide_id
      WHERE t.id = $1 AND g.user_id = $2`,
@@ -43,7 +43,8 @@ async function findTopicForUser(topicId, userId) {
       id: row.guide_id,
       title: row.guide_title,
       prompt: row.guide_prompt,
-      ageLevel: row.age_level,
+      learningLevel: row.learning_level,
+      coverage: row.coverage,
       outline: row.outline_json ? JSON.parse(row.outline_json) : null,
     },
   };

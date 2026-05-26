@@ -66,7 +66,7 @@ function guideTags(guide) {
   }
 
   const words = guide.title.split(/\s+/).filter((word) => word.length > 3);
-  const level = guide.ageLevel.replaceAll('_', ' ');
+  const level = guide.learningLevel.replaceAll('_', ' ');
   return [words[0] || 'Learning', words[1] || level].slice(0, 2);
 }
 

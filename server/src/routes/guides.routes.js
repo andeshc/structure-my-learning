@@ -13,7 +13,8 @@ const router = express.Router();
 
 const createGuideSchema = z.object({
   prompt: z.string().trim().min(5).max(500),
-  ageLevel: z.enum(['ages_8_10', 'ages_11_13', 'ages_14_17', 'adult_beginner', 'adult_advanced']),
+  learningLevel: z.enum(['early_learner', 'young_child', 'middle_schooler', 'high_schooler', 'adult_beginner', 'adult_intermediate', 'adult_advanced']),
+  coverage: z.enum(['overview', 'balanced', 'comprehensive']),
 });
 
 const extendGuideSchema = z.object({
@@ -65,9 +66,9 @@ async function guideWithTopics(guide) {
   };
 }
 
-async function generateOutlineInBackground({ guideId, prompt, ageLevel }) {
+async function generateOutlineInBackground({ guideId, prompt, learningLevel, coverage }) {
   try {
-    const result = ai.streamOutline({ prompt, ageLevel });
+    const result = ai.streamOutline({ prompt, learningLevel, coverage });
     let lastSavedCount = 0;
 
     for await (const partial of result.partialObjectStream) {
@@ -115,9 +116,9 @@ router.get('/', asyncHandler(async (req, res) => {
 router.post('/', asyncHandler(async (req, res) => {
   const input = createGuideSchema.parse(req.body);
   const guideId = ids.guideId();
-  await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, ageLevel: input.ageLevel });
+  await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   await guides.setNeedsReview(guideId, true);
-  generateOutlineInBackground({ guideId, prompt: input.prompt, ageLevel: input.ageLevel });
+  generateOutlineInBackground({ guideId, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   res.json({ guideId });
 }));
 
@@ -175,7 +176,8 @@ router.post('/:guideId/extend', asyncHandler(async (req, res, next) => {
     guideTitle: guide.title,
     existingSections: guide.outline?.sections ?? [],
     userPrompt: input.userPrompt,
-    ageLevel: guide.ageLevel,
+    learningLevel: guide.learningLevel,
+    coverage: guide.coverage,
   });
 
   res.json({ sections });

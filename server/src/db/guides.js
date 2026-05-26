@@ -7,7 +7,8 @@ function toGuide(row) {
     userId: row.user_id,
     title: row.title,
     prompt: row.prompt,
-    ageLevel: row.age_level,
+    learningLevel: row.learning_level,
+    coverage: row.coverage || 'balanced',
     status: row.status || 'ready',
     needsReview: Boolean(row.needs_review),
     outline: row.outline_json ? JSON.parse(row.outline_json) : null,
@@ -36,9 +37,9 @@ function progressSelect() {
 async function createGuideWithTopics({ guide, topics }) {
   await withTransaction(async (client) => {
     await client.query(
-      `INSERT INTO guides (id, user_id, title, prompt, age_level, outline_json, illustration_path)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [guide.id, guide.userId, guide.title, guide.prompt, guide.ageLevel, guide.outlineJson, guide.illustrationPath]
+      `INSERT INTO guides (id, user_id, title, prompt, learning_level, coverage, outline_json, illustration_path)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [guide.id, guide.userId, guide.title, guide.prompt, guide.learningLevel, guide.coverage || 'balanced', guide.outlineJson, guide.illustrationPath]
     );
     for (const topic of topics) {
       await client.query(
@@ -49,10 +50,10 @@ async function createGuideWithTopics({ guide, topics }) {
   });
 }
 
-async function createPendingGuide({ id, userId, prompt, ageLevel }) {
+async function createPendingGuide({ id, userId, prompt, learningLevel, coverage }) {
   await query(
-    `INSERT INTO guides (id, user_id, title, prompt, age_level, status) VALUES ($1, $2, $3, $4, $5, 'pending')`,
-    [id, userId, prompt.slice(0, 90), prompt, ageLevel]
+    `INSERT INTO guides (id, user_id, title, prompt, learning_level, coverage, status) VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+    [id, userId, prompt.slice(0, 90), prompt, learningLevel, coverage]
   );
 }
 

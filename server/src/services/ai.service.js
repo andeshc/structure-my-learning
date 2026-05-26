@@ -33,20 +33,30 @@ function parsePromptSections(markdown) {
 
 const guidePromptSections = parsePromptSections(guidePromptTemplate);
 
-const ageGuidance = {
-  ages_8_10: 'Elementary learner; simple vocabulary, concrete examples, gentle pacing, no assumed background knowledge.',
-  ages_11_13: 'Middle-grade learner; clear vocabulary, light technical terms with definitions, relatable examples.',
-  ages_14_17: 'Teen learner; stronger conceptual depth, school-level terminology, examples that connect to real applications.',
-  adult_beginner: 'Adult learner new to the subject; respectful tone, practical examples, simplistic anological terminology, no childish framing.',
-  adult_advanced: 'Adult or professional learner; deeper explanations but simple terminology.',
+const learningLevelGuidance = {
+  early_learner:      'Very young child (ages 3–5); use the simplest words, one idea at a time, no assumed background.',
+  young_child:        'Child (ages 6–10); simple vocabulary, concrete examples, gentle pacing, no assumed background knowledge.',
+  middle_schooler:    'Middle-grade learner (ages 11–13); clear vocabulary, light technical terms with definitions, relatable examples.',
+  high_schooler:      'Teen learner (ages 14–18); stronger conceptual depth, school-level terminology, real-world applications.',
+  adult_beginner:     'Adult learner new to the subject; respectful tone, practical examples, no childish framing.',
+  adult_intermediate: 'Adult with some familiarity; can handle moderate terminology, appreciates nuance and real-world application.',
+  adult_advanced:     'Adult or professional learner; deeper explanations, precise terminology, efficient pacing, minimal hand-holding.',
 };
 
-const maxSubtopicsPerAgeLevel = {
-  ages_8_10: 18,
-  ages_11_13: 40,
-  ages_14_17: 48,
-  adult_beginner: Infinity,
-  adult_advanced: Infinity,
+const coverageGuidance = {
+  overview:      'Overview — high-level survey, key concepts only, no deep dives. Prioritise breadth; keep each topic concise.',
+  balanced:      'Balanced — cover core concepts with solid depth. Include important subtopics but stay focused; avoid tangents.',
+  comprehensive: 'Comprehensive — go deep on every topic. Include edge cases, nuances, and related concepts; maximise breadth and depth.',
+};
+
+const maxSubtopics = {
+  early_learner:      { overview: 8,  balanced: 12, comprehensive: 18 },
+  young_child:        { overview: 10, balanced: 18, comprehensive: 28 },
+  middle_schooler:    { overview: 15, balanced: 28, comprehensive: 42 },
+  high_schooler:      { overview: 20, balanced: 36, comprehensive: 52 },
+  adult_beginner:     { overview: 20, balanced: Infinity, comprehensive: Infinity },
+  adult_intermediate: { overview: 25, balanced: Infinity, comprehensive: Infinity },
+  adult_advanced:     { overview: 30, balanced: Infinity, comprehensive: Infinity },
 };
 
 const outlineItemSchema = z.object({
@@ -168,9 +178,9 @@ function setAiMocks(mocks) {
   testMocks = mocks || {};
 }
 
-function streamOutline({ prompt, ageLevel }) {
+function streamOutline({ prompt, learningLevel, coverage }) {
   if (testMocks.generateOutline) {
-    const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, ageLevel }))
+    const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, learningLevel, coverage }))
       .then((r) => outlineSchema.parse(r));
     return {
       partialObjectStream: (async function* () { yield await outlinePromise; })(),
@@ -178,14 +188,20 @@ function streamOutline({ prompt, ageLevel }) {
     };
   }
 
-  const max = maxSubtopicsPerAgeLevel[ageLevel];
+  const max = maxSubtopics[learningLevel][coverage];
   const subtopicLimitRule = isFinite(max)
     ? `- The total number of items across ALL sections must not exceed ${max}. Distribute items across sections accordingly — do not exceed this budget.`
     : '';
 
+  const learnerProfile = `Learner profile:
+- Level: ${learningLevel} — ${learningLevelGuidance[learningLevel]}
+- Coverage: ${coverage} — ${coverageGuidance[coverage]}`;
+
   const system = `${guidePromptSections['System Prompt']}
 
 ${guidePromptSections['Instructions']}
+
+${learnerProfile}
 
 Additional output rules:
 - Arrange sections from foundational to advanced.
@@ -201,7 +217,8 @@ Additional output rules:
 
   const userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
-    .replace('`{{DEPTH_LEVEL}}`', ageLevel);
+    .replace('`{{LEARNING_LEVEL}}`', learningLevel)
+    .replace('`{{COVERAGE}}`', coverage);
 
   if (getObjectMode() === 'tool') {
     const objectPromise = generateObject({
@@ -294,8 +311,8 @@ Rules:
 
   const prompt = `Guide title: ${guide.title}
 Original user goal: "${guide.prompt}"
-Learner age level: ${guide.ageLevel}
-Age-level guidance: ${ageGuidance[guide.ageLevel]}
+Learner level: ${guide.learningLevel} — ${learningLevelGuidance[guide.learningLevel]}
+Coverage: ${guide.coverage} — ${coverageGuidance[guide.coverage]}
 
 Full outline:
 ${JSON.stringify(outline)}
@@ -397,7 +414,8 @@ async function streamTopicContent({ guide, outline, topic, onEvent = () => {} })
 
   const baseContext = `Guide: "${guide.title}"
 Goal: "${guide.prompt}"
-Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
+Level: ${guide.learningLevel} — ${learningLevelGuidance[guide.learningLevel]}
+Coverage: ${guide.coverage} — ${coverageGuidance[guide.coverage]}
 Full outline: ${JSON.stringify(outline)}
 ${sectionContext}
 Topic: "${topic.title}" — ${topic.description}`;
@@ -417,7 +435,8 @@ async function streamSubtopicContent({ guide, outline, topic, item, onEvent = ()
 
   const baseContext = `Guide: "${guide.title}"
 Goal: "${guide.prompt}"
-Level: ${guide.ageLevel} — ${ageGuidance[guide.ageLevel]}
+Level: ${guide.learningLevel} — ${learningLevelGuidance[guide.learningLevel]}
+Coverage: ${guide.coverage} — ${coverageGuidance[guide.coverage]}
 Full outline: ${JSON.stringify(outline)}
 Parent section: "${topic.title}" — ${topic.description}
 Subtopic: "${item.title}"${item.overview ? ` — ${item.overview}` : ''}
@@ -426,7 +445,7 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
   return _streamLesson({ baseContext, onEvent });
 }
 
-async function generateAdditionalSections({ guideTitle, existingSections, userPrompt, ageLevel }) {
+async function generateAdditionalSections({ guideTitle, existingSections, userPrompt, learningLevel, coverage }) {
   const existingTitles = existingSections.map((s) => s.title).join('\n- ');
 
   const { object } = await generateObject({
@@ -435,7 +454,8 @@ async function generateAdditionalSections({ guideTitle, existingSections, userPr
     mode: getObjectMode(),
     system: `You are StructureMyLearning's curriculum designer. Generate 1–3 additional learning guide sections based on a user's request. The new sections must complement the existing outline without duplicating any topic already covered.`,
     prompt: `Guide title: "${guideTitle}"
-Learner level: ${ageLevel} — ${ageGuidance[ageLevel]}
+Learner level: ${learningLevel} — ${learningLevelGuidance[learningLevel]}
+Coverage: ${coverage} — ${coverageGuidance[coverage]}
 
 Existing sections (do not duplicate):
 - ${existingTitles}
@@ -452,7 +472,7 @@ async function chatWithTutor({ guide, topic, messages }) {
   try {
     return streamText({
       model: getContentModel(),
-      system: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.ageLevel.replaceAll('_', ' ')}.`,
+      system: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.learningLevel.replaceAll('_', ' ')}.`,
       messages: await convertToModelMessages(messages),
       maxTokens: 300,
     });
@@ -465,7 +485,7 @@ async function chatWithTutor({ guide, topic, messages }) {
 }
 
 module.exports = {
-  ageGuidance,
+  learningLevelGuidance,
   chatWithTutor,
   generateAdditionalSections,
   generateGuideIllustration,
