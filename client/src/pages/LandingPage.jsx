@@ -426,8 +426,28 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="border-t border-charcoal/8 bg-canvas py-20">
-        <div className="mx-auto max-w-5xl px-6">
+      <section className="relative overflow-hidden border-t border-charcoal/8 bg-canvas py-20">
+        {/* Brand bloom — no grid */}
+        <div
+          className="pointer-events-none absolute inset-x-0 -top-10 h-[420px]"
+          style={{
+            background: [
+              'radial-gradient(ellipse 70% 80% at 50% 0%, rgba(15,118,110,0.10) 0%, transparent 65%)',
+              'radial-gradient(ellipse 40% 50% at 8%  60%, rgba(99,102,241,0.07) 0%, transparent 60%)',
+              'radial-gradient(ellipse 40% 50% at 92% 30%, rgba(251,146,60,0.07)  0%, transparent 55%)',
+            ].join(', '),
+          }}
+        />
+        {/* Corner pill decoration */}
+        <div className="pointer-events-none absolute -bottom-4 -right-8 opacity-[0.07]">
+          <svg viewBox="0 0 104 73" className="w-72" aria-hidden="true">
+            <rect x="54" y="0"  width="50" height="21" rx="10.5" fill="#0F766E"/>
+            <rect x="27" y="26" width="50" height="21" rx="10.5" fill="#0F766E"/>
+            <rect x="0"  y="52" width="50" height="21" rx="10.5" fill="#0F766E"/>
+          </svg>
+        </div>
+
+        <div className="relative mx-auto max-w-5xl px-6">
           <Reveal>
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-teal-700" />
             <h2 className="text-center text-2xl font-semibold tracking-tight text-charcoal">How it works</h2>
@@ -437,11 +457,15 @@ export default function LandingPage() {
           <div className="mt-12 grid gap-5 sm:grid-cols-3">
             {STEPS.map(({ n, Icon, title, body, color }, i) => (
               <Reveal key={n} delay={i * 100}>
-                <div className="relative overflow-hidden rounded-xl border border-charcoal/10 bg-white p-7 shadow-card h-full">
+                <div className="relative h-full overflow-hidden rounded-xl border border-charcoal/10 bg-white p-7 shadow-card">
                   <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: color.bar }} />
                   <div className="mb-6 flex items-center justify-between">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full font-mono text-xs font-bold text-white" style={{ backgroundColor: color.chip }}>
-                      {n.replace('0', '')}
+                    {/* Gradient pill badge — brand mark */}
+                    <span
+                      className="inline-flex items-center rounded-full px-3 py-1 font-mono text-xs font-bold text-white"
+                      style={{ background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 55%, #2DD4BF 100%)' }}
+                    >
+                      {n}
                     </span>
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: color.icon, border: `1px solid ${color.iconBorder}` }}>
                       <Icon size={17} style={{ color: color.iconText }} />
