@@ -438,7 +438,14 @@ export default function LandingPage() {
             ].join(', '),
           }}
         />
-        {/* Corner pill decoration */}
+        {/* Corner pill decorations */}
+        <div className="pointer-events-none absolute -left-8 -top-4 rotate-180 opacity-[0.07]">
+          <svg viewBox="0 0 104 73" className="w-72" aria-hidden="true">
+            <rect x="54" y="0"  width="50" height="21" rx="10.5" fill="#0F766E"/>
+            <rect x="27" y="26" width="50" height="21" rx="10.5" fill="#0F766E"/>
+            <rect x="0"  y="52" width="50" height="21" rx="10.5" fill="#0F766E"/>
+          </svg>
+        </div>
         <div className="pointer-events-none absolute -bottom-4 -right-8 opacity-[0.07]">
           <svg viewBox="0 0 104 73" className="w-72" aria-hidden="true">
             <rect x="54" y="0"  width="50" height="21" rx="10.5" fill="#0F766E"/>
