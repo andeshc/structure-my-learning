@@ -338,7 +338,7 @@ export default function SubtopicDetailPage() {
             </div>
 
             {/* Content card */}
-            <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 space-y-3">
+            <div className="mt-6 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border border-slate-200 bg-white p-6 lg:p-8 space-y-3">
               <div className="h-4 w-full rounded bg-slate-100" />
               <div className="h-4 w-5/6 rounded bg-slate-100" />
               <div className="h-4 w-4/5 rounded bg-slate-100" />
@@ -484,7 +484,7 @@ export default function SubtopicDetailPage() {
           </div>
 
           {/* Lesson content */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
+          <div className="mt-6 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
             {loadingContent ? (
               <div className="animate-pulse space-y-3">
                 <div className="h-4 w-full rounded bg-slate-100" />
