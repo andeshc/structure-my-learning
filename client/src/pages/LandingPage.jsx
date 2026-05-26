@@ -244,7 +244,7 @@ function useDemoAnimation() {
 const HeroDemo = memo(function HeroDemo() {
   const { displayText, showOutline, visibleTopics, outline } = useDemoAnimation();
   return (
-    <div className="mx-auto mt-14 max-w-2xl overflow-hidden rounded-xl border border-charcoal/10 bg-white text-left shadow-card">
+    <div className="mt-12 overflow-hidden rounded-xl border border-charcoal/10 bg-white text-left shadow-card lg:mt-0">
       <div className="flex items-center gap-1.5 border-b border-charcoal/8 bg-canvas/60 px-4 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-red-300" />
         <span className="h-2.5 w-2.5 rounded-full bg-yellow-300" />
@@ -381,38 +381,47 @@ export default function LandingPage() {
             ].join(', '),
           }}
         />
-        <div className="relative mx-auto w-full max-w-4xl px-6 pb-20 pt-16 text-center">
-          <span className="inline-block rounded-full border border-teal-700/25 bg-teal-700/6 px-4 py-1.5 text-xs font-medium tracking-wide text-teal-700">
-            AI-powered structured learning
-          </span>
+        <div className="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-16">
+          <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-center lg:gap-16">
 
-          <h1 className="mt-6 text-5xl font-semibold leading-[1.1] tracking-tight text-charcoal sm:text-6xl">
-            Turn any learning goal into<br />
-            <span className="bg-gradient-to-r from-teal-600 via-cyan-500 to-indigo-500 bg-clip-text text-transparent">
-              a guide built just for you.
-            </span>
-          </h1>
+            {/* ── Left: copy ── */}
+            <div className="flex-1 text-center lg:text-left">
+              <span className="inline-block rounded-full border border-teal-700/25 bg-teal-700/6 px-4 py-1.5 text-xs font-medium tracking-wide text-teal-700">
+                AI-powered structured learning
+              </span>
 
-          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-charcoal-400 sm:text-lg">
-            Type what you're curious about. Get a complete, structured learning guide — with real depth
-            on every topic. Like having a tutor who wrote a mini-course, just for you.
-          </p>
+              <h1 className="mt-6 text-5xl font-semibold leading-[1.1] tracking-tight text-charcoal sm:text-6xl">
+                Turn any learning goal into{' '}
+                <span className="bg-gradient-to-r from-teal-600 via-cyan-500 to-indigo-500 bg-clip-text text-transparent">
+                  a guide built just for you.
+                </span>
+              </h1>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login" className="flex items-center gap-2 rounded-md bg-teal-700 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800">
-              Get started free <ArrowRight size={15} />
-            </Link>
-            <Link to="/pricing" className="rounded-md border border-charcoal/20 px-6 py-3 text-sm font-medium text-charcoal transition-colors hover:bg-charcoal/5">
-              See pricing
-            </Link>
+              <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-charcoal-400 sm:text-lg lg:mx-0">
+                Type what you're curious about. Get a complete, structured learning guide — with real depth
+                on every topic. Like having a tutor who wrote a mini-course, just for you.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                <Link to="/login" className="flex items-center gap-2 rounded-md bg-teal-700 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800">
+                  Get started free <ArrowRight size={15} />
+                </Link>
+                <Link to="/pricing" className="rounded-md border border-charcoal/20 px-6 py-3 text-sm font-medium text-charcoal transition-colors hover:bg-charcoal/5">
+                  See pricing
+                </Link>
+              </div>
+              <p className="mt-3 text-xs text-charcoal-400">No credit card required · 3 free guides to start</p>
+              <p className="mt-6 text-sm text-charcoal-400">
+                Join learners building real knowledge — not just watching videos.
+              </p>
+            </div>
+
+            {/* ── Right: demo ── */}
+            <div className="w-full lg:flex-1">
+              <HeroDemo />
+            </div>
+
           </div>
-          <p className="mt-3 text-xs text-charcoal-400">No credit card required · 3 free guides to start</p>
-
-          <HeroDemo />
-
-          <p className="mt-6 text-sm text-charcoal-400">
-            Join learners building real knowledge — not just watching videos.
-          </p>
         </div>
       </section>
 
