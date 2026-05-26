@@ -133,7 +133,7 @@ const MarqueeStrip = memo(function MarqueeStrip() {
         {doubled.map(({ title, field }, i) => (
           <Link
             key={i}
-            to="/register"
+            to="/login"
             className="flex shrink-0 items-center gap-2.5 rounded-full border border-charcoal/10 bg-white px-5 py-2.5 shadow-card transition-shadow hover:shadow-card-hover"
           >
             <span className="text-xs font-semibold text-teal-700">{field}</span>
@@ -263,7 +263,7 @@ const HeroDemo = memo(function HeroDemo() {
       </div>
 
       <div className="px-5 pb-4">
-        <Link to="/register" className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800">
+        <Link to="/login" className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-800">
           Generate my guide <ArrowRight size={14} />
         </Link>
       </div>
@@ -342,13 +342,13 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-7 sm:flex">
             <Link to="/pricing" className="text-sm text-charcoal-400 transition-colors hover:text-charcoal">Pricing</Link>
             <Link to="/login"   className="text-sm text-charcoal-400 transition-colors hover:text-charcoal">Sign in</Link>
-            <Link to="/register" className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800">
+            <Link to="/login" className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800">
               Get started free
             </Link>
           </nav>
           <div className="flex items-center gap-3 sm:hidden">
             <Link to="/login" className="text-sm text-charcoal-400">Sign in</Link>
-            <Link to="/register" className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800">
+            <Link to="/login" className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800">
               Get started
             </Link>
           </div>
@@ -399,7 +399,7 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/register" className="flex items-center gap-2 rounded-md bg-teal-700 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800">
+            <Link to="/login" className="flex items-center gap-2 rounded-md bg-teal-700 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-800">
               Get started free <ArrowRight size={15} />
             </Link>
             <Link to="/pricing" className="rounded-md border border-charcoal/20 px-6 py-3 text-sm font-medium text-charcoal transition-colors hover:bg-charcoal/5">
@@ -522,7 +522,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/register" className="mt-8 block w-full rounded-md border border-charcoal/20 py-2.5 text-center text-sm font-medium text-charcoal transition-colors hover:bg-charcoal/5">
+                <Link to="/login" className="mt-8 block w-full rounded-md border border-charcoal/20 py-2.5 text-center text-sm font-medium text-charcoal transition-colors hover:bg-charcoal/5">
                   Get started free
                 </Link>
               </div>
@@ -543,7 +543,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/register" className="mt-8 block w-full rounded-md bg-teal-700 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800">
+                <Link to="/login" className="mt-8 block w-full rounded-md bg-teal-700 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-teal-800">
                   Start with Pro
                 </Link>
               </div>
@@ -578,7 +578,7 @@ export default function LandingPage() {
                 The best time to learn something<br className="hidden sm:block" /> properly was yesterday.
               </h2>
               <p className="mt-4 text-teal-200/70">The second best time is right now.</p>
-              <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-white px-8 py-3 text-sm font-medium text-teal-900 transition-colors hover:bg-teal-50">
+              <Link to="/login" className="mt-8 inline-flex items-center gap-2 rounded-md bg-white px-8 py-3 text-sm font-medium text-teal-900 transition-colors hover:bg-teal-50">
                 Start learning for free <ArrowRight size={15} />
               </Link>
             </div>
