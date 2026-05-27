@@ -60,10 +60,15 @@ app.get('/share/:token/og-image.png', async (req, res) => {
     if (!imageUrl) return res.redirect('/og-image.png');
     const upstream = await fetch(imageUrl);
     if (!upstream.ok) return res.redirect('/og-image.png');
-    res.set('Content-Type', upstream.headers.get('content-type') || 'image/png');
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    const sharp = require('sharp');
+    const compressed = await sharp(buffer)
+      .resize(1200, 630, { fit: 'cover' })
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    res.set('Content-Type', 'image/jpeg');
     res.set('Cache-Control', 'public, max-age=86400');
-    const { Readable } = require('stream');
-    Readable.fromWeb(upstream.body).pipe(res);
+    res.send(compressed);
   } catch {
     res.redirect('/og-image.png');
   }
