@@ -446,7 +446,7 @@ export default function SubtopicDetailPage() {
         </aside>
 
         {/* Main content */}
-        <div ref={articleRef}>
+        <div ref={articleRef} className="min-w-0">
           {/* Mobile breadcrumb */}
           <div className="mb-5 flex min-w-0 items-center gap-2 text-sm text-slate-500 xl:hidden">
             <Link className="shrink-0 max-w-[45%] truncate font-medium text-blue-700 hover:underline" to={`/guides/${guide.id}`}>
