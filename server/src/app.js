@@ -51,6 +51,24 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Route not found.' });
 });
 
+// Image proxy for share OG images — keeps the image on the main domain so
+// WhatsApp/bot crawlers aren't blocked by CDN bot protection on cdn.*
+app.get('/share/:token/og-image', async (req, res) => {
+  try {
+    const guide = await guidesDb.findGuideByShareToken(req.params.token);
+    const imageUrl = guide?.illustrationUrl;
+    if (!imageUrl) return res.redirect('/og-image.png');
+    const upstream = await fetch(imageUrl);
+    if (!upstream.ok) return res.redirect('/og-image.png');
+    res.set('Content-Type', upstream.headers.get('content-type') || 'image/png');
+    res.set('Cache-Control', 'public, max-age=86400');
+    const { Readable } = require('stream');
+    Readable.fromWeb(upstream.body).pipe(res);
+  } catch {
+    res.redirect('/og-image.png');
+  }
+});
+
 // Serve built client in production
 const distPath = path.join(__dirname, '../../client/dist');
 if (fs.existsSync(distPath)) {
@@ -65,7 +83,9 @@ if (fs.existsSync(distPath)) {
       if (!guide) return res.send(indexHtml);
       const title = `${guide.title} | StructureMyLearning`;
       const desc = `Learn "${guide.title}" — an AI-generated structured guide, shared by ${guide.ownerName}.`;
-      const illustrationUrl = escAttr(guide.illustrationUrl || 'https://structuremylearning.com/og-image.png');
+      const illustrationUrl = guide.illustrationUrl
+        ? escAttr(`${config.appUrl}/share/${req.params.token}/og-image`)
+        : escAttr(`${config.appUrl}/og-image.png`);
       const shareUrl = escAttr(`${config.appUrl}/share/${req.params.token}`);
       const injected = indexHtml
         .replace(/<title>[^<]*<\/title>/, `<title>${escAttr(title)}</title>`)
