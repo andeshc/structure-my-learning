@@ -66,14 +66,21 @@ if (fs.existsSync(distPath)) {
       const title = `${guide.title} | StructureMyLearning`;
       const desc = `Learn "${guide.title}" — an AI-generated structured guide, shared by ${guide.ownerName}.`;
       const illustrationUrl = escAttr(guide.illustrationUrl || 'https://structuremylearning.com/og-image.png');
+      const shareUrl = escAttr(`${config.appUrl}/share/${req.params.token}`);
       const injected = indexHtml
         .replace(/<title>[^<]*<\/title>/, `<title>${escAttr(title)}</title>`)
+        .replace(/(<meta name="description"\s+content=")[^"]*(")/,         `$1${escAttr(desc)}$2`)
+        .replace(/(<meta property="og:url"\s+content=")[^"]*(")/,          `$1${shareUrl}$2`)
         .replace(/(<meta property="og:title"\s+content=")[^"]*(")/,        `$1${escAttr(title)}$2`)
         .replace(/(<meta property="og:description"\s+content=")[^"]*(")/,  `$1${escAttr(desc)}$2`)
         .replace(/(<meta property="og:image"\s+content=")[^"]*(")/,        `$1${illustrationUrl}$2`)
         .replace(/(<meta property="og:image:width"\s+content=")[^"]*(")/,  '$11200$2')
         .replace(/(<meta property="og:image:height"\s+content=")[^"]*(")/,  '$1630$2')
-        .replace('</head>', `  <meta name="twitter:card" content="summary_large_image" />\n  </head>`);
+        .replace(/(<meta property="og:image:alt"\s+content=")[^"]*(")/,    `$1${escAttr(title)}$2`)
+        .replace(/(<meta name="twitter:title"\s+content=")[^"]*(")/,       `$1${escAttr(title)}$2`)
+        .replace(/(<meta name="twitter:description"\s+content=")[^"]*(")/,  `$1${escAttr(desc)}$2`)
+        .replace(/(<meta name="twitter:image"\s+content=")[^"]*(")/,       `$1${illustrationUrl}$2`)
+        .replace(/(<meta name="twitter:image:alt"\s+content=")[^"]*(")/,   `$1${escAttr(title)}$2`);
       res.send(injected);
     } catch {
       res.sendFile(path.join(distPath, 'index.html'));
