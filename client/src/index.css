@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Unlayered — beats both @layer base and Tailwind CDN's unlayered utilities */
+html { overflow-x: hidden; }
 
 /* AI-generated lesson content — kept outside @layer to win over Tailwind CDN preflight */
 .lesson-content {
@@ -118,10 +120,11 @@
   padding: 0.15em 0.4em;
 }
 
-.lesson-content pre {
+.lesson-content.lesson-content pre {
   width: 100%;
   overflow-x: auto;
   max-width: 100%;
+  min-width: 0;
   border-radius: 0.5rem;
   font-size: 0.82rem;
 }
@@ -164,7 +167,6 @@
 @layer base {
   html {
     @apply bg-canvas text-charcoal font-sans;
-    overflow-x: hidden;
   }
 
   body {
