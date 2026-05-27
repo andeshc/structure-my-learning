@@ -84,7 +84,7 @@ export default function AppShell() {
             </Link>
             <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>
           </header>
-          <main className="flex-1 overflow-x-hidden px-5 py-7 sm:px-8 lg:px-16 lg:py-12">
+          <main className="flex-1 px-5 py-7 sm:px-8 lg:px-16 lg:py-12">
             <Outlet />
           </main>
           {!hideFooter && <Footer className="border-t border-slate-200" />}

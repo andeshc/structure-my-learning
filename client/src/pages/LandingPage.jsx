@@ -327,7 +327,7 @@ export default function LandingPage() {
   const price = PRICES[currency];
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-canvas">
+    <div className="flex min-h-screen flex-col bg-canvas">
 
       {/* ── Navbar ── */}
       <header

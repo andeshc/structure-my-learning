@@ -114,6 +114,7 @@
 @layer base {
   html {
     @apply bg-canvas text-charcoal font-sans;
+    overflow-x: hidden;
   }
 
   body {
