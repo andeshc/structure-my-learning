@@ -1,3 +1,6 @@
+// Railway has no IPv6 outbound — force all DNS lookups to prefer IPv4
+require('dns').setDefaultResultOrder('ipv4first');
+
 const { initDb } = require('./db/init');
 const config = require('./config');
 const app = require('./app');
