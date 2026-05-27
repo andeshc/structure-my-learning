@@ -5,11 +5,24 @@
 
 /* AI-generated lesson content — kept outside @layer to win over Tailwind CDN preflight */
 .lesson-content {
-  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
   font-size: 0.9375rem;   /* 15px */
   line-height: 1.75;
   color: #374151;         /* slate-700 */
+}
+
+.lesson-content,
+.lesson-content * {
+  box-sizing: border-box;
+}
+
+.lesson-content.lesson-content * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .lesson-content > * + * { margin-top: 1rem; }
@@ -40,10 +53,23 @@
 .lesson-content p { margin-top: 0.875rem; }
 .lesson-content p:first-child { margin-top: 0; }
 
+.lesson-content p,
+.lesson-content h1,
+.lesson-content h2,
+.lesson-content h3,
+.lesson-content h4,
+.lesson-content li,
+.lesson-content blockquote,
+.lesson-content a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 .lesson-content ul,
 .lesson-content ol {
   padding-left: 1.5rem;
   margin-top: 0.875rem;
+  max-width: 100%;
 }
 .lesson-content ul { list-style-type: disc; }
 .lesson-content ol { list-style-type: decimal; }
@@ -67,6 +93,22 @@
   margin-top: 1rem;
 }
 
+.lesson-content div,
+.lesson-content section,
+.lesson-content article,
+.lesson-content aside,
+.lesson-content figure {
+  max-width: 100%;
+}
+
+.lesson-content img,
+.lesson-content svg,
+.lesson-content video,
+.lesson-content canvas {
+  max-width: 100%;
+  height: auto;
+}
+
 .lesson-content code:not(pre code) {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.85em;
@@ -77,10 +119,18 @@
 }
 
 .lesson-content pre {
+  width: 100%;
   overflow-x: auto;
   max-width: 100%;
   border-radius: 0.5rem;
   font-size: 0.82rem;
+}
+
+.lesson-content.lesson-content pre code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
 }
 
 .lesson-content table {
@@ -103,7 +153,7 @@
 }
 
 /* Illustration images embedded in AI-generated lesson content */
-.lesson-illustration {
+.lesson-content .lesson-illustration {
   display: block;
   width: 100%;
   margin: 1.5rem auto;

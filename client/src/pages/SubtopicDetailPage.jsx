@@ -36,7 +36,7 @@ const PURIFY_CONFIG = {
   USE_PROFILES: { html: true, svg: true, svgFilters: true },
   ADD_TAGS: [],
   FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
 };
 
 function sanitize(html) {
