@@ -59,6 +59,13 @@ export default function TermsPage() {
           <p>Lifetime access is tied to the continued operation of StructureMyLearning. It does not guarantee any specific feature set in perpetuity — features may change as the product evolves. LTD purchases are <strong className="text-charcoal">non-refundable</strong> after the promotional window closes. If we permanently discontinue the service, we will provide at least 60 days' notice and pro-rated compensation where feasible.</p>
         </Section>
 
+        <Section title="Guide Sharing and Adoption">
+          <p>You may generate a share link for any guide in your library. Anyone with the link can preview up to two subtopics without an account; viewing additional subtopics requires signing in and adopting the guide.</p>
+          <p>Adopting a guide adds it to your library without copying it. Your learning progress on an adopted guide is stored independently from the original creator and from other adopters.</p>
+          <p><strong className="text-charcoal">Deletion and persistence.</strong> If you delete a guide that other users have adopted, the guide is not immediately removed from our systems. Its content remains accessible to existing adopters until each of them removes the guide from their own library. Once the last adopter removes it, the guide is permanently deleted. You cannot revoke access from individual adopters; your only recourse is to delete the guide and allow attrition as adopters leave.</p>
+          <p>By sharing a guide you confirm that its content does not violate these Terms or applicable law.</p>
+        </Section>
+
         <Section title="Acceptable Use">
           <p>You agree not to use StructureMyLearning to:</p>
           <ul className="list-disc pl-5 space-y-1">

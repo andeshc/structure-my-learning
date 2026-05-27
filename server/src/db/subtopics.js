@@ -1,6 +1,5 @@
 const { query, getOne, getAll, withTransaction } = require('./index');
 const { subtopicId } = require('../utils/ids');
-const { touchGuide } = require('./guides');
 
 function toSubtopic(row) {
   if (!row) return null;
@@ -74,18 +73,22 @@ async function listSubtopicsForTopic(topicId) {
   return rows.map(toSubtopic);
 }
 
-async function updateSubtopicProgress(subtopicId, isCompleted) {
+async function updateSubtopicProgress(userId, subtopicId, isCompleted) {
   const completedAt = isCompleted ? new Date().toISOString() : null;
   await query(
-    'UPDATE subtopics SET is_completed = $1, completed_at = $2, updated_at = NOW() WHERE id = $3',
-    [isCompleted ? 1 : 0, completedAt, subtopicId]
+    `INSERT INTO subtopic_progress (user_id, subtopic_id, is_completed, completed_at)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (user_id, subtopic_id) DO UPDATE SET is_completed = $3, completed_at = $4`,
+    [userId, subtopicId, isCompleted, completedAt]
   );
+}
+
+async function getSubtopicProgressForUser(userId, subtopicId) {
   const row = await getOne(
-    'SELECT s.topic_id, t.guide_id FROM subtopics s JOIN topics t ON t.id = s.topic_id WHERE s.id = $1',
-    [subtopicId]
+    'SELECT is_completed, completed_at FROM subtopic_progress WHERE user_id = $1 AND subtopic_id = $2',
+    [userId, subtopicId]
   );
-  if (row) await touchGuide(row.guide_id);
-  return toSubtopic(await getOne('SELECT * FROM subtopics WHERE id = $1', [subtopicId]));
+  return { isCompleted: row?.is_completed ?? false, completedAt: row?.completed_at ?? null };
 }
 
 async function saveSubtopicContentHtml(subtopicId, contentHtml) {
@@ -194,14 +197,16 @@ async function getGuidesWithPendingWork() {
   return rows.map((r) => r.guide_id);
 }
 
-async function listAllSubtopicsForGuide(guideId) {
+async function listAllSubtopicsForGuide(guideId, userId) {
   const rows = await getAll(
     `SELECT s.topic_id, s.position, s.dev_status,
-            CASE WHEN s.is_completed = 1 THEN 1 ELSE 0 END AS is_completed,
+            COALESCE(sp.is_completed, false) AS is_completed,
             CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
-     FROM subtopics s JOIN topics t ON t.id = s.topic_id
+     FROM subtopics s
+     JOIN topics t ON t.id = s.topic_id
+     LEFT JOIN subtopic_progress sp ON sp.subtopic_id = s.id AND sp.user_id = $2
      WHERE t.guide_id = $1 ORDER BY t.position, s.position`,
-    [guideId]
+    [guideId, userId]
   );
   return rows.map((r) => ({
     topicId: r.topic_id,
@@ -214,13 +219,14 @@ async function listAllSubtopicsForGuide(guideId) {
 
 async function listSubtopicStatusesForGuide(guideId) {
   const rows = await getAll(
-    `SELECT s.topic_id, s.position, s.dev_status, s.illustration_urls,
+    `SELECT s.id, s.topic_id, s.position, s.dev_status, s.illustration_urls,
             CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s JOIN topics t ON t.id = s.topic_id
      WHERE t.guide_id = $1 ORDER BY t.position, s.position`,
     [guideId]
   );
   return rows.map((r) => ({
+    subtopicId: r.id,
     topicId: r.topic_id,
     position: r.position,
     devStatus: r.dev_status,
@@ -244,6 +250,7 @@ module.exports = {
   findSubtopicForUser,
   getGuidesWithPendingWork,
   getPendingSubtopicsForGuide,
+  getSubtopicProgressForUser,
   initSubtopicsForGuide,
   listSubtopicStatusesForGuide,
   listSubtopicsForTopic,

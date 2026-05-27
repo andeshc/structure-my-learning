@@ -3,12 +3,14 @@ import {
   CheckCircle,
   ChevronLeft,
   Layers,
+  Link2,
   PlusCircle,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { deleteGuide, developGuide, extendGuide, finalizeGuide, getGuide, getGuideOutlineStatus } from '../api/guides';
+import { shareGuide } from '../api/share';
 import LoadingPanel from '../components/LoadingPanel';
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
@@ -430,6 +432,7 @@ export default function GuideDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -505,6 +508,15 @@ export default function GuideDetailPage() {
     }
   }
 
+  async function handleShare() {
+    try {
+      const { shareUrl } = await shareGuide(guideId);
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch { /* ignore */ }
+  }
+
   async function handleDelete() {
     setIsDeleting(true);
     try {
@@ -570,13 +582,13 @@ export default function GuideDetailPage() {
 
         {confirmDelete ? (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-600">Delete this guide?</span>
+            <span className="text-sm text-slate-600">{guide.isAdopted ? 'Remove from library?' : 'Delete this guide?'}</span>
             <button
               className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               disabled={isDeleting}
               onClick={handleDelete}
             >
-              {isDeleting ? 'Deleting…' : 'Yes, delete'}
+              {isDeleting ? (guide.isAdopted ? 'Removing…' : 'Deleting…') : guide.isAdopted ? 'Yes, remove' : 'Yes, delete'}
             </button>
             <button
               className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-300"
@@ -586,13 +598,29 @@ export default function GuideDetailPage() {
             </button>
           </div>
         ) : (
-          <button
-            aria-label="Delete guide"
-            className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-red-200 hover:text-red-600"
-            onClick={() => setConfirmDelete(true)}
-          >
-            <Trash2 size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                aria-label="Share guide"
+                className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-teal-200 hover:text-teal-600"
+                onClick={handleShare}
+              >
+                <Link2 size={16} />
+              </button>
+              {shareCopied && (
+                <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-[10px] font-medium text-white">
+                  Link copied!
+                </span>
+              )}
+            </div>
+            <button
+              aria-label="Delete guide"
+              className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-red-200 hover:text-red-600"
+              onClick={() => setConfirmDelete(true)}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         )}
       </div>
 
@@ -601,9 +629,15 @@ export default function GuideDetailPage() {
         <div className="grid lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="p-5 lg:p-7">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
-                {formatLearningLevel(guide.learningLevel)}
-              </span>
+              {guide.isAdopted && guide.ownerName ? (
+                <span className="text-xs font-bold uppercase tracking-wide text-teal-700">
+                  By {guide.ownerName}
+                </span>
+              ) : (
+                <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
+                  {formatLearningLevel(guide.learningLevel)}
+                </span>
+              )}
               {guide.coverage && guide.coverage !== 'balanced' && (
                 <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {guide.coverage.charAt(0).toUpperCase() + guide.coverage.slice(1)}
@@ -638,7 +672,7 @@ export default function GuideDetailPage() {
                   {summary.subtopicPct === 100 ? 'Review guide' : summary.completed === 0 ? 'Start learning' : 'Continue'}
                 </button>
               )}
-              {guide.outline?.sections?.some((s) => s.items?.some((item) => item.devStatus === 'pending' || item.devStatus === 'failed')) && (
+              {!guide.isAdopted && guide.outline?.sections?.some((s) => s.items?.some((item) => item.devStatus === 'pending' || item.devStatus === 'failed')) && (
                 <button
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700"
                   onClick={handleDevelop}

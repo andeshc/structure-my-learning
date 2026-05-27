@@ -224,6 +224,7 @@ function GuideCard({ guide, index, onDelete }) {
   const menuRef = useRef(null);
   const tags = guideTags(guide);
   const title = displayGuideTitle(guide.title);
+  const isAdopted = Boolean(guide.isAdopted);
   const topics = guide.topicCount || 0;
   const completedTopics = guide.completedTopicCount || 0;
   const subtopicCount = guide.outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
@@ -299,7 +300,7 @@ function GuideCard({ guide, index, onDelete }) {
                 }}
               >
                 <Trash2 size={14} />
-                Delete guide
+                {isAdopted ? 'Remove from library' : 'Delete guide'}
               </button>
             </div>
           )}
@@ -311,9 +312,12 @@ function GuideCard({ guide, index, onDelete }) {
           {title}
         </Link>
 
-        {/* Topic count chip */}
+        {/* Topic count + optional attribution */}
         <p className="mt-1.5 text-xs font-medium text-slate-400">
           {topics} topic{topics !== 1 ? 's' : ''}
+          {isAdopted && guide.ownerName && (
+            <> · By <span className="text-slate-600">{guide.ownerName}</span></>
+          )}
         </p>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -517,9 +521,11 @@ export default function DashboardPage() {
                 <BarChart3 size={24} />
               </span>
               <div>
-                <h2 className="text-xl font-bold">Delete guide?</h2>
+                <h2 className="text-xl font-bold">{deleteTarget.isAdopted ? 'Remove from library?' : 'Delete guide?'}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  This will permanently delete "{deleteTarget.title}" and all generated topic content.
+                  {deleteTarget.isAdopted
+                    ? `This will remove "${deleteTarget.title}" from your library. The original guide will not be affected.`
+                    : `This will permanently delete "${deleteTarget.title}" and all generated topic content.`}
                 </p>
               </div>
             </div>
@@ -528,7 +534,7 @@ export default function DashboardPage() {
                 Cancel
               </button>
               <button className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white" onClick={confirmDelete}>
-                Delete
+                {deleteTarget.isAdopted ? 'Remove' : 'Delete'}
               </button>
             </div>
           </div>

@@ -35,7 +35,7 @@ export default function PrivacyPage() {
 
         <Section title="Information We Collect">
           <p>When you create an account, we collect your name, email address, and — if you sign in via Google or GitHub — your profile information from that provider. During onboarding we ask where you heard about us; this is stored alongside your account.</p>
-          <p>We store every learning guide you create, the AI-generated content for each topic, your completion progress, and any contact form messages you send us.</p>
+          <p>We store every learning guide you create, the AI-generated content for each topic, your completion progress, and any contact form messages you send us. If you access a guide via a share link, we also record which subtopics you have viewed in order to enforce the two-subtopic preview limit; this is stored per user and per share link.</p>
           <p>We collect standard server logs (IP address, browser type, pages visited) for security and debugging purposes. Your IP address is also used to determine your country so we can display pricing in the appropriate currency (INR or USD).</p>
           <p>For paid subscriptions, your billing details (name, email, and payment method) are collected and processed by our payment provider, Dodo Payments. We receive a transaction record and subscription status but do not store your card details.</p>
         </Section>
@@ -65,6 +65,7 @@ export default function PrivacyPage() {
 
         <Section title="Data Retention">
           <p>Your data is retained for as long as your account is active. If you wish to delete your account and all associated data, please <Link className="text-teal-700 hover:underline" to="/contact">contact us</Link>.</p>
+          <p>If you delete a guide that other users have adopted, the guide content is not immediately erased — it persists until all adopters remove it from their libraries, at which point it is permanently deleted. If you need expedited removal, contact us and we will review the request.</p>
           <p>Billing and transaction records are subject to statutory retention requirements and may be kept for up to 7 years after account deletion for tax and accounting compliance, even after all other personal data has been removed.</p>
           <p>Your data may be processed and stored in countries outside your country of residence, including the United States, where our infrastructure and third-party service providers operate. By using StructureMyLearning you consent to this transfer.</p>
         </Section>

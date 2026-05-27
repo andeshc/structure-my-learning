@@ -66,6 +66,22 @@ async function initDb() {
   if (gc.length && !gc.includes('needs_review')) {
     await query(`ALTER TABLE guides ADD COLUMN needs_review BOOLEAN NOT NULL DEFAULT FALSE`);
   }
+  if (gc.length && !gc.includes('share_token')) {
+    await query(`ALTER TABLE guides ADD COLUMN share_token TEXT UNIQUE`);
+  }
+  // Allow guides.user_id to be NULL for tombstoned guides (owner deleted, adopters retain access)
+  if (gc.length) {
+    await query(`ALTER TABLE guides ALTER COLUMN user_id DROP NOT NULL`);
+  }
+
+  if (uc.length && !uc.includes('guides_created_count')) {
+    await query(`ALTER TABLE users ADD COLUMN guides_created_count INTEGER NOT NULL DEFAULT 0`);
+    await query(`
+      UPDATE users SET guides_created_count = (
+        SELECT COUNT(*) FROM guides WHERE user_id = users.id
+      )
+    `);
+  }
 
   const tc = await cols('topics');
   if (tc.length && !tc.includes('content_html')) {
@@ -85,6 +101,20 @@ async function initDb() {
   }
   if (sc.length && !sc.includes('illustration_urls')) {
     await query('ALTER TABLE subtopics ADD COLUMN illustration_urls TEXT');
+  }
+
+  // Seed subtopic_progress from legacy subtopics.is_completed (one-time, idempotent)
+  const spc = await cols('subtopic_progress');
+  if (!spc.length) {
+    await query(`
+      INSERT INTO subtopic_progress (user_id, subtopic_id, is_completed, completed_at)
+      SELECT g.user_id, s.id, true, s.completed_at
+      FROM subtopics s
+      JOIN topics t ON t.id = s.topic_id
+      JOIN guides g ON g.id = t.guide_id
+      WHERE s.is_completed = 1
+      ON CONFLICT DO NOTHING
+    `);
   }
 }
 

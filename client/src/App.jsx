@@ -20,6 +20,8 @@ import TermsPage from './pages/TermsPage';
 import ContactPage from './pages/ContactPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import AdminReportPage from './pages/AdminReportPage';
+import SharedGuidePage from './pages/SharedGuidePage';
+import SharedSubtopicPage from './pages/SharedSubtopicPage';
 
 export default function App() {
   return (
@@ -38,8 +40,10 @@ export default function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
-              <Route element={<ProtectedRoute />}>
-                <Route element={<AppShell />}>
+              <Route element={<AppShell />}>
+                <Route path="share/:shareToken" element={<SharedGuidePage />} />
+              <Route path="share/:shareToken/topics/:topicId/subtopics/:position" element={<SharedSubtopicPage />} />
+                <Route element={<ProtectedRoute />}>
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="guides/new" element={<NewGuidePage />} />
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified BOOLEAN NOT NULL DEFAULT FALSE,
   referral_source TEXT,
   referral_source_other TEXT,
+  guides_created_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (email <> '')
@@ -54,6 +55,7 @@ CREATE TABLE IF NOT EXISTS guides (
   status TEXT NOT NULL DEFAULT 'ready' CHECK (status IN ('pending', 'ready', 'failed')),
   outline_json TEXT,
   illustration_path TEXT,
+  share_token TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -92,6 +94,30 @@ CREATE TABLE IF NOT EXISTS subtopics (
   FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS shared_guide_views (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  share_token TEXT NOT NULL,
+  subtopic_id TEXT NOT NULL REFERENCES subtopics(id) ON DELETE CASCADE,
+  viewed_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, share_token, subtopic_id)
+);
+
+CREATE TABLE IF NOT EXISTS guide_adoptions (
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  guide_id    TEXT NOT NULL REFERENCES guides(id) ON DELETE CASCADE,
+  share_token TEXT NOT NULL,
+  adopted_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, guide_id)
+);
+
+CREATE TABLE IF NOT EXISTS subtopic_progress (
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subtopic_id  TEXT NOT NULL REFERENCES subtopics(id) ON DELETE CASCADE,
+  is_completed BOOLEAN NOT NULL DEFAULT false,
+  completed_at TIMESTAMPTZ,
+  PRIMARY KEY (user_id, subtopic_id)
+);
+
 CREATE TABLE IF NOT EXISTS contact_submissions (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -104,6 +130,8 @@ CREATE INDEX IF NOT EXISTS idx_guides_user_updated ON guides(user_id, updated_at
 CREATE INDEX IF NOT EXISTS idx_topics_guide_position ON topics(guide_id, position);
 CREATE INDEX IF NOT EXISTS idx_subtopics_topic_position ON subtopics(topic_id, position);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_guide_adoptions_user ON guide_adoptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subtopic_progress_user ON subtopic_progress(user_id, subtopic_id);
 `;
 
 module.exports = schema;

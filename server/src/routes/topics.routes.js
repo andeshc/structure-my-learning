@@ -47,12 +47,27 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
 
   const dbSubtopics = await subtopicsDb.listSubtopicsForTopic(req.params.topicId);
   const dbByPosition = Object.fromEntries(dbSubtopics.map((s) => [s.position, s]));
+  const dbSubtopic = dbByPosition[position] ?? null;
+
+  // Per-user progress
+  const userProgress = dbSubtopic
+    ? await subtopicsDb.getSubtopicProgressForUser(req.user.id, dbSubtopic.id)
+    : { isCompleted: false, completedAt: null };
+
+  // Per-user section items
+  const allSubtopicsForSection = await subtopicsDb.listAllSubtopicsForGuide(found.guide.id, req.user.id);
+  const subtopicsByTopicPos = {};
+  for (const s of allSubtopicsForSection) {
+    if (!subtopicsByTopicPos[s.topicId]) subtopicsByTopicPos[s.topicId] = {};
+    subtopicsByTopicPos[s.topicId][s.position] = s;
+  }
+  const topicSubs = subtopicsByTopicPos[req.params.topicId] ?? {};
 
   const sectionItems = (section.items || []).map((si, i) => ({
     position: i,
     title: si.title,
     importance: si.importance,
-    isCompleted: dbByPosition[i]?.isCompleted ?? false,
+    isCompleted: topicSubs[i]?.isCompleted ?? false,
     hasContent: dbByPosition[i]?.hasContent ?? false,
     devStatus: dbByPosition[i]?.devStatus ?? 'pending',
   }));
@@ -72,31 +87,24 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     }
   }
 
-  const dbSubtopic = dbByPosition[position] ?? null;
-
   const allTopics = await topicsDb.listTopicsForGuide(found.guide.id);
-  const allSubtopics = await subtopicsDb.listAllSubtopicsForGuide(found.guide.id);
-  const subsByTopicAndPos = {};
-  for (const s of allSubtopics) {
-    if (!subsByTopicAndPos[s.topicId]) subsByTopicAndPos[s.topicId] = {};
-    subsByTopicAndPos[s.topicId][s.position] = s;
-  }
-  const fullOutline = outline.sections.map((section, i) => {
+  const fullOutline = outline.sections.map((sec, i) => {
     const t = allTopics[i];
-    const topicSubs = t ? subsByTopicAndPos[t.id] ?? {} : {};
+    const tSubs = t ? subtopicsByTopicPos[t.id] ?? {} : {};
     return {
       topicId: t?.id ?? null,
-      title: section.title,
-      items: section.items.map((item, pos) => ({
+      title: sec.title,
+      items: sec.items.map((si, pos) => ({
         position: pos,
-        title: item.title,
-        isCompleted: topicSubs[pos]?.isCompleted ?? false,
-        hasContent: topicSubs[pos]?.hasContent ?? false,
-        devStatus: topicSubs[pos]?.devStatus ?? 'pending',
+        title: si.title,
+        isCompleted: tSubs[pos]?.isCompleted ?? false,
+        hasContent: tSubs[pos]?.hasContent ?? false,
+        devStatus: tSubs[pos]?.devStatus ?? 'pending',
       })),
     };
   });
 
+  // Progress percentage for this user+guide
   const guide = await guides.findGuideForUser(found.guide.id, req.user.id);
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
   const completedSubtopics = guide?.completedSubtopicCount ?? 0;
@@ -104,7 +112,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
 
   res.json({
     subtopic: dbSubtopic
-      ? dbSubtopic
+      ? { ...dbSubtopic, isCompleted: userProgress.isCompleted, completedAt: userProgress.completedAt }
       : { id: null, position, title: item.title, contentHtml: null, hasContent: false, isCompleted: false, completedAt: null, devStatus: 'pending' },
     item,
     sectionItems,
@@ -113,7 +121,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     nextTopic,
     fullOutline,
     topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
-    guide: { id: found.guide.id, title: found.guide.title, progressPercentage: guide?.progressPercentage ?? 0, subtopicProgressPercentage },
+    guide: { id: found.guide.id, title: found.guide.title, subtopicProgressPercentage },
   });
 }));
 
@@ -146,21 +154,16 @@ router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, 
   }
 
   const subtopic = await subtopicsDb.findOrCreateSubtopic(req.params.topicId, position, item.title);
-  await subtopicsDb.updateSubtopicProgress(subtopic.id, isCompleted);
-
-  const totalItems = section.items.length;
-  const allDbSubtopics = await subtopicsDb.listSubtopicsForTopic(req.params.topicId);
-  const completedCount = allDbSubtopics.filter((s) => s.isCompleted).length;
-  await topicsDb.updateTopicProgress(req.params.topicId, completedCount >= totalItems);
+  await subtopicsDb.updateSubtopicProgress(req.user.id, subtopic.id, isCompleted);
 
   const guide = await guides.findGuideForUser(found.guide.id, req.user.id);
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
-  const completedSubtopicsCount = guide?.completedSubtopicCount ?? 0;
-  const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopicsCount / totalSubtopics) * 100) : 0;
+  const completedSubtopics = guide?.completedSubtopicCount ?? 0;
+  const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
 
   res.json({
     isCompleted,
-    guide: { id: found.guide.id, progressPercentage: guide?.progressPercentage ?? 0, subtopicProgressPercentage },
+    guide: { id: found.guide.id, subtopicProgressPercentage },
   });
 }));
 

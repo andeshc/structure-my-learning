@@ -1,5 +1,4 @@
 const { query, getOne, getAll } = require('./index');
-const { touchGuide } = require('./guides');
 
 function toTopic(row) {
   if (!row) return null;
@@ -33,7 +32,10 @@ async function findTopicForUser(topicId, userId) {
             g.prompt AS guide_prompt, g.learning_level, g.coverage, g.outline_json
      FROM topics t
      JOIN guides g ON g.id = t.guide_id
-     WHERE t.id = $1 AND g.user_id = $2`,
+     WHERE t.id = $1
+       AND (g.user_id = $2 OR EXISTS (
+         SELECT 1 FROM guide_adoptions WHERE guide_id = g.id AND user_id = $2
+       ))`,
     [topicId, userId]
   );
   if (!row) return null;
@@ -64,21 +66,9 @@ async function saveTopicContentHtml(topicId, contentHtml) {
   );
 }
 
-async function updateTopicProgress(topicId, isCompleted) {
-  const completedAt = isCompleted ? new Date().toISOString() : null;
-  await query(
-    `UPDATE topics SET is_completed = $1, completed_at = $2, updated_at = NOW() WHERE id = $3`,
-    [isCompleted ? 1 : 0, completedAt, topicId]
-  );
-  const topic = await getOne('SELECT * FROM topics WHERE id = $1', [topicId]);
-  if (topic) await touchGuide(topic.guide_id);
-  return toTopic(topic);
-}
-
 module.exports = {
   findTopicForUser,
   listTopicsForGuide,
   saveTopicContent,
   saveTopicContentHtml,
-  updateTopicProgress,
 };

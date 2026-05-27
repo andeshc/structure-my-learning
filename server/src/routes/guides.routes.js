@@ -29,13 +29,18 @@ const finalizeGuideSchema = z.object({
   })).max(9).default([]),
 });
 
-async function guideWithTopics(guide) {
+async function guideWithTopics(guide, userId) {
   const topics = await topicsDb.listTopicsForGuide(guide.id);
   const statuses = await subtopicsDb.listSubtopicStatusesForGuide(guide.id);
+  const allProgress = await subtopicsDb.listAllSubtopicsForGuide(guide.id, userId);
 
   const byTopicPos = {};
   for (const s of statuses) {
     (byTopicPos[s.topicId] ??= {})[s.position] = s;
+  }
+  const progressByTopicPos = {};
+  for (const s of allProgress) {
+    (progressByTopicPos[s.topicId] ??= {})[s.position] = s;
   }
 
   const outline = guide.outline || {
@@ -52,6 +57,7 @@ async function guideWithTopics(guide) {
         devStatus: byTopicPos[topicId]?.[pos]?.devStatus ?? 'pending',
         hasContent: byTopicPos[topicId]?.[pos]?.hasContent ?? false,
         illustrationUrls: byTopicPos[topicId]?.[pos]?.illustrationUrls ?? [],
+        isCompleted: progressByTopicPos[topicId]?.[pos]?.isCompleted ?? false,
       })),
     };
   });
@@ -113,10 +119,17 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ guides: await guides.listGuidesForUser(req.user.id) });
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req, res, next) => {
+  const count = await guides.getGuidesCreatedCount(req.user.id);
+  if (count >= 3) {
+    const err = new Error('Guide limit reached. Upgrade to create more guides.');
+    err.status = 403;
+    return next(err);
+  }
   const input = createGuideSchema.parse(req.body);
   const guideId = ids.guideId();
   await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
+  await guides.incrementGuidesCreatedCount(req.user.id);
   await guides.setNeedsReview(guideId, true);
   generateOutlineInBackground({ guideId, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   res.json({ guideId });
@@ -142,11 +155,11 @@ router.get('/:guideId', asyncHandler(async (req, res, next) => {
     return;
   }
 
-  res.json({ guide: await guideWithTopics(guide) });
+  res.json({ guide: await guideWithTopics(guide, req.user.id) });
 }));
 
 router.post('/:guideId/develop', asyncHandler(async (req, res, next) => {
-  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
+  const guide = await guides.findOwnedGuideForUser(req.params.guideId, req.user.id);
   if (!guide) {
     const error = new Error('Guide not found.');
     error.status = 404;
@@ -158,14 +171,14 @@ router.post('/:guideId/develop', asyncHandler(async (req, res, next) => {
     if (config.nodeEnv !== 'test') console.error('[guide-developer]', err.message);
   });
 
-  res.json({ guide: await guideWithTopics(guide) });
+  res.json({ guide: await guideWithTopics(guide, req.user.id) });
 }));
 
 router.post('/:guideId/extend', asyncHandler(async (req, res, next) => {
   const { guideId } = req.params;
   const input = extendGuideSchema.parse(req.body);
 
-  const guide = await guides.findGuideForUser(guideId, req.user.id);
+  const guide = await guides.findOwnedGuideForUser(guideId, req.user.id);
   if (!guide) {
     const error = new Error('Guide not found.');
     error.status = 404;
@@ -187,7 +200,7 @@ router.post('/:guideId/finalize', asyncHandler(async (req, res, next) => {
   const { guideId } = req.params;
   const input = finalizeGuideSchema.parse(req.body);
 
-  const guide = await guides.findGuideForUser(guideId, req.user.id);
+  const guide = await guides.findOwnedGuideForUser(guideId, req.user.id);
   if (!guide) {
     const error = new Error('Guide not found.');
     error.status = 404;
@@ -228,17 +241,43 @@ router.post('/:guideId/finalize', asyncHandler(async (req, res, next) => {
   });
 
   const completedGuide = await guides.findGuideForUser(guideId, req.user.id);
-  res.json({ guide: await guideWithTopics(completedGuide) });
+  res.json({ guide: await guideWithTopics(completedGuide, req.user.id) });
+}));
+
+router.post('/:guideId/share', asyncHandler(async (req, res, next) => {
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+  // Adopted guides already have the original share token; owned guides may need one generated
+  const token = guide.shareToken || await guides.enableSharing(req.params.guideId, req.user.id);
+  if (!token) {
+    const error = new Error('Could not generate share link.');
+    error.status = 500;
+    return next(error);
+  }
+  res.json({ shareUrl: `${config.appUrl}/share/${token}` });
 }));
 
 router.delete('/:guideId', asyncHandler(async (req, res, next) => {
-  const result = await guides.deleteGuideForUser(req.params.guideId, req.user.id);
-
-  if (result.rowCount === 0) {
-    const error = new Error('Guide not found.');
-    error.status = 404;
-    next(error);
-    return;
+  const owned = await guides.findOwnedGuideForUser(req.params.guideId, req.user.id);
+  if (owned) {
+    const adoptionCount = await guides.getAdoptionCount(req.params.guideId);
+    if (adoptionCount > 0) {
+      await guides.tombstoneGuide(req.params.guideId, req.user.id);
+    } else {
+      await guides.deleteGuideForUser(req.params.guideId, req.user.id);
+    }
+  } else {
+    const removed = await guides.removeAdoption(req.user.id, req.params.guideId);
+    if (!removed) {
+      const error = new Error('Guide not found.');
+      error.status = 404;
+      return next(error);
+    }
+    await guides.cleanupTombstonedGuide(req.params.guideId);
   }
 
   res.json({ ok: true });

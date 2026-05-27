@@ -22,9 +22,9 @@ export default function AppShell() {
   const auth = useAuth();
   const { pathname } = useLocation();
 
-  // Hide sidebar on subtopic pages — those have their own full-outline navigation
-  const hideSidebar = pathname.startsWith('/topics/');
-  const hideFooter = pathname.startsWith('/topics/') || pathname.startsWith('/guides/');
+  const isShareSubtopic = /^\/share\/[^/]+\/topics\//.test(pathname);
+  const hideSidebar = pathname.startsWith('/topics/') || isShareSubtopic;
+  const hideFooter = pathname.startsWith('/topics/') || pathname.startsWith('/guides/') || isShareSubtopic;
 
   async function handleLogout() {
     await auth.signOut();
