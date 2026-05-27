@@ -1,7 +1,7 @@
 const subtopicsDb = require('../db/subtopics');
 const subtopicAgent = require('./subtopic-agent');
 
-const BATCH_SIZE = 4;
+const BATCH_SIZE = parseInt(process.env.SUBTOPIC_BATCH_SIZE, 10) || 4;
 const activeDevelopments = new Set();
 
 async function developSubtopic(id) {

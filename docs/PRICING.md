@@ -41,10 +41,10 @@ A one-time payment for permanent Pro access — no recurring charges ever.
 
 | | India | International |
 |---|---|---|
-| **Lifetime** | ₹4,999 | $149 |
-| Equivalent months of Pro | ~17 months | ~17 months |
+| **Lifetime** | ₹5,999 | $149 |
+| Equivalent months of Pro | ~20 months | ~17 months |
 
-Priced at ~17× the monthly rate, which is the standard breakeven benchmark.
+Priced at ~17–20× the monthly rate, which is the standard breakeven benchmark.
 
 ### Why it works at launch
 - Immediate cash before recurring revenue kicks in — useful for covering API and infra costs
@@ -56,7 +56,7 @@ Priced at ~17× the monthly rate, which is the standard breakeven benchmark.
 LTD buyers tend to be power users who generate more API cost than average. A buyer who creates 500 guides over 3 years at $0.20/guide costs more than $149.
 
 **Mitigations:**
-- Cap the lifetime plan at 10 guides/month (not unlimited)
+- Cap the lifetime plan at 10 guides/month with fair-use AI tutor (not unlimited)
 - Offer it only during a short launch window, then retire it permanently — scarcity is the point
 - Never bring it back after the window closes
 
