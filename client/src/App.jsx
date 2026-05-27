@@ -19,6 +19,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import ContactPage from './pages/ContactPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import AdminReportPage from './pages/AdminReportPage';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />
                   <Route path="topics/:topicId/subtopics/:position" element={<SubtopicDetailPage />} />
                   <Route path="account" element={<AccountPage />} />
+                  <Route path="report" element={<AdminReportPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Route>

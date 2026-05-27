@@ -13,7 +13,9 @@ const guidesRouter = require('./routes/guides.routes');
 const topicsRouter = require('./routes/topics.routes');
 const contactRouter = require('./routes/contact.routes');
 const geoRouter = require('./routes/geo.routes');
+const adminRouter = require('./routes/admin.routes');
 const { requireAuth } = require('./middleware/auth');
+const { requireAdmin } = require('./middleware/admin');
 const { aiRateLimit, authRateLimit } = require('./middleware/rateLimit');
 const passport = require('./passport');
 
@@ -40,6 +42,7 @@ app.use('/api/account', requireAuth, accountRouter);
 app.use('/api/guides', requireAuth, aiRateLimit, guidesRouter);
 app.use('/api/topics', requireAuth, aiRateLimit, topicsRouter);
 app.use('/api/contact', authRateLimit, contactRouter);
+app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 app.use('/api', geoRouter);
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Route not found.' });
