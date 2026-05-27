@@ -1,27 +1,13 @@
-const dns = require('dns').promises;
 const nodemailer = require('nodemailer');
 const config = require('../config');
 
-async function createTransporter() {
+function createTransporter() {
   if (!config.smtpUser || !config.smtpPass) return null;
-
-  // Nodemailer v8 ignores family:4 and dns.setDefaultResultOrder — resolve to
-  // IPv4 explicitly so Railway (no IPv6 egress) can connect.
-  let host = config.smtpHost;
-  try {
-    const [ipv4] = await dns.resolve4(config.smtpHost);
-    host = ipv4;
-    console.log(`[email] Resolved ${config.smtpHost} → ${host} (IPv4)`);
-  } catch (e) {
-    console.warn('[email] IPv4 DNS resolve failed, falling back to hostname:', e.message);
-  }
-
   return nodemailer.createTransport({
-    host,
+    host: config.smtpHost,
     port: config.smtpPort,
     secure: config.smtpPort === 465,
     auth: { user: config.smtpUser, pass: config.smtpPass },
-    tls: { servername: config.smtpHost },
     connectionTimeout: 8000,
     greetingTimeout: 8000,
     socketTimeout: 10000,
@@ -32,7 +18,7 @@ async function sendVerificationEmail(email, name, token) {
   console.log(`[email] Attempting to send verification email to ${email}`);
   console.log(`[email] SMTP config — host: ${config.smtpHost}, port: ${config.smtpPort}, user: ${config.smtpUser}, passSet: ${!!config.smtpPass}`);
 
-  const transporter = await createTransporter();
+  const transporter = createTransporter();
   if (!transporter) {
     console.warn(`[email] SMTP not configured — verification token for ${email}: ${token}`);
     return;
