@@ -448,21 +448,21 @@ export default function SubtopicDetailPage() {
         {/* Main content */}
         <div ref={articleRef}>
           {/* Mobile breadcrumb */}
-          <div className="mb-5 flex items-center gap-2 text-sm text-slate-500 xl:hidden">
-            <Link className="font-medium text-blue-700 hover:underline" to={`/guides/${guide.id}`}>
+          <div className="mb-5 flex min-w-0 items-center gap-2 text-sm text-slate-500 xl:hidden">
+            <Link className="shrink-0 max-w-[45%] truncate font-medium text-blue-700 hover:underline" to={`/guides/${guide.id}`}>
               {guide.title}
             </Link>
-            <span>/</span>
+            <span className="shrink-0">/</span>
             <span className="truncate">{topic.title}</span>
           </div>
 
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Lesson {lessonNumber} of {totalLessons}
               </p>
-              <h1 className="mt-1 max-w-3xl text-3xl font-bold leading-tight text-slate-950">{item.title}</h1>
+              <h1 className="mt-1 max-w-3xl text-2xl font-bold leading-tight text-slate-950 sm:text-3xl">{item.title}</h1>
               <div className="mt-2 flex items-center gap-2">
                 <ImportanceBadge importance={item.importance} />
               </div>
@@ -471,7 +471,7 @@ export default function SubtopicDetailPage() {
               )}
             </div>
             <button
-              className={`shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
+              className={`self-start shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
                 subtopic?.isCompleted
                   ? 'border border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:text-red-700'
                   : 'bg-emerald-600 text-white hover:bg-emerald-700'
