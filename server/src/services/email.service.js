@@ -8,6 +8,10 @@ function createTransporter() {
     port: config.smtpPort,
     secure: config.smtpPort === 465,
     auth: { user: config.smtpUser, pass: config.smtpPass },
+    family: 4,
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 10000,
   });
 }
 
