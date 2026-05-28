@@ -120,12 +120,13 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 router.post('/', asyncHandler(async (req, res, next) => {
-  const count = await guides.getGuidesCreatedCount(req.user.id);
-  if (count >= 3) {
-    const err = new Error('Guide limit reached. Upgrade to create more guides.');
-    err.status = 403;
-    return next(err);
-  }
+  // SUSPENDED: guide creation cap temporarily disabled
+  // const count = await guides.getGuidesCreatedCount(req.user.id);
+  // if (count >= 3) {
+  //   const err = new Error('Guide limit reached. Upgrade to create more guides.');
+  //   err.status = 403;
+  //   return next(err);
+  // }
   const input = createGuideSchema.parse(req.body);
   const guideId = ids.guideId();
   await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
