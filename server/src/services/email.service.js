@@ -5,7 +5,7 @@ const config = require('../config');
 
 const GUIDE_READY_TEMPLATE = path.join(
   __dirname,
-  '../../../client/src/email-templates/guide-ready.html'
+  '../../email-templates/guide-ready.html'
 );
 
 function escapeHtml(str) {
