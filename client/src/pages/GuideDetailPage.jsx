@@ -599,7 +599,7 @@ export default function GuideDetailPage() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div className="relative flex items-center gap-1.5">
               <button
                 aria-label="Share guide"
                 className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-teal-200 hover:text-teal-600"
@@ -607,6 +607,11 @@ export default function GuideDetailPage() {
               >
                 <Link2 size={16} />
               </button>
+              {guide.adoptionCount > 0 && (
+                <span className="text-xs font-medium text-slate-400">
+                  {guide.adoptionCount} {guide.adoptionCount === 1 ? 'adoption' : 'adoptions'}
+                </span>
+              )}
               {shareCopied && (
                 <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-[10px] font-medium text-white">
                   Link copied!

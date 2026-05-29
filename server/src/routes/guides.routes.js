@@ -156,7 +156,9 @@ router.get('/:guideId', asyncHandler(async (req, res, next) => {
     return;
   }
 
-  res.json({ guide: await guideWithTopics(guide, req.user.id) });
+  const enriched = await guideWithTopics(guide, req.user.id);
+  const adoptionCount = enriched.isAdopted ? null : await guides.getAdoptionCount(req.params.guideId);
+  res.json({ guide: { ...enriched, adoptionCount } });
 }));
 
 router.post('/:guideId/develop', asyncHandler(async (req, res, next) => {
