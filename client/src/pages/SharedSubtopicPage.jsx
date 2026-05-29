@@ -275,7 +275,7 @@ export default function SharedSubtopicPage() {
         {gated && !dismissed && (
           <GateModal
             shareToken={shareToken}
-            onDismiss={() => setDismissed(true)}
+            onDismiss={() => navigate(`/share/${shareToken}`)}
           />
         )}
         {gated && dismissed && (
