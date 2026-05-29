@@ -13,8 +13,8 @@ html { overflow-x: hidden; }
   overflow-x: hidden;
   overflow-wrap: break-word;
   font-size: 0.9375rem;   /* 15px */
-  line-height: 1.75;
-  color: #374151;         /* slate-700 */
+  line-height: 1.75rem;
+  color: rgb(55, 65, 85);
 }
 
 .lesson-content,
@@ -118,6 +118,25 @@ html { overflow-x: hidden; }
   color: #0f172a;
   border-radius: 4px;
   padding: 0.15em 0.4em;
+  white-space: nowrap;
+}
+
+/* Code inside callouts — tinted to match each callout's colour scheme */
+.lesson-content div[class*="bg-blue-50"] code:not(pre code) {
+  background: #dbeafe;    /* blue-100 */
+  color: #1e40af;         /* blue-800 */
+}
+.lesson-content div[class*="bg-amber-50"] code:not(pre code) {
+  background: #fef3c7;    /* amber-100 */
+  color: #92400e;         /* amber-800 */
+}
+.lesson-content div[class*="bg-red-50"] code:not(pre code) {
+  background: #fee2e2;    /* red-100 */
+  color: #991b1b;         /* red-800 */
+}
+.lesson-content div[class*="bg-emerald-50"] code:not(pre code) {
+  background: #d1fae5;    /* emerald-100 */
+  color: #065f46;         /* emerald-800 */
 }
 
 .lesson-content.lesson-content pre {
@@ -162,6 +181,47 @@ html { overflow-x: hidden; }
   margin: 1.5rem auto;
   max-width: 52rem; /* ~832px — change here to resize all lesson illustrations */
   border-radius: 0.75rem;
+}
+
+/* Steps list — CSS counter replaces numbered span badges */
+.lesson-content ol.steps-list {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: steps;
+}
+.lesson-content ol.steps-list > li {
+  counter-increment: steps;
+  display: block;
+  position: relative;
+  padding-left: 2.5rem;
+  margin-top: 0.75rem;
+}
+.lesson-content ol.steps-list > li::before {
+  content: counter(steps);
+  position: absolute;
+  left: 0;
+  top: 0.125rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table wrapper */
+.lesson-content .table-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+.lesson-content .table-wrapper table {
+  display: table;
+  min-width: 100%;
 }
 
 @layer base {

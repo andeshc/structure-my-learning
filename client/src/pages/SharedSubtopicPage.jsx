@@ -128,14 +128,6 @@ export default function SharedSubtopicPage() {
   const articleRef = useRef(null);
   const contentRef = useRef(null);
 
-  useEffect(() => {
-    if (document.querySelector('script[data-tailwind-cdn]')) return;
-    const script = document.createElement('script');
-    script.src = 'https://cdn.tailwindcss.com';
-    script.setAttribute('data-tailwind-cdn', '');
-    document.head.appendChild(script);
-  }, []);
-
   // Redirect to share page if not authenticated
   useEffect(() => {
     if (auth.status !== 'loading' && !auth.isAuthenticated) {

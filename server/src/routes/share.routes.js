@@ -5,6 +5,7 @@ const subtopicsDb = require('../db/subtopics');
 const shareDb = require('../db/share');
 const asyncHandler = require('../utils/asyncHandler');
 const { requireAuth } = require('../middleware/auth');
+const { transformHtml } = require('../utils/htmlTransformer');
 
 const router = express.Router();
 
@@ -178,7 +179,7 @@ router.get('/:token/topics/:topicId/subtopics/:position', requireAuth, asyncHand
     gated: false,
     viewedCount,
     subtopic: dbSubtopic
-      ? { ...dbSubtopic, isCompleted: false }
+      ? { ...dbSubtopic, contentHtml: transformHtml(dbSubtopic.contentHtml), isCompleted: false }
       : { id: null, position, title: item.title, contentHtml: null, hasContent: false, isCompleted: false, completedAt: null, devStatus: 'pending' },
     item,
     sectionItems,

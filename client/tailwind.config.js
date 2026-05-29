@@ -1,6 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
+  // Classes used in server/src/utils/htmlTransformer.js output that don't appear
+  // in any JSX source file — Tailwind would purge them without this list.
+  safelist: [
+    // callout containers
+    'border-l-4', 'rounded-r-xl', 'my-6',
+    'border-blue-500',
+    'bg-amber-50', 'border-amber-400',
+    'border-red-400',
+    'bg-emerald-50', 'border-emerald-200', 'py-5',
+    // callout labels
+    'mb-1', 'mb-3',
+    'text-blue-900', 'text-amber-900', 'text-red-900', 'text-emerald-900',
+    // callout body text
+    'text-blue-800', 'text-amber-800', 'text-red-800',
+    'text-emerald-800',
+    // inline code (span → code replacement)
+    'text-slate-900',
+  ],
   theme: {
     extend: {
       colors: {

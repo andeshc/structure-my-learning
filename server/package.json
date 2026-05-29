@@ -24,6 +24,7 @@
     "geoip-lite": "^1.4.10",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "node-html-parser": "^7.1.0",
     "nodemailer": "^8.0.7",
     "openai": "^4.47.1",
     "passport": "^0.7.0",

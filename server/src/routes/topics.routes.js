@@ -6,6 +6,7 @@ const subtopicsDb = require('../db/subtopics');
 const ai = require('../services/ai.service');
 const asyncHandler = require('../utils/asyncHandler');
 const { aiRateLimit } = require('../middleware/rateLimit');
+const { transformHtml } = require('../utils/htmlTransformer');
 
 const router = express.Router();
 
@@ -112,7 +113,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
 
   res.json({
     subtopic: dbSubtopic
-      ? { ...dbSubtopic, isCompleted: userProgress.isCompleted, completedAt: userProgress.completedAt }
+      ? { ...dbSubtopic, contentHtml: transformHtml(dbSubtopic.contentHtml), isCompleted: userProgress.isCompleted, completedAt: userProgress.completedAt }
       : { id: null, position, title: item.title, contentHtml: null, hasContent: false, isCompleted: false, completedAt: null, devStatus: 'pending' },
     item,
     sectionItems,
