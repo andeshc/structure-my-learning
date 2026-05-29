@@ -3,8 +3,10 @@ const { z } = require('zod');
 const guides = require('../db/guides');
 const topicsDb = require('../db/topics');
 const subtopicsDb = require('../db/subtopics');
+const usersDb = require('../db/users');
 const ai = require('../services/ai.service');
 const guideDeveloper = require('../services/guide-developer');
+const { sendGuideReadyEmail } = require('../services/email.service');
 const asyncHandler = require('../utils/asyncHandler');
 const config = require('../config');
 const ids = require('../utils/ids');
@@ -72,7 +74,7 @@ async function guideWithTopics(guide, userId) {
   };
 }
 
-async function generateOutlineInBackground({ guideId, prompt, learningLevel, coverage }) {
+async function generateOutlineInBackground({ guideId, userId, prompt, learningLevel, coverage }) {
   try {
     const result = ai.streamOutline({ prompt, learningLevel, coverage });
     let lastSavedCount = 0;
@@ -109,6 +111,17 @@ async function generateOutlineInBackground({ guideId, prompt, learningLevel, cov
     ai.generateGuideIllustration({ guideId, outline, prompt })
       .then((path) => guides.setGuideIllustration(guideId, path))
       .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
+
+    usersDb.findUserById(userId).then((user) => {
+      if (!user) return;
+      sendGuideReadyEmail({
+        email: user.email,
+        name: user.name,
+        guideTitle: outline.title,
+        guideUrl: `${config.appUrl}/guides/${guideId}`,
+        sections: outline.sections || [],
+      });
+    }).catch((err) => { if (config.nodeEnv !== 'test') console.error('[guide-ready-email]', err.message); });
   } catch (err) {
     if (config.nodeEnv !== 'test') console.error('[outline-background]', err.message);
     await guides.markGuideFailed(guideId);
@@ -132,7 +145,7 @@ router.post('/', asyncHandler(async (req, res, next) => {
   await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   await guides.incrementGuidesCreatedCount(req.user.id);
   await guides.setNeedsReview(guideId, true);
-  generateOutlineInBackground({ guideId, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
+  generateOutlineInBackground({ guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   res.json({ guideId });
 }));
 
