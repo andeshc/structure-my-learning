@@ -74,7 +74,7 @@ async function guideWithTopics(guide, userId) {
   };
 }
 
-async function generateOutlineInBackground({ guideId, userId, prompt, learningLevel, coverage }) {
+async function generateOutlineInBackground({ guideId, prompt, learningLevel, coverage }) {
   try {
     const result = ai.streamOutline({ prompt, learningLevel, coverage });
     let lastSavedCount = 0;
@@ -112,23 +112,6 @@ async function generateOutlineInBackground({ guideId, userId, prompt, learningLe
       .then((path) => guides.setGuideIllustration(guideId, path))
       .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
 
-    console.log(`[guide-ready-email] Looking up user ${userId} for guide ${guideId}`);
-    usersDb.findUserById(userId).then((user) => {
-      if (!user) {
-        console.warn(`[guide-ready-email] User ${userId} not found — skipping email`);
-        return;
-      }
-      console.log(`[guide-ready-email] Sending to ${user.email}`);
-      return sendGuideReadyEmail({
-        email: user.email,
-        name: user.name,
-        guideTitle: outline.title,
-        guideUrl: `${config.appUrl}/guides/${guideId}`,
-        sections: outline.sections || [],
-      });
-    }).then(() => {
-      console.log(`[guide-ready-email] Done for guide ${guideId}`);
-    }).catch((err) => { console.error(`[guide-ready-email] Failed for guide ${guideId}:`, err.message); });
   } catch (err) {
     if (config.nodeEnv !== 'test') console.error('[outline-background]', err.message);
     await guides.markGuideFailed(guideId);
@@ -152,7 +135,7 @@ router.post('/', asyncHandler(async (req, res, next) => {
   await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   await guides.incrementGuidesCreatedCount(req.user.id);
   await guides.setNeedsReview(guideId, true);
-  generateOutlineInBackground({ guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
+  generateOutlineInBackground({ guideId, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
   res.json({ guideId });
 }));
 
@@ -259,9 +242,32 @@ router.post('/:guideId/finalize', asyncHandler(async (req, res, next) => {
   }
 
   await guides.setNeedsReview(guideId, false);
-  guideDeveloper.developGuide(guideId).catch((err) => {
-    if (config.nodeEnv !== 'test') console.error('[guide-developer]', err.message);
-  });
+
+  const { id: userId } = req.user;
+  const guideTitle = guide.outline?.title || guide.title;
+  const guideSections = guide.outline?.sections || [];
+
+  guideDeveloper.developGuide(guideId)
+    .then(() => {
+      console.log(`[guide-ready-email] Development complete for guide ${guideId}, sending email`);
+      return usersDb.findUserById(userId);
+    })
+    .then((user) => {
+      if (!user) {
+        console.warn(`[guide-ready-email] User ${userId} not found — skipping email`);
+        return;
+      }
+      console.log(`[guide-ready-email] Sending to ${user.email}`);
+      return sendGuideReadyEmail({
+        email: user.email,
+        name: user.name,
+        guideTitle,
+        guideUrl: `${config.appUrl}/guides/${guideId}`,
+        sections: guideSections,
+      });
+    })
+    .then(() => { console.log(`[guide-ready-email] Done for guide ${guideId}`); })
+    .catch((err) => { console.error(`[guide-ready-email] Failed for guide ${guideId}:`, err.message); });
 
   const completedGuide = await guides.findGuideForUser(guideId, req.user.id);
   res.json({ guide: await guideWithTopics(completedGuide, req.user.id) });
