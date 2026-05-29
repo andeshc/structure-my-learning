@@ -86,8 +86,9 @@ function GateModal({ shareToken, onDismiss }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10">
         <p className="text-lg font-semibold text-slate-900">You've previewed 2 lessons</p>
         <p className="mt-2 text-sm text-slate-500">
           Add this guide to your library to keep reading, track your progress, and use the AI tutor.
@@ -96,13 +97,13 @@ function GateModal({ shareToken, onDismiss }) {
           <button
             onClick={handleAdd}
             disabled={adding}
-            className="w-full rounded-lg bg-teal-700 px-4 py-2.5 font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+            className="w-full rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
           >
-            {adding ? 'Adding…' : 'Add to my library →'}
+            {adding ? 'Adding…' : 'Add to Library'}
           </button>
           <button
             onClick={onDismiss}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:border-slate-300"
+            className="w-full text-center text-sm text-slate-400 transition-colors hover:text-slate-600"
           >
             Maybe later
           </button>
@@ -120,6 +121,7 @@ export default function SharedSubtopicPage() {
 
   const [data, setData] = useState(null);
   const [gated, setGated] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [error, setError] = useState('');
   const [readingProgress, setReadingProgress] = useState(0);
   const [adding, setAdding] = useState(false);
@@ -234,7 +236,7 @@ export default function SharedSubtopicPage() {
     return <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>;
   }
 
-  if (!data && !gated) {
+  if (!data) {
     return (
       <>
         <div className="fixed left-0 right-0 top-0 z-[70] h-1 bg-slate-100" />
@@ -258,21 +260,33 @@ export default function SharedSubtopicPage() {
             </div>
             <div className="mt-6 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border border-slate-200 bg-white p-6 lg:p-8 space-y-3">
               {[100, 83, 90, 100, 75, null, 100, 83, 66].map((w, i) =>
-                w ? <div key={i} className={`h-4 rounded bg-slate-100`} style={{ width: `${w}%` }} /> : <div key={i} className="mt-4 h-36 w-full rounded-lg bg-slate-100" />
+                w ? <div key={i} className="h-4 rounded bg-slate-100" style={{ width: `${w}%` }} /> : <div key={i} className="mt-4 h-36 w-full rounded-lg bg-slate-100" />
               )}
             </div>
           </div>
         </div>
+        {gated && !dismissed && (
+          <GateModal
+            shareToken={shareToken}
+            onDismiss={() => setDismissed(true)}
+          />
+        )}
+        {gated && dismissed && (
+          <div className="fixed bottom-0 inset-x-0 z-40 flex items-center justify-between gap-4 border-t border-teal-200 bg-white/90 px-5 py-3 backdrop-blur-sm">
+            <p className="min-w-0 text-sm text-slate-700">
+              <span className="font-semibold">Add to your library</span>
+              <span className="hidden sm:inline text-slate-500"> to access all lessons and track progress</span>
+            </p>
+            <button
+              onClick={handleAddToLibrary}
+              disabled={adding}
+              className="shrink-0 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+            >
+              {adding ? 'Adding…' : 'Add to Library'}
+            </button>
+          </div>
+        )}
       </>
-    );
-  }
-
-  if (gated) {
-    return (
-      <GateModal
-        shareToken={shareToken}
-        onDismiss={() => navigate(`/share/${shareToken}`)}
-      />
     );
   }
 
