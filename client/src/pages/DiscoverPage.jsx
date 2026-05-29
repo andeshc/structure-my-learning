@@ -93,7 +93,7 @@ function DiscoverCard({ guide, index, currentUserId }) {
           to={`/share/${guide.shareToken}`}
           className="flex items-center justify-end px-4 py-3 text-sm font-semibold text-white transition-colors bg-teal-700 hover:bg-teal-800"
         >
-          Adopt guide →
+          View guide →
         </Link>
       )}
     </article>
