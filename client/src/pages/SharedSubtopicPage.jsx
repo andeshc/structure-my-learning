@@ -237,10 +237,15 @@ export default function SharedSubtopicPage() {
   }
 
   if (!data) {
+    const isLoading = !gated;
     return (
       <>
         <div className="fixed left-0 right-0 top-0 z-[70] h-1 bg-slate-100" />
-        <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)] animate-pulse">
+        {/* Loading: pulsing skeleton. Gated: static blurred article shape. */}
+        <div
+          className={`grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)] select-none pointer-events-none ${isLoading ? 'animate-pulse' : ''}`}
+          style={gated ? { filter: 'blur(6px)', opacity: 0.6 } : {}}
+        >
           <aside className="hidden xl:flex xl:flex-col gap-4">
             <div className="h-4 w-32 rounded bg-slate-200" />
             <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
@@ -259,8 +264,10 @@ export default function SharedSubtopicPage() {
               <div className="mt-1 h-4 w-full max-w-lg rounded bg-slate-200" />
             </div>
             <div className="mt-6 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border border-slate-200 bg-white p-6 lg:p-8 space-y-3">
-              {[100, 83, 90, 100, 75, null, 100, 83, 66].map((w, i) =>
-                w ? <div key={i} className="h-4 rounded bg-slate-100" style={{ width: `${w}%` }} /> : <div key={i} className="mt-4 h-36 w-full rounded-lg bg-slate-100" />
+              {[100, 83, 95, 78, 100, 88, null, 72, 100, 85, 60, 100, 90, null, 100, 83, 66].map((w, i) =>
+                w
+                  ? <div key={i} className="h-4 rounded bg-slate-200" style={{ width: `${w}%` }} />
+                  : <div key={i} className="mt-4 h-40 w-full rounded-xl bg-slate-100" />
               )}
             </div>
           </div>
