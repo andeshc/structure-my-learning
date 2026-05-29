@@ -160,7 +160,7 @@ HTML structure and component patterns:
 - Body paragraphs: <p>...</p>. Dont split the paragraphs to make them too small. If a piece of text should be a an undevided paragraph, thod split it.
 - Key concept callout (if required): <div class="callout-info"><p class="callout-label">Key Concept</p><p>...</p></div>
 - Analogy callout (if required): <div class="callout-tip"><p class="callout-label">Analogy</p><p>...</p></div>
-- Warning / common mistake (if required): <div class="callout-warning"><p class="callout-label">Common Mistake</p><p>...</p></div>
+- Warning / common mistake (if required): <div class="callout-warning"><p class="callout-label">Common Mistake</p><p>...</p></div>. Add this only if you want to call out a genuinely common mistake.
 - Code blocks (if required): <pre><code class="language-python">...</code></pre>
   Replace "python" with the correct Prism language identifier (javascript, typescript, bash, sql, json, css, html, java, go, rust, etc.). Prism handles all syntax colouring — do not add any classes to <pre>.
 - Bullet lists: <ul><li>...</li></ul>

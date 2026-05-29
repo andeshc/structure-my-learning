@@ -14,8 +14,9 @@
 ## MAJOR FEATURES
 - [ ] Allow users to give feedback on each guide page and each topic page
 - [ ] Payment gateway integration (dodo payments)
-- [ ] When I click on generate guide, I want the to persent the user with ai generated questionnaire relevant to the users original learning goal prompt (also based on their selection of learning level and the coverage). The answers to the questionnaire will be used to further refine the goal and generate the outline better.
+- [ ] **AI generated questionnaire relevant to user's goal** When I click on generate guide, I want the to persent the user with ai generated questionnaire relevant to the users original learning goal prompt (also based on their selection of learning level and the coverage). The answers to the questionnaire will be used to further refine the goal and generate the outline better.
 - [X] I want to generate the subtopic content without all the tailwind style classes. I just want to add single representative classes to the elements, that I can then style externally in the application using tailwind (or any other library). How can we achieve this?
-- [ ] I want to implement the discover tab. This will show all the guides that all the user's have shared. But for this to work, we need a share toggle - instead of a share button. We should be able to toggle sharing on/off. How would we implement this? How would be the UX/UI? Think through it.
-- [ ] A 5-star system of giving the feedback when the user finishes the guide (or anytime in between). This acts as the guide review (which can be used for discover tab)
+- [X] **Discover Tab** I want to implement the discover tab. This will show all the guides that all the user's have shared. But for this to work, we need a share toggle - instead of a share button. We should be able to toggle sharing on/off. How would we implement this? How would be the UX/UI? Think through it.
+- [ ] **5-star review system for guides** A 5-star system of giving the feedback when the user finishes the guide (or anytime in between). This acts as the guide review (which can be used for discover tab)
+- [ ] **Search in Discover tab**
 
