@@ -196,38 +196,81 @@ function SharedSubtopicItem({ item, topicId, position, shareToken }) {
   );
 }
 
+// ─── Adoption modal ───────────────────────────────────────────────────────────
+
+function AdoptionModal({ guide, onAdd, onPreview, isAdding }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
+      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/10">
+        {guide.illustrationUrl && (
+          <div className="h-36 overflow-hidden">
+            <img src={guide.illustrationUrl} alt={guide.title} className="h-full w-full object-cover" />
+          </div>
+        )}
+        <div className="p-6">
+          {guide.ownerName && (
+            <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">
+              Shared by {guide.ownerName}
+            </p>
+          )}
+          <h2 className="mt-1 text-lg font-bold leading-snug text-slate-900">{guide.title}</h2>
+          <p className="mt-0.5 text-sm text-slate-400">{guide.topicCount} topic{guide.topicCount !== 1 ? 's' : ''}</p>
+
+          <div className="mt-5 rounded-xl bg-teal-50 px-4 py-3">
+            <p className="text-sm font-semibold text-teal-900">Add to your library to:</p>
+            <ul className="mt-2 space-y-1.5 text-sm text-teal-800">
+              <li>✓ Track your progress across all lessons</li>
+              <li>✓ Ask the AI tutor questions as you learn</li>
+              <li>✓ Access every lesson anytime, at your own pace</li>
+            </ul>
+          </div>
+
+          <button
+            onClick={onAdd}
+            disabled={isAdding}
+            className="mt-4 w-full rounded-xl bg-teal-700 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+          >
+            {isAdding ? 'Adding…' : 'Add to Library'}
+          </button>
+          <button
+            onClick={onPreview}
+            className="mt-3 w-full text-center text-sm text-slate-400 transition-colors hover:text-slate-600"
+          >
+            Just preview <span className="text-slate-300 mx-1">·</span> limited to 2 lessons
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sticky bar (shown while previewing) ─────────────────────────────────────
+
+function StickyAdoptBar({ guide, onAdd, isAdding }) {
+  return (
+    <div className="fixed bottom-0 inset-x-0 z-40 flex items-center justify-between gap-4 border-t border-teal-200 bg-white/90 px-5 py-3 backdrop-blur-sm">
+      <p className="min-w-0 text-sm text-slate-700">
+        <span className="font-semibold">Add to your library</span>
+        <span className="hidden sm:inline text-slate-500"> to track progress and use the AI tutor</span>
+      </p>
+      <button
+        onClick={onAdd}
+        disabled={isAdding}
+        className="shrink-0 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-60"
+      >
+        {isAdding ? 'Adding…' : 'Add to Library'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Read-only guide view (renders inside AppShell's <main>) ─────────────────
 
-function SharedGuideView({ shareToken, guide, ownerName }) {
-  const navigate = useNavigate();
-  const [adding, setAdding] = useState(false);
-
-  async function handleAddToLibrary() {
-    setAdding(true);
-    try {
-      const { guideId } = await adoptGuide(shareToken);
-      navigate(`/guides/${guideId}`);
-    } catch {
-      setAdding(false);
-    }
-  }
-
+function SharedGuideView({ shareToken, guide, ownerName, isPreviewing, onAdd, isAdding }) {
   return (
-    <section>
-      {/* Add to Library banner */}
-      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-teal-800">
-          <span className="font-semibold">You're previewing a shared guide.</span>{' '}
-          Add it to your library to track progress and use the AI tutor.
-        </p>
-        <button
-          onClick={handleAddToLibrary}
-          disabled={adding}
-          className="shrink-0 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-        >
-          {adding ? 'Adding…' : 'Add to library'}
-        </button>
-      </div>
+    <section className={isPreviewing ? 'pb-20' : ''}>
+      {isPreviewing && <StickyAdoptBar guide={guide} onAdd={onAdd} isAdding={isAdding} />}
 
       {/* Hero — same layout as GuideDetailPage */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -364,6 +407,9 @@ export default function SharedGuidePage() {
   const [ownerName, setOwnerName] = useState('');
   const [loadingGuide, setLoadingGuide] = useState(false);
   const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   // Fetch public meta for unauthenticated preview
   useEffect(() => {
@@ -380,17 +426,32 @@ export default function SharedGuidePage() {
           navigate(`/guides/${data.guideId}`, { replace: true });
           return;
         }
-        // If the viewer is the owner, redirect to their guide
         if (data.guide?.userId === auth.user?.id) {
           navigate(`/guides/${data.guide.id}`, { replace: true });
           return;
         }
         setGuide(data.guide);
         setOwnerName(data.guide?.ownerName ?? '');
+        setShowModal(true);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingGuide(false));
   }, [auth.isAuthenticated, shareToken]);
+
+  async function handleAdd() {
+    setIsAdding(true);
+    try {
+      const { guideId } = await adoptGuide(shareToken);
+      navigate(`/guides/${guideId}`);
+    } catch {
+      setIsAdding(false);
+    }
+  }
+
+  function handlePreview() {
+    setShowModal(false);
+    setIsPreviewing(true);
+  }
 
   if (!auth.isAuthenticated) {
     return <UnauthenticatedView meta={meta} shareToken={shareToken} />;
@@ -412,10 +473,23 @@ export default function SharedGuidePage() {
   if (!guide) return null;
 
   return (
-    <SharedGuideView
-      shareToken={shareToken}
-      guide={guide}
-      ownerName={ownerName}
-    />
+    <>
+      {showModal && (
+        <AdoptionModal
+          guide={guide}
+          onAdd={handleAdd}
+          onPreview={handlePreview}
+          isAdding={isAdding}
+        />
+      )}
+      <SharedGuideView
+        shareToken={shareToken}
+        guide={guide}
+        ownerName={ownerName}
+        isPreviewing={isPreviewing}
+        onAdd={handleAdd}
+        isAdding={isAdding}
+      />
+    </>
   );
 }
