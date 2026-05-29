@@ -18,6 +18,7 @@ function escapeHtml(str) {
 
 function createTransporter() {
   if (!config.smtpUser || !config.smtpPass) return null;
+  console.log(`[email] SMTP: ${config.smtpHost}:${config.smtpPort} user=${config.smtpUser}`);
   return nodemailer.createTransport({
     host: config.smtpHost,
     port: config.smtpPort,
@@ -79,6 +80,7 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
       </td></tr>
     </table>` : '';
 
+  console.log(`[email] Loading template: ${GUIDE_READY_TEMPLATE}`);
   let html;
   try {
     html = fs.readFileSync(GUIDE_READY_TEMPLATE, 'utf8')
@@ -87,6 +89,7 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
       .replace(/\{\{GUIDE_TITLE\}\}/g, escapeHtml(guideTitle))
       .replace(/\{\{GUIDE_URL\}\}/g, escapeHtml(guideUrl))
       .replace(/\{\{TOPICS_BLOCK\}\}/g, topicsBlock);
+    console.log(`[email] Template loaded (${html.length} bytes, ${sections.length} topic(s))`);
   } catch (err) {
     console.error('[email] Failed to load guide-ready template:', err.message);
     throw err;
@@ -97,18 +100,18 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
     : '';
   const text = `Hi ${name},\n\nYour guide "${guideTitle}" is ready!${topicsText}\nOpen it here: ${guideUrl}\n\n— StructureMyLearning`;
 
-  console.log(`[email] Sending guide-ready email to ${email} (subject: "Your guide is ready — ${guideTitle}")`);
+  console.log(`[email] Sending to=${email} from=${config.contactFromEmail || config.smtpUser}`);
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: config.contactFromEmail || config.smtpUser,
       to: email,
       subject: `Your guide is ready — ${guideTitle}`,
       text,
       html,
     });
-    console.log(`[email] Guide-ready email delivered to ${email}`);
+    console.log(`[email] Accepted — messageId=${info.messageId} response="${info.response}"`);
   } catch (err) {
-    console.error(`[email] sendMail failed for ${email}:`, err.message, err.code || '');
+    console.error(`[email] sendMail failed — code=${err.code} response=${err.response || err.message}`);
     throw err;
   }
 }
