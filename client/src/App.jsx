@@ -22,6 +22,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import AdminReportPage from './pages/AdminReportPage';
 import SharedGuidePage from './pages/SharedGuidePage';
 import SharedSubtopicPage from './pages/SharedSubtopicPage';
+import DiscoverPage from './pages/DiscoverPage';
 
 export default function App() {
   return (
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="share/:shareToken/topics/:topicId/subtopics/:position" element={<SharedSubtopicPage />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="dashboard" element={<DashboardPage />} />
+                  <Route path="discover" element={<DiscoverPage />} />
                   <Route path="guides/new" element={<NewGuidePage />} />
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />
                   <Route path="topics/:topicId/subtopics/:position" element={<SubtopicDetailPage />} />

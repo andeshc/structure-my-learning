@@ -69,6 +69,9 @@ async function initDb() {
   if (gc.length && !gc.includes('share_token')) {
     await query(`ALTER TABLE guides ADD COLUMN share_token TEXT UNIQUE`);
   }
+  if (gc.length && !gc.includes('is_public')) {
+    await query(`ALTER TABLE guides ADD COLUMN is_public BOOLEAN NOT NULL DEFAULT false`);
+  }
   // Allow guides.user_id to be NULL for tombstoned guides (owner deleted, adopters retain access)
   if (gc.length) {
     await query(`ALTER TABLE guides ALTER COLUMN user_id DROP NOT NULL`);

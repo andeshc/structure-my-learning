@@ -264,6 +264,18 @@ router.post('/:guideId/share', asyncHandler(async (req, res, next) => {
   res.json({ shareUrl: `${config.appUrl}/share/${token}` });
 }));
 
+router.patch('/:guideId/sharing', asyncHandler(async (req, res, next) => {
+  const isPublic = Boolean(req.body.public);
+  const result = await guides.setGuidePublic(req.params.guideId, req.user.id, isPublic);
+  if (!result) {
+    const err = new Error('Guide not found.');
+    err.status = 404;
+    return next(err);
+  }
+  const shareUrl = result.shareToken ? `${config.appUrl}/share/${result.shareToken}` : null;
+  res.json({ isPublic: result.isPublic, shareToken: result.shareToken, shareUrl });
+}));
+
 router.delete('/:guideId', asyncHandler(async (req, res, next) => {
   const owned = await guides.findOwnedGuideForUser(req.params.guideId, req.user.id);
   if (owned) {

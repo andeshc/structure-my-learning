@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS guides (
   outline_json TEXT,
   illustration_path TEXT,
   share_token TEXT UNIQUE,
+  is_public BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

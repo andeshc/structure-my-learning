@@ -1,4 +1,5 @@
 import {
+  Compass,
   Home,
   LogOut,
   PlusCircle,
@@ -54,6 +55,10 @@ export default function AppShell() {
               <NavLink className={navClass} to="/dashboard">
                 <Home size={27} fill="currentColor" strokeWidth={2.2} />
                 Dashboard
+              </NavLink>
+              <NavLink className={navClass} to="/discover">
+                <Compass size={27} strokeWidth={2.2} />
+                Discover
               </NavLink>
               <NavLink className={navClass} to="/guides/new">
                 <PlusCircle size={28} strokeWidth={2.2} />

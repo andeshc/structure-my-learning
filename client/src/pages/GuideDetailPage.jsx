@@ -5,12 +5,13 @@ import {
   Layers,
   Link2,
   PlusCircle,
+  Share2,
   Trash2,
+  Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { deleteGuide, developGuide, extendGuide, finalizeGuide, getGuide, getGuideOutlineStatus } from '../api/guides';
-import { shareGuide } from '../api/share';
+import { deleteGuide, developGuide, extendGuide, finalizeGuide, getGuide, getGuideOutlineStatus, toggleSharing } from '../api/guides';
 import LoadingPanel from '../components/LoadingPanel';
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
@@ -432,7 +433,10 @@ export default function GuideDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
-  const [shareCopied, setShareCopied] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [shareUrl, setShareUrl] = useState(null);
+  const [isTogglingShare, setIsTogglingShare] = useState(false);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -447,6 +451,13 @@ export default function GuideDetailPage() {
     fetchGuide();
     return () => { cancelled = true; };
   }, [guideId]);
+
+  // Sync share state whenever guide changes (initial load or poll refresh)
+  useEffect(() => {
+    if (!guide) return;
+    setIsPublic(guide.isPublic ?? false);
+    setShareUrl(guide.shareToken ? `${window.location.origin}/share/${guide.shareToken}` : null);
+  }, [guide?.id, guide?.isPublic, guide?.shareToken]);
 
   // Prefetch illustration URLs once guide is loaded
   useEffect(() => {
@@ -508,13 +519,26 @@ export default function GuideDetailPage() {
     }
   }
 
-  async function handleShare() {
+  async function handleShareToggle() {
+    const next = !isPublic;
+    setIsPublic(next);
+    setIsTogglingShare(true);
     try {
-      const { shareUrl } = await shareGuide(guideId);
-      await navigator.clipboard.writeText(shareUrl);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2500);
-    } catch { /* ignore */ }
+      const result = await toggleSharing(guideId, next);
+      setIsPublic(result.isPublic);
+      if (result.shareUrl) setShareUrl(result.shareUrl);
+    } catch {
+      setIsPublic(!next);
+    } finally {
+      setIsTogglingShare(false);
+    }
+  }
+
+  async function handleCopyShareLink() {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareLinkCopied(true);
+    setTimeout(() => setShareLinkCopied(false), 2500);
   }
 
   async function handleDelete() {
@@ -598,41 +622,26 @@ export default function GuideDetailPage() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center gap-1.5">
-              <button
-                aria-label="Share guide"
-                className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-teal-200 hover:text-teal-600"
-                onClick={handleShare}
-              >
-                <Link2 size={16} />
-              </button>
-              {guide.adoptionCount > 0 && (
-                <span className="text-xs font-medium text-slate-400">
-                  {guide.adoptionCount} {guide.adoptionCount === 1 ? 'adoption' : 'adoptions'}
-                </span>
-              )}
-              {shareCopied && (
-                <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-[10px] font-medium text-white">
-                  Link copied!
-                </span>
-              )}
-            </div>
-            <button
-              aria-label="Delete guide"
-              className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-red-200 hover:text-red-600"
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
+          <button
+            aria-label="Delete guide"
+            className="rounded-lg border border-slate-200 p-2 text-slate-400 transition-colors hover:border-red-200 hover:text-red-600"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 size={16} />
+          </button>
         )}
       </div>
 
       {/* Hero */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="p-5 lg:p-7">
+
+        {/* ── Top: guide details + illustration ── */}
+        {/* Mobile: content then full-width image stacked */}
+        {/* Desktop: fixed h-64 grid — left content, right image at exact 3:2 (384×256) */}
+        <div className="lg:grid lg:h-64 lg:grid-cols-[minmax(0,1fr)_384px]">
+
+          {/* Left / top: metadata */}
+          <div className="flex flex-col gap-3 p-5 lg:overflow-hidden lg:p-6">
             <div className="flex flex-wrap items-center gap-2">
               {guide.isAdopted && guide.ownerName ? (
                 <span className="text-xs font-bold uppercase tracking-wide text-teal-700">
@@ -655,9 +664,9 @@ export default function GuideDetailPage() {
               ))}
             </div>
 
-            <h1 className="mt-2 max-w-3xl text-3xl font-bold leading-tight text-slate-950">{guide.title}</h1>
+            <h1 className="line-clamp-2 text-2xl font-bold leading-tight text-slate-950 lg:text-3xl">{guide.title}</h1>
 
-            <div className="mt-4 max-w-sm">
+            <div className="max-w-sm">
               <div className="mb-1.5 flex items-center justify-between text-sm">
                 <span className="font-semibold text-slate-700">{summary.subtopicPct}% complete</span>
                 <span className="text-xs text-slate-400">{summary.completed} of {summary.total} topics done</span>
@@ -667,7 +676,7 @@ export default function GuideDetailPage() {
               </progress>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
               {summary.nextTopic && (
                 <button
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
@@ -688,7 +697,10 @@ export default function GuideDetailPage() {
             </div>
           </div>
 
-          <div className="aspect-[3/2] border-t border-slate-200 bg-[#fbf4e8] lg:aspect-auto lg:min-h-[220px] lg:border-l lg:border-t-0">
+          {/* Right / bottom: illustration */}
+          {/* Mobile: full width at correct 3:2 ratio */}
+          {/* Desktop: fills the 384×256 column exactly = 3:2 */}
+          <div className="aspect-[3/2] border-t border-slate-100 bg-[#fbf4e8] lg:aspect-auto lg:border-l lg:border-t-0">
             {guide.illustrationUrl ? (
               <img className="h-full w-full object-cover" src={guide.illustrationUrl} alt={`${guide.title} illustration`} />
             ) : (
@@ -696,6 +708,82 @@ export default function GuideDetailPage() {
             )}
           </div>
         </div>
+
+        {/* ── Bottom: sharing strip — owners only ── */}
+        {/* Fixed-height row, isolated from guide content above */}
+        {!guide.isAdopted && (
+          <div className="border-t border-slate-100">
+            {isPublic ? (
+              /* Public state */
+              <div className="px-5 py-4 lg:px-6">
+                {/* Header row */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-100">
+                      <CheckCircle size={16} className="text-emerald-600" />
+                    </span>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-800">Shared publicly</span>
+                        {guide.adoptionCount > 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-xs font-semibold text-teal-700">
+                            <Users size={11} />
+                            {guide.adoptionCount} {guide.adoptionCount === 1 ? 'adoption' : 'adoptions'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-400">Visible in Discover — anyone can adopt it</p>
+                    </div>
+                  </div>
+                  <button
+                    className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-600 disabled:opacity-50"
+                    disabled={isTogglingShare}
+                    onClick={handleShareToggle}
+                  >
+                    Make private
+                  </button>
+                </div>
+                {/* URL row — full width so the URL gets maximum space */}
+                {shareUrl && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="w-0 min-w-0 flex-1 truncate rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] text-slate-500">
+                      {shareUrl}
+                    </span>
+                    <button
+                      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
+                      onClick={handleCopyShareLink}
+                    >
+                      <Link2 size={12} />
+                      {shareLinkCopied ? 'Copied!' : 'Copy link'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Private state */
+              <div className="flex items-center justify-between gap-3 px-5 py-4 lg:px-6">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-100">
+                    <Share2 size={16} className="text-teal-700" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Share this guide</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Let others discover and adopt it from the community</p>
+                  </div>
+                </div>
+                <button
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
+                  disabled={isTogglingShare}
+                  onClick={handleShareToggle}
+                >
+                  <Share2 size={14} />
+                  {isTogglingShare ? 'Sharing…' : 'Share publicly'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Topic list */}

@@ -51,3 +51,10 @@ export function finalizeGuide(guideId, extraSections) {
     body: JSON.stringify({ extraSections }),
   });
 }
+
+export function toggleSharing(guideId, isPublic) {
+  return apiRequest(`/api/guides/${guideId}/sharing`, {
+    method: 'PATCH',
+    body: JSON.stringify({ public: isPublic }),
+  });
+}

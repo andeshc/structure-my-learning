@@ -15,6 +15,7 @@ const contactRouter = require('./routes/contact.routes');
 const geoRouter = require('./routes/geo.routes');
 const adminRouter = require('./routes/admin.routes');
 const shareRouter = require('./routes/share.routes');
+const discoverRouter = require('./routes/discover.routes');
 const guidesDb = require('./db/guides');
 const { requireAuth } = require('./middleware/auth');
 const { requireAdmin } = require('./middleware/admin');
@@ -46,6 +47,7 @@ app.use('/api/topics', requireAuth, aiRateLimit, topicsRouter);
 app.use('/api/contact', authRateLimit, contactRouter);
 app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 app.use('/api/share', shareRouter);
+app.use('/api/discover', requireAuth, discoverRouter);
 app.use('/api', geoRouter);
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Route not found.' });

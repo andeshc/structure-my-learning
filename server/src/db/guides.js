@@ -19,6 +19,7 @@ function toGuide(row) {
     isAdopted: Boolean(row.is_adopted),
     ownerName: row.owner_name || null,
     shareToken: row.share_token || null,
+    isPublic: Boolean(row.is_public),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -256,6 +257,56 @@ async function cleanupTombstonedGuide(guideId) {
   );
 }
 
+async function setGuidePublic(guideId, userId, isPublic) {
+  const guide = await findOwnedGuideForUser(guideId, userId);
+  if (!guide) return null;
+  if (isPublic && !guide.shareToken) {
+    const token = ids.shareToken();
+    await query(
+      `UPDATE guides SET share_token = $1, is_public = true, updated_at = NOW() WHERE id = $2`,
+      [token, guideId]
+    );
+    return { isPublic: true, shareToken: token };
+  }
+  await query(
+    `UPDATE guides SET is_public = $1, updated_at = NOW() WHERE id = $2`,
+    [isPublic, guideId]
+  );
+  return { isPublic, shareToken: guide.shareToken };
+}
+
+async function listPublicGuides(viewerUserId, limit, offset) {
+  const rows = await getAll(
+    `SELECT g.id, g.title, g.illustration_path, g.share_token, g.user_id,
+            u.name AS owner_name,
+            COUNT(DISTINCT t.id) AS topic_count,
+            EXISTS(
+              SELECT 1 FROM guide_adoptions
+              WHERE guide_id = g.id AND user_id = $1
+            ) AS viewer_has_adopted
+     FROM guides g
+     JOIN users u ON u.id = g.user_id
+     LEFT JOIN topics t ON t.guide_id = g.id
+     WHERE g.is_public = true
+       AND g.share_token IS NOT NULL
+       AND g.user_id IS NOT NULL
+     GROUP BY g.id, u.name
+     ORDER BY g.updated_at DESC
+     LIMIT $2 OFFSET $3`,
+    [viewerUserId, limit, offset]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    illustrationUrl: r.illustration_path || null,
+    shareToken: r.share_token,
+    userId: r.user_id,
+    ownerName: r.owner_name,
+    topicCount: Number(r.topic_count || 0),
+    viewerHasAdopted: Boolean(r.viewer_has_adopted),
+  }));
+}
+
 async function incrementGuidesCreatedCount(userId) {
   await query(
     `UPDATE users SET guides_created_count = guides_created_count + 1 WHERE id = $1`,
@@ -270,6 +321,8 @@ async function getGuidesCreatedCount(userId) {
 
 module.exports = {
   appendSectionsToGuide,
+  setGuidePublic,
+  listPublicGuides,
   completeGuide,
   updatePartialOutline,
   setNeedsReview,
