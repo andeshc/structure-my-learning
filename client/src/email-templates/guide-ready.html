@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Your guide is ready</title>
+</head>
+<!--
+  Variables substituted at send time:
+    {{APP_URL}}      – canonical app URL (e.g. https://structuremylearning.com)
+    {{NAME}}         – recipient's display name
+    {{GUIDE_TITLE}}  – title of the completed guide
+    {{GUIDE_URL}}    – direct link to the guide page
+    {{TOPICS_BLOCK}} – pre-built <table> HTML listing guide sections, or ""
+-->
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <!--
+    Outer wrapper: teal-50 background + SVG grid pattern.
+    The grid is a 40×40px cell with a top/left edge line — tiles into a full grid.
+    Background-image SVG: <svg xmlns='…' width='40' height='40'><path d='M 40 0 L 0 0 0 40' fill='none' stroke='#0f766e' stroke-width='0.7' stroke-opacity='0.13'/></svg>
+  -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+    style="background-color:#f0fdf9;background-image:url('data:image/svg+xml,%3Csvg xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27 width%3D%2740%27 height%3D%2740%27%3E%3Cpath d%3D%27M 40 0 L 0 0 0 40%27 fill%3D%27none%27 stroke%3D%27%230f766e%27 stroke-width%3D%270.7%27 stroke-opacity%3D%270.13%27%2F%3E%3C%2Fsvg%3E');background-size:40px 40px;">
+    <tr>
+      <td align="center" style="padding:40px 16px 40px;">
+
+        <!-- Card -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+          style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,118,110,0.10);">
+
+          <!-- ── Logo strip ── -->
+          <tr>
+            <td style="background:#ffffff;padding:22px 32px;border-bottom:2px solid #ccfbf1;">
+              <img
+                src="{{APP_URL}}/logo.svg"
+                alt="StructureMyLearning"
+                width="140"
+                height="79"
+                style="display:block;width:140px;height:auto;border:0;"
+              />
+            </td>
+          </tr>
+
+          <!-- ── Status band ── -->
+          <tr>
+            <td style="background:#0f766e;padding:11px 32px;">
+              <span style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:999px;
+                padding:3px 13px;font-size:11px;font-weight:700;color:#ccfbf1;
+                letter-spacing:0.09em;text-transform:uppercase;">
+                Guide ready
+              </span>
+            </td>
+          </tr>
+
+          <!-- ── Body ── -->
+          <tr>
+            <td style="background:#ffffff;padding:36px 32px 28px;">
+
+              <p style="margin:0 0 8px;font-size:13px;color:#64748b;">Hi {{NAME}},</p>
+              <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#0f172a;line-height:1.25;">
+                {{GUIDE_TITLE}}
+              </h1>
+              <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
+                Your learning guide is ready. We've structured it into topics and lessons
+                — open it whenever you're ready to start.
+              </p>
+
+              {{TOPICS_BLOCK}}
+
+              <!-- CTA button -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-radius:10px;background:#0f766e;">
+                    <a href="{{GUIDE_URL}}"
+                      style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:700;
+                        color:#ffffff;text-decoration:none;letter-spacing:-0.01em;">
+                      Open my guide &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- ── Footer ── -->
+          <tr>
+            <td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
+                You're receiving this because you created a guide on
+                <a href="{{APP_URL}}" style="color:#0f766e;text-decoration:none;">StructureMyLearning</a>.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
