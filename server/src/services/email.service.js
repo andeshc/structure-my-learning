@@ -57,6 +57,11 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
     return;
   }
 
+  const topicCount = sections.length;
+  const lessonCount = sections.reduce((total, section) => total + (Array.isArray(section.items) ? section.items.length : 0), 0);
+  const topicLabel = topicCount === 1 ? 'topic' : 'topics';
+  const lessonLabel = lessonCount === 1 ? 'lesson' : 'lessons';
+
   const topicRows = sections.slice(0, 8).map((s) => `
     <tr>
       <td style="padding:5px 0;">
@@ -71,9 +76,12 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
 
   const topicsBlock = sections.length > 0 ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-      style="background:#f8fafc;border-radius:10px;margin-bottom:28px;">
+      style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;margin-bottom:28px;">
       <tr><td style="padding:18px 20px;">
         <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;">Topics covered</p>
+        <p style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#64748b;">
+          <span style="color:#64748b;">${topicCount} ${topicLabel} ready${lessonCount > 0 ? ` &bull; ${lessonCount} ${lessonLabel} generated` : ''}</span>
+        </p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           ${topicRows}
         </table>

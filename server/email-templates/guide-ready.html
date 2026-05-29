@@ -43,20 +43,34 @@
 
           <!-- ── Logo strip ── -->
           <tr>
-            <td style="background:#ffffff;padding:16px 28px 14px;border-bottom:2px solid #ccfbf1;">
-              <img
-                src="{{APP_URL}}/logo.svg"
-                alt="StructureMyLearning"
-                width="130"
-                height="74"
-                style="display:block;width:130px;height:auto;border:0;"
-              />
+            <td style="background:#ffffff;padding:18px 28px 16px;border-bottom:1px solid #ccfbf1;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <img
+                      src="{{APP_URL}}/logo-email.png"
+                      alt=""
+                      width="34"
+                      height="34"
+                      style="display:block;width:34px;height:34px;border:0;"
+                    />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <p style="margin:0;font-size:17px;font-weight:800;line-height:1;color:#16211f;letter-spacing:-0.03em;">
+                      Structure
+                    </p>
+                    <p style="margin:3px 0 0;font-size:7px;font-weight:700;line-height:1;color:#0f766e;letter-spacing:0.22em;text-transform:uppercase;">
+                      My Learning
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- ── Hero band ── -->
           <tr>
-            <td style="background:#0f766e;padding:22px 28px 26px;">
+            <td style="background:#0f766e;padding:24px 28px 28px;">
               <!-- "Guide ready" pill -->
               <div style="margin-bottom:10px;">
                 <span style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:999px;
@@ -67,7 +81,10 @@
               </div>
               <!-- Headline -->
               <p style="margin:0;font-size:21px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.01em;">
-                Your guide is ready!
+                Your learning guide is ready
+              </p>
+              <p style="margin:8px 0 0;font-size:14px;color:#ccfbf1;line-height:1.5;">
+                <span style="color:#ccfbf1;">{{GUIDE_TITLE}} is ready to start.</span>
               </p>
             </td>
           </tr>
@@ -87,8 +104,8 @@
               </h1>
 
               <!-- Body copy — explicit color on the whole paragraph prevents client overrides -->
-              <p style="margin:0 0 28px;font-size:15px;line-height:1.65;">
-                <span style="color:#475569;">We've structured your guide into topics and lessons. Open it whenever you're ready to start learning.</span>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.65;">
+                <span style="color:#475569;">We've structured your guide into a clear sequence of topics and lessons so you can start from the beginning and keep moving at your own pace.</span>
               </p>
 
               {{TOPICS_BLOCK}}
@@ -97,14 +114,19 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="border-radius:10px;background:#0f766e;">
-                    <a href="{{GUIDE_URL}}"
-                      style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:700;
-                        color:#ffffff;text-decoration:none;letter-spacing:-0.01em;">
-                      Open my guide &rarr;
+                    <a class="email-cta" href="{{GUIDE_URL}}"
+                      style="display:inline-block;padding:15px 32px;font-size:15px;font-weight:800;
+                        color:#ffffff !important;text-decoration:none !important;letter-spacing:-0.01em;">
+                      Start learning now &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
+
+              <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#64748b;">
+                If the button doesn't work, open this link:<br>
+                <a href="{{GUIDE_URL}}" style="color:#0f766e !important;text-decoration:underline !important;text-underline-offset:2px;word-break:break-all;">{{GUIDE_URL}}</a>
+              </p>
 
             </td>
           </tr>
@@ -114,7 +136,11 @@
             <td style="background:#f8fafc;padding:18px 28px;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
                 You're receiving this because you created a guide on
-                <a href="{{APP_URL}}" style="color:#0f766e;text-decoration:none;">StructureMyLearning</a>.
+                <a href="{{APP_URL}}" style="color:#0f766e !important;text-decoration:none !important;">StructureMyLearning</a>.
+              </p>
+              <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+                Need help? Contact
+                <a href="mailto:support@structuremylearning.com" style="color:#0f766e !important;text-decoration:none !important;">support@structuremylearning.com</a>.
               </p>
             </td>
           </tr>
