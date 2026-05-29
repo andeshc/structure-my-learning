@@ -112,16 +112,23 @@ async function generateOutlineInBackground({ guideId, userId, prompt, learningLe
       .then((path) => guides.setGuideIllustration(guideId, path))
       .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
 
+    console.log(`[guide-ready-email] Looking up user ${userId} for guide ${guideId}`);
     usersDb.findUserById(userId).then((user) => {
-      if (!user) return;
-      sendGuideReadyEmail({
+      if (!user) {
+        console.warn(`[guide-ready-email] User ${userId} not found — skipping email`);
+        return;
+      }
+      console.log(`[guide-ready-email] Sending to ${user.email}`);
+      return sendGuideReadyEmail({
         email: user.email,
         name: user.name,
         guideTitle: outline.title,
         guideUrl: `${config.appUrl}/guides/${guideId}`,
         sections: outline.sections || [],
       });
-    }).catch((err) => { if (config.nodeEnv !== 'test') console.error('[guide-ready-email]', err.message); });
+    }).then(() => {
+      console.log(`[guide-ready-email] Done for guide ${guideId}`);
+    }).catch((err) => { console.error(`[guide-ready-email] Failed for guide ${guideId}:`, err.message); });
   } catch (err) {
     if (config.nodeEnv !== 'test') console.error('[outline-background]', err.message);
     await guides.markGuideFailed(guideId);

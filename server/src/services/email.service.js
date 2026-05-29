@@ -165,6 +165,7 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
 
   const text = `Hi ${name},\n\nYour guide "${guideTitle}" is ready!${topicsText}\nOpen it here: ${guideUrl}\n\n— StructureMyLearning`;
 
+  console.log(`[email] Sending guide-ready email to ${email} (subject: "Your guide is ready — ${guideTitle}")`);
   try {
     await transporter.sendMail({
       from: config.contactFromEmail || config.smtpUser,
@@ -173,8 +174,10 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
       text,
       html,
     });
+    console.log(`[email] Guide-ready email delivered to ${email}`);
   } catch (err) {
-    console.error('[email] Failed to send guide ready email:', err.message);
+    console.error(`[email] sendMail failed for ${email}:`, err.message, err.code || '');
+    throw err;
   }
 }
 
