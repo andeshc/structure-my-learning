@@ -19,6 +19,13 @@ function navClass({ isActive }) {
   ].join(' ');
 }
 
+function tabClass({ isActive }) {
+  return [
+    'flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-semibold transition-colors',
+    isActive ? 'text-teal-700' : 'text-slate-400',
+  ].join(' ');
+}
+
 export default function AppShell() {
   const auth = useAuth();
   const { pathname } = useLocation();
@@ -26,6 +33,7 @@ export default function AppShell() {
   const isShareSubtopic = /^\/share\/[^/]+\/topics\//.test(pathname);
   const hideSidebar = pathname.startsWith('/topics/') || isShareSubtopic;
   const hideFooter = pathname.startsWith('/topics/') || pathname.startsWith('/guides/') || isShareSubtopic;
+  const hideBottomNav = pathname.startsWith('/topics/') || isShareSubtopic;
 
   async function handleLogout() {
     await auth.signOut();
@@ -89,12 +97,37 @@ export default function AppShell() {
             </Link>
             <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>
           </header>
-          <main className="flex-1 px-5 py-7 sm:px-8 lg:px-16 lg:py-12">
+          <main className={`flex-1 px-5 py-7 sm:px-8 lg:px-16 lg:py-12 ${hideBottomNav ? '' : 'pb-24 lg:pb-12'}`}>
             <Outlet />
           </main>
           {!hideFooter && <Footer className="border-t border-slate-200" />}
         </div>
       </div>
+
+      {/* Bottom tab bar — mobile only, hidden on immersive pages */}
+      {!hideBottomNav && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-teal-100 lg:hidden"
+          style={{ backgroundColor: '#f0fdfa' }}
+        >
+          <NavLink className={tabClass} to="/dashboard">
+            <Home size={22} strokeWidth={2.2} />
+            Dashboard
+          </NavLink>
+          <NavLink className={tabClass} to="/discover">
+            <Compass size={22} strokeWidth={2.2} />
+            Discover
+          </NavLink>
+          <NavLink className={tabClass} to="/guides/new">
+            <PlusCircle size={22} strokeWidth={2.2} />
+            New
+          </NavLink>
+          <NavLink className={tabClass} to="/account">
+            <UserRound size={22} strokeWidth={2.2} />
+            Account
+          </NavLink>
+        </nav>
+      )}
     </div>
   );
 }
