@@ -62,8 +62,8 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
       <td style="padding:5px 0;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="width:7px;height:7px;background:#0f766e;border-radius:50%;vertical-align:middle;">&nbsp;</td>
-            <td style="padding-left:10px;font-size:14px;color:#334155;line-height:1.4;">${escapeHtml(s.title)}</td>
+            <td style="width:14px;font-size:8px;color:#0f766e;vertical-align:middle;line-height:1;">&#9679;</td>
+            <td style="font-size:14px;line-height:1.4;"><span style="color:#334155;">${escapeHtml(s.title)}</span></td>
           </tr>
         </table>
       </td>

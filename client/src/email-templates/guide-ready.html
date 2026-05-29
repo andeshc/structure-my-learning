@@ -1,9 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!--[if !mso]><!-->
+  <meta name="x-apple-disable-message-reformatting">
+  <!--<![endif]-->
   <title>Your guide is ready</title>
+  <style>
+    /* Prevent Apple Mail / iOS auto-linking names, dates, addresses */
+    a[x-apple-data-detectors] {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+    /* Prevent Gmail from auto-linking phone numbers / addresses */
+    u + #body a { color: inherit !important; text-decoration: none !important; }
+    #MessageViewBody a { color: inherit !important; text-decoration: none !important; }
+  </style>
 </head>
 <!--
   Variables substituted at send time:
@@ -13,17 +26,16 @@
     {{GUIDE_URL}}    – direct link to the guide page
     {{TOPICS_BLOCK}} – pre-built <table> HTML listing guide sections, or ""
 -->
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<body id="body" style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 
   <!--
-    Outer wrapper: teal-50 background + SVG grid pattern.
-    The grid is a 40×40px cell with a top/left edge line — tiles into a full grid.
-    Background-image SVG: <svg xmlns='…' width='40' height='40'><path d='M 40 0 L 0 0 0 40' fill='none' stroke='#0f766e' stroke-width='0.7' stroke-opacity='0.13'/></svg>
+    Outer wrapper: teal-50 (#f0fdf9) background + SVG grid pattern (40×40 cells).
+    Outlook ignores background-image and falls back to background-color.
   -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
     style="background-color:#f0fdf9;background-image:url('data:image/svg+xml,%3Csvg xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27 width%3D%2740%27 height%3D%2740%27%3E%3Cpath d%3D%27M 40 0 L 0 0 0 40%27 fill%3D%27none%27 stroke%3D%27%230f766e%27 stroke-width%3D%270.7%27 stroke-opacity%3D%270.13%27%2F%3E%3C%2Fsvg%3E');background-size:40px 40px;">
     <tr>
-      <td align="center" style="padding:40px 16px 40px;">
+      <td align="center" style="padding:40px 16px;">
 
         <!-- Card -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
@@ -31,39 +43,52 @@
 
           <!-- ── Logo strip ── -->
           <tr>
-            <td style="background:#ffffff;padding:22px 32px;border-bottom:2px solid #ccfbf1;">
+            <td style="background:#ffffff;padding:16px 28px 14px;border-bottom:2px solid #ccfbf1;">
               <img
                 src="{{APP_URL}}/logo.svg"
                 alt="StructureMyLearning"
-                width="140"
-                height="79"
-                style="display:block;width:140px;height:auto;border:0;"
+                width="130"
+                height="74"
+                style="display:block;width:130px;height:auto;border:0;"
               />
             </td>
           </tr>
 
-          <!-- ── Status band ── -->
+          <!-- ── Hero band ── -->
           <tr>
-            <td style="background:#0f766e;padding:11px 32px;">
-              <span style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:999px;
-                padding:3px 13px;font-size:11px;font-weight:700;color:#ccfbf1;
-                letter-spacing:0.09em;text-transform:uppercase;">
-                Guide ready
-              </span>
+            <td style="background:#0f766e;padding:22px 28px 26px;">
+              <!-- "Guide ready" pill -->
+              <div style="margin-bottom:10px;">
+                <span style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:999px;
+                  padding:3px 12px;font-size:11px;font-weight:700;color:#ccfbf1;
+                  letter-spacing:0.09em;text-transform:uppercase;">
+                  Guide ready
+                </span>
+              </div>
+              <!-- Headline -->
+              <p style="margin:0;font-size:21px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.01em;">
+                Your guide is ready!
+              </p>
             </td>
           </tr>
 
           <!-- ── Body ── -->
           <tr>
-            <td style="background:#ffffff;padding:36px 32px 28px;">
+            <td style="background:#ffffff;padding:32px 28px 32px;">
 
-              <p style="margin:0 0 8px;font-size:13px;color:#64748b;">Hi {{NAME}},</p>
-              <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#0f172a;line-height:1.25;">
-                {{GUIDE_TITLE}}
+              <!-- Greeting — wrapped in span to block client auto-linking the name -->
+              <p style="margin:0 0 6px;font-size:13px;color:#64748b;">
+                Hi <span style="color:#64748b;">{{NAME}}</span>,
+              </p>
+
+              <!-- Guide title — explicit color stops Gmail treating it as a link -->
+              <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#0f172a;line-height:1.25;letter-spacing:-0.02em;">
+                <span style="color:#0f172a;text-decoration:none;">{{GUIDE_TITLE}}</span>
               </h1>
-              <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
-                Your learning guide is ready. We've structured it into topics and lessons
-                — open it whenever you're ready to start.
+
+              <!-- Body copy — explicit color on the whole paragraph prevents client overrides -->
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.65;">
+                <span style="color:#475569;">We've structured your guide into topics and lessons. Open it whenever you're ready to start learning.</span>
               </p>
 
               {{TOPICS_BLOCK}}
@@ -86,7 +111,7 @@
 
           <!-- ── Footer ── -->
           <tr>
-            <td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
+            <td style="background:#f8fafc;padding:18px 28px;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
                 You're receiving this because you created a guide on
                 <a href="{{APP_URL}}" style="color:#0f766e;text-decoration:none;">StructureMyLearning</a>.
