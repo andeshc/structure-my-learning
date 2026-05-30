@@ -18,11 +18,13 @@ function escapeHtml(str) {
 
 function createTransporter() {
   if (!config.smtpUser || !config.smtpPass) return null;
-  console.log(`[email] SMTP: ${config.smtpHost}:${config.smtpPort} user=${config.smtpUser}`);
+  const ehloName = new URL(config.appUrl).hostname;
+  console.log(`[email] SMTP: ${config.smtpHost}:${config.smtpPort} user=${config.smtpUser} ehlo=${ehloName}`);
   return nodemailer.createTransport({
     host: config.smtpHost,
     port: config.smtpPort,
     secure: config.smtpPort === 465,
+    name: ehloName,
     auth: { user: config.smtpUser, pass: config.smtpPass },
     connectionTimeout: 8000,
     greetingTimeout: 8000,
