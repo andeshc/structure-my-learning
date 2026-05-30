@@ -108,19 +108,33 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
     : '';
   const text = `Hi ${name},\n\nYour guide "${guideTitle}" is ready!${topicsText}\nOpen it here: ${guideUrl}\n\n— StructureMyLearning`;
 
-  console.log(`[email] Sending to=${email} from=${config.contactFromEmail || config.smtpUser}`);
-  try {
-    const info = await transporter.sendMail({
-      from: config.contactFromEmail || config.smtpUser,
-      to: email,
-      subject: `Your guide is ready — ${guideTitle}`,
-      text,
-      html,
-    });
-    console.log(`[email] Accepted — messageId=${info.messageId} response="${info.response}"`);
-  } catch (err) {
-    console.error(`[email] sendMail failed — code=${err.code} response=${err.response || err.message}`);
-    throw err;
+  const message = {
+    from: config.contactFromEmail || config.smtpUser,
+    to: email,
+    subject: `Your guide is ready — ${guideTitle}`,
+    text,
+    html,
+  };
+
+  console.log(`[email] Sending to=${email} from=${message.from}`);
+
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const info = await transporter.sendMail(message);
+      console.log(`[email] Accepted — messageId=${info.messageId} response="${info.response}"`);
+      return;
+    } catch (err) {
+      const is421 = err.response && err.response.startsWith('421');
+      if (is421 && attempt < MAX_ATTEMPTS) {
+        const delaySec = attempt * 10;
+        console.warn(`[email] 421 on attempt ${attempt}/${MAX_ATTEMPTS} — retrying in ${delaySec}s`);
+        await new Promise((resolve) => setTimeout(resolve, delaySec * 1000));
+      } else {
+        console.error(`[email] sendMail failed after ${attempt} attempt(s) — code=${err.code} response=${err.response || err.message}`);
+        throw err;
+      }
+    }
   }
 }
 
