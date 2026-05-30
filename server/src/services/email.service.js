@@ -127,9 +127,8 @@ async function sendGuideReadyEmail({ email, name, guideTitle, guideUrl, sections
     } catch (err) {
       const is421 = err.response && err.response.startsWith('421');
       if (is421 && attempt < MAX_ATTEMPTS) {
-        const delaySec = attempt * 10;
-        console.warn(`[email] 421 on attempt ${attempt}/${MAX_ATTEMPTS} — retrying in ${delaySec}s`);
-        await new Promise((resolve) => setTimeout(resolve, delaySec * 1000));
+        console.warn(`[email] 421 on attempt ${attempt}/${MAX_ATTEMPTS} — retrying in 5s`);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       } else {
         console.error(`[email] sendMail failed after ${attempt} attempt(s) — code=${err.code} response=${err.response || err.message}`);
         throw err;
