@@ -41,37 +41,36 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
           style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,118,110,0.10);">
 
-          <!-- ── Teal header (logo + hero) ── -->
+          <!-- ── Header banner ── -->
           <tr>
-            <td style="background:#0f766e;padding:28px 28px 32px;">
-              <!-- Logo -->
-              <div style="margin-bottom:20px;">
-                <img
-                  src="{{APP_URL}}/logo-white-email.png"
-                  alt="Structure My Learning"
-                  width="107"
-                  height="60"
-                  style="display:block;width:107px;height:60px;border:0;"
-                />
-              </div>
-              <!-- "Guide ready" pill -->
-              <div style="margin-bottom:10px;">
-                <span style="display:inline-block;background:#0d9488;border-radius:999px;
-                  padding:3px 12px;font-size:11px;font-weight:700;color:#ccfbf1;
-                  letter-spacing:0.09em;text-transform:uppercase;">
-                  Guide ready
-                </span>
-              </div>
-              <!-- Headline -->
-              <p style="margin:0;font-size:21px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.01em;">
-                Your learning guide is ready
-              </p>
+            <td style="padding:0;line-height:0;">
+              <img
+                src="{{APP_URL}}/email-header.png"
+                alt="Structure My Learning"
+                width="560"
+                height="200"
+                style="display:block;width:560px;height:200px;border:0;"
+              />
             </td>
           </tr>
 
           <!-- ── Body ── -->
           <tr>
-            <td style="background:#ffffff;padding:32px 28px 32px;">
+            <td style="background:#ffffff;padding:28px 28px 32px;">
+
+              <!-- "Guide ready" pill -->
+              <div style="margin-bottom:12px;">
+                <span style="display:inline-block;background:#ccfbf1;border-radius:999px;
+                  padding:3px 12px;font-size:11px;font-weight:700;color:#0f766e;
+                  letter-spacing:0.09em;text-transform:uppercase;">
+                  Guide ready
+                </span>
+              </div>
+
+              <!-- Headline -->
+              <p style="margin:0 0 20px;font-size:21px;font-weight:600;color:#0f172a;line-height:1.2;letter-spacing:-0.01em;">
+                Your learning guide is ready
+              </p>
 
               <!-- Greeting — wrapped in span to block client auto-linking the name -->
               <p style="margin:0 0 6px;font-size:13px;color:#64748b;">
@@ -79,7 +78,7 @@
               </p>
 
               <!-- Guide title — explicit color stops Gmail treating it as a link -->
-              <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#0f172a;line-height:1.25;letter-spacing:-0.02em;">
+              <h1 style="margin:0 0 16px;font-size:22px;font-weight:600;color:#0f172a;line-height:1.25;letter-spacing:-0.02em;">
                 <span style="color:#0f172a;text-decoration:none;">{{GUIDE_TITLE}}</span>
               </h1>
 
@@ -95,7 +94,7 @@
                 <tr>
                   <td style="border-radius:10px;background:#0f766e;">
                     <a class="email-cta" href="{{GUIDE_URL}}"
-                      style="display:inline-block;padding:15px 32px;font-size:15px;font-weight:800;
+                      style="display:inline-block;padding:15px 32px;font-size:15px;font-weight:600;
                         color:#ffffff !important;text-decoration:none !important;letter-spacing:-0.01em;">
                       Start learning now &rarr;
                     </a>
