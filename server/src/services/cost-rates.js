@@ -20,8 +20,8 @@ function loadRates() {
 const RATES = loadRates();
 
 function estimateCost(usage, modelId) {
-  const promptTokens = usage?.promptTokens ?? 0;
-  const completionTokens = usage?.completionTokens ?? 0;
+  const promptTokens = usage?.inputTokens ?? usage?.promptTokens ?? 0;
+  const completionTokens = usage?.outputTokens ?? usage?.completionTokens ?? 0;
   const rate = RATES[modelId];
   const costUsd = rate
     ? (promptTokens / 1e6) * rate.input + (completionTokens / 1e6) * rate.output

@@ -142,9 +142,11 @@ async function generateSubtopicContent({ guide, outline, topic, item }) {
   console.log(`[subtopic-agent] phase 4: refine — "${item.title}"`);
   const { text: finalHtml, usage: u4 } = await runRefinePhase(baseContext, draft, feedback, illustrationContext);
 
+  const inp = (u) => u?.inputTokens ?? u?.promptTokens ?? 0;
+  const out = (u) => u?.outputTokens ?? u?.completionTokens ?? 0;
   const usage = {
-    promptTokens: (u1?.promptTokens ?? 0) + (u2?.promptTokens ?? 0) + (u3?.promptTokens ?? 0) + (u4?.promptTokens ?? 0),
-    completionTokens: (u1?.completionTokens ?? 0) + (u2?.completionTokens ?? 0) + (u3?.completionTokens ?? 0) + (u4?.completionTokens ?? 0),
+    inputTokens: inp(u1) + inp(u2) + inp(u3) + inp(u4),
+    outputTokens: out(u1) + out(u2) + out(u3) + out(u4),
   };
 
   return { html: finalHtml, illustrationUrls: validIllustrations.map((r) => r.url), usage };
