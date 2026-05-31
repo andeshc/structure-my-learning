@@ -36,6 +36,9 @@ async function developSubtopic(id) {
     await subtopicsDb.saveSubtopicContentHtml(id, html);
     if (illustrationUrls.length > 0) await subtopicsDb.saveIllustrationUrls(id, illustrationUrls);
     await subtopicsDb.setDevStatus(id, 'ready');
+    if (!usage?.inputTokens && !usage?.outputTokens) {
+      console.warn(`[cost] subtopic ${id} — usage missing or zero:`, JSON.stringify(usage));
+    }
     const { tokensIn, tokensOut, costUsd } = estimateCost(usage, getContentModelId());
     await guidesDb.incrementGuideCost(ctx.guide.id, tokensIn, tokensOut, costUsd);
     console.log(`[cost] subtopic ${id} — in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);

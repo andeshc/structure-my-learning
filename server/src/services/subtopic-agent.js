@@ -55,11 +55,19 @@ After your tool calls, output a brief structured research summary covering the k
 
   const toolResults = steps.flatMap((s) => s.toolResults ?? []);
   const verifications = toolResults.filter((r) => r.toolName === 'verify_content_plan');
+  // Aggregate across all steps — generateText.usage only returns the final step
+  const totalUsage = steps.reduce(
+    (acc, s) => ({
+      inputTokens: (acc.inputTokens ?? 0) + (s.usage?.inputTokens ?? 0),
+      outputTokens: (acc.outputTokens ?? 0) + (s.usage?.outputTokens ?? 0),
+    }),
+    { inputTokens: 0, outputTokens: 0 }
+  );
   return {
     notes: verifications.length > 0
       ? `\n\nFact-check notes — apply corrections before writing:\n${verifications.map((r) => r.output.verification).join('\n')}`
       : '',
-    usage,
+    usage: totalUsage,
   };
 }
 
