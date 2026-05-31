@@ -1,6 +1,20 @@
 const { generateText, tool, jsonSchema, stepCountIs } = require('ai');
 const { getContentModel, clampTokens } = require('./llm');
 const { learningLevelGuidance, TOPIC_HTML_SYSTEM, generateTopicIllustrationTool } = require('./ai.service');
+const { estimateCost } = require('./cost-rates');
+const config = require('../config');
+
+function getContentModelId() {
+  if (config.aiProvider === 'claude') return config.anthropicContentModel;
+  if (config.aiProvider === 'novita') return config.novitaContentModel;
+  if (config.aiProvider === 'together') return config.togetherContentModel;
+  return config.openaiContentModel;
+}
+
+function logPhase(label, usage) {
+  const { tokensIn, tokensOut, costUsd } = estimateCost(usage, getContentModelId());
+  console.log(`[subtopic-agent] ${label} — in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);
+}
 
 const verifyContentPlanTool = tool({
   description: 'Review planned claims for a lesson before writing. Returns a per-claim verdict.',
@@ -140,15 +154,19 @@ async function generateSubtopicContent({ guide, outline, topic, item }) {
 
   console.log(`[subtopic-agent] phase 1: research — "${item.title}"`);
   const { notes: researchNotes, usage: u1 } = await runResearchPhase(baseContext, item.title);
+  logPhase('phase 1 research', u1);
 
   console.log(`[subtopic-agent] phase 2: draft — "${item.title}"`);
   const { text: draft, usage: u2 } = await runDraftPhase(baseContext, researchNotes, illustrationContext);
+  logPhase('phase 2 draft', u2);
 
   console.log(`[subtopic-agent] phase 3: quality check — "${item.title}"`);
   const { text: feedback, usage: u3 } = await runQualityCheckPhase(draft, guide.learningLevel, item.title);
+  logPhase('phase 3 quality', u3);
 
   console.log(`[subtopic-agent] phase 4: refine — "${item.title}"`);
   const { text: finalHtml, usage: u4 } = await runRefinePhase(baseContext, draft, feedback, illustrationContext);
+  logPhase('phase 4 refine', u4);
 
   const inp = (u) => u?.inputTokens ?? u?.promptTokens ?? 0;
   const out = (u) => u?.outputTokens ?? u?.completionTokens ?? 0;
