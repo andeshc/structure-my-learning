@@ -20,3 +20,9 @@
 - [ ] **5-star review system for guides** A 5-star system of giving the feedback when the user finishes the guide (or anytime in between). This acts as the guide review (which can be used for discover tab)
 - [ ] **Search in Discover tab**
 
+
+
+## EMAILS
+- [ ] Email verification pending after account creation
+- [ ] Guide ready email
+- [ ] Guide created but outline not finalized yet - should mention guide development will only start when you finalize the outline
