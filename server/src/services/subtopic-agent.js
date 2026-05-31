@@ -13,7 +13,7 @@ function getContentModelId() {
 
 function logPhase(label, usage) {
   const { tokensIn, tokensOut, costUsd } = estimateCost(usage, getContentModelId());
-  console.log(`[subtopic-agent] ${label} — in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);
+  console.log(`[subtopic-agent-cost] ${label} — in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);
 }
 
 const verifyContentPlanTool = tool({
