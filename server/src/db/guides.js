@@ -310,7 +310,7 @@ async function listPublicGuides(viewerUserId, limit, offset) {
 async function incrementGuideCost(guideId, tokensIn, tokensOut, costUsd) {
   await query(
     `UPDATE guides SET tokens_in = tokens_in + $1, tokens_out = tokens_out + $2, cost_usd = cost_usd + $3 WHERE id = $4`,
-    [tokensIn, tokensOut, costUsd]
+    [tokensIn, tokensOut, costUsd, guideId]
   );
 }
 
