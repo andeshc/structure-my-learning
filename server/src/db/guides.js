@@ -20,9 +20,6 @@ function toGuide(row) {
     ownerName: row.owner_name || null,
     shareToken: row.share_token || null,
     isPublic: Boolean(row.is_public),
-    tokensIn: Number(row.tokens_in || 0),
-    tokensOut: Number(row.tokens_out || 0),
-    costUsd: Number(row.cost_usd || 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
