@@ -46,10 +46,18 @@ ${planned_claims.map((c, i) => `${i + 1}. ${c}`).join('\n')}`,
 });
 
 function buildBaseContext({ guide, outline, topic, item }) {
+  const slimOutline = {
+    title: outline.title,
+    sections: (outline.sections ?? []).map((s) =>
+      s.title === topic.title
+        ? s
+        : { title: s.title, description: s.description }
+    ),
+  };
   return `Guide: "${guide.title}"
 Goal: "${guide.prompt}"
 Level: ${guide.learningLevel} — ${learningLevelGuidance[guide.learningLevel]}
-Full outline: ${JSON.stringify(outline)}
+Outline: ${JSON.stringify(slimOutline)}
 Parent section: "${topic.title}" — ${topic.description ?? ''}
 Subtopic: "${item.title}"${item.overview ? ` — ${item.overview}` : ''}
 Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey details: ${item.details.join(', ')}` : ''}`;
@@ -112,12 +120,12 @@ Output a concise bullet list of specific improvements. Be direct — the writer 
   return { text, usage };
 }
 
-async function runRefinePhase(baseContext, draft, feedback, illustrationContext) {
+async function runRefinePhase(baseContext, draft, feedback) {
   const { text, usage } = await generateText({
     model: getContentModel(),
     maxTokens: clampTokens(4500),
     system: TOPIC_HTML_SYSTEM,
-    prompt: `${baseContext}${illustrationContext}
+    prompt: `${baseContext}
 
 Quality review feedback to apply:
 ${feedback}
@@ -125,7 +133,7 @@ ${feedback}
 Original draft:
 ${draft}
 
-Apply the improvements from the quality review. Output the complete revised HTML lesson.`,
+Apply the improvements from the quality review. Preserve all existing <img> tags exactly as they appear. Output the complete revised HTML lesson.`,
   });
   return { text, usage };
 }
@@ -165,7 +173,7 @@ async function generateSubtopicContent({ guide, outline, topic, item }) {
   logPhase('phase 3 quality', u3);
 
   console.log(`[subtopic-agent] phase 4: refine — "${item.title}"`);
-  const { text: finalHtml, usage: u4 } = await runRefinePhase(baseContext, draft, feedback, illustrationContext);
+  const { text: finalHtml, usage: u4 } = await runRefinePhase(baseContext, draft, feedback);
   logPhase('phase 4 refine', u4);
 
   const inp = (u) => u?.inputTokens ?? u?.promptTokens ?? 0;
