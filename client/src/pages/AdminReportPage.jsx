@@ -19,6 +19,13 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function formatCost(usd) {
+  const n = Number(usd || 0);
+  if (n === 0) return '—';
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(2)}`;
+}
+
 export default function AdminReportPage() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -44,6 +51,7 @@ export default function AdminReportPage() {
 
   const totalGuides = guides.length;
   const readyGuides = guides.filter((g) => g.status === 'ready').length;
+  const totalCost = guides.reduce((sum, g) => sum + Number(g.cost_usd || 0), 0);
 
   return (
     <section className="max-w-5xl">
@@ -51,11 +59,12 @@ export default function AdminReportPage() {
       <p className="mt-1 text-sm text-slate-500">All registered users and their guides.</p>
 
       {/* Summary stats */}
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Total users', value: users.length },
           { label: 'Total guides', value: totalGuides },
           { label: 'Ready guides', value: readyGuides },
+          { label: 'Total cost', value: formatCost(totalCost) },
         ].map(({ label, value }) => (
           <div key={label} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
@@ -65,7 +74,8 @@ export default function AdminReportPage() {
       </div>
 
       {/* Users table */}
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -102,7 +112,7 @@ export default function AdminReportPage() {
                   {isExpanded && userGuides.length > 0 && (
                     <tr key={`${u.id}-guides`}>
                       <td colSpan={5} className="bg-slate-50 px-4 pb-3 pt-0">
-                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="border-b border-slate-100 text-left font-semibold uppercase tracking-wide text-slate-400">
@@ -110,6 +120,7 @@ export default function AdminReportPage() {
                                 <th className="px-3 py-2">Level</th>
                                 <th className="px-3 py-2">Coverage</th>
                                 <th className="px-3 py-2">Status</th>
+                                <th className="px-3 py-2">Cost</th>
                                 <th className="px-3 py-2">Created</th>
                               </tr>
                             </thead>
@@ -128,6 +139,7 @@ export default function AdminReportPage() {
                                       {g.status}
                                     </span>
                                   </td>
+                                  <td className="px-3 py-2 text-slate-500">{formatCost(g.cost_usd)}</td>
                                   <td className="px-3 py-2 text-slate-400">{formatDate(g.created_at)}</td>
                                 </tr>
                               ))}
@@ -147,6 +159,7 @@ export default function AdminReportPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   );

@@ -16,7 +16,8 @@ router.get('/report', async (req, res, next) => {
     );
 
     const guides = await getAll(
-      `SELECT id, user_id, title, learning_level, coverage, status, created_at
+      `SELECT id, user_id, title, learning_level, coverage, status, created_at,
+              tokens_in, tokens_out, cost_usd
        FROM guides
        ORDER BY created_at DESC`
     );
