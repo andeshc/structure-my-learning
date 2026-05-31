@@ -220,16 +220,17 @@ Additional output rules:
     .replace('`{{COVERAGE}}`', coverage);
 
   if (getObjectMode() === 'tool') {
-    const objectPromise = generateObject({
+    const resultPromise = generateObject({
       model: getGuideModel(),
       schema: outlineSchema,
       mode: 'tool',
       system,
       prompt: userPrompt,
-    }).then((r) => r.object);
+    });
     return {
-      partialObjectStream: (async function* () { yield await objectPromise; })(),
-      object: objectPromise,
+      partialObjectStream: (async function* () { yield await resultPromise.then((r) => r.object); })(),
+      object: resultPromise.then((r) => r.object),
+      usage: resultPromise.then((r) => r.usage),
     };
   }
   return streamObject({ model: getGuideModel(), schema: outlineSchema, system, prompt: userPrompt });

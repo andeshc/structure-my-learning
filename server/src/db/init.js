@@ -72,6 +72,11 @@ async function initDb() {
   if (gc.length && !gc.includes('is_public')) {
     await query(`ALTER TABLE guides ADD COLUMN is_public BOOLEAN NOT NULL DEFAULT false`);
   }
+  if (gc.length && !gc.includes('tokens_in')) {
+    await query(`ALTER TABLE guides ADD COLUMN tokens_in INTEGER NOT NULL DEFAULT 0`);
+    await query(`ALTER TABLE guides ADD COLUMN tokens_out INTEGER NOT NULL DEFAULT 0`);
+    await query(`ALTER TABLE guides ADD COLUMN cost_usd NUMERIC(10,6) NOT NULL DEFAULT 0`);
+  }
   // Allow guides.user_id to be NULL for tombstoned guides (owner deleted, adopters retain access)
   if (gc.length) {
     await query(`ALTER TABLE guides ALTER COLUMN user_id DROP NOT NULL`);

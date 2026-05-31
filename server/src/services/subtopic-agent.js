@@ -42,7 +42,7 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
 }
 
 async function runResearchPhase(baseContext, topicTitle) {
-  const { steps } = await generateText({
+  const { steps, usage } = await generateText({
     model: getContentModel(),
     maxTokens: clampTokens(1500),
     stopWhen: stepCountIs(6),
@@ -55,23 +55,26 @@ After your tool calls, output a brief structured research summary covering the k
 
   const toolResults = steps.flatMap((s) => s.toolResults ?? []);
   const verifications = toolResults.filter((r) => r.toolName === 'verify_content_plan');
-  return verifications.length > 0
-    ? `\n\nFact-check notes — apply corrections before writing:\n${verifications.map((r) => r.output.verification).join('\n')}`
-    : '';
+  return {
+    notes: verifications.length > 0
+      ? `\n\nFact-check notes — apply corrections before writing:\n${verifications.map((r) => r.output.verification).join('\n')}`
+      : '',
+    usage,
+  };
 }
 
 async function runDraftPhase(baseContext, researchNotes, illustrationContext) {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: getContentModel(),
     maxTokens: clampTokens(4000),
     system: TOPIC_HTML_SYSTEM,
     prompt: `${baseContext}${researchNotes}${illustrationContext}\n\nWrite the complete HTML lesson now.`,
   });
-  return text;
+  return { text, usage };
 }
 
 async function runQualityCheckPhase(draft, learningLevel, topicTitle) {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: getContentModel(),
     maxTokens: clampTokens(600),
     system: `You are a lesson quality reviewer for a ${learningLevel.replace(/_/g, ' ')} learner.
@@ -84,11 +87,11 @@ Evaluate the lesson on:
 Output a concise bullet list of specific improvements. Be direct — the writer will act on each point. If the lesson is excellent, say so briefly.`,
     prompt: `Topic: "${topicTitle}"\n\nLesson draft:\n${draft}`,
   });
-  return text;
+  return { text, usage };
 }
 
 async function runRefinePhase(baseContext, draft, feedback, illustrationContext) {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: getContentModel(),
     maxTokens: clampTokens(4500),
     system: TOPIC_HTML_SYSTEM,
@@ -102,7 +105,7 @@ ${draft}
 
 Apply the improvements from the quality review. Output the complete revised HTML lesson.`,
   });
-  return text;
+  return { text, usage };
 }
 
 async function generateSubtopicContent({ guide, outline, topic, item }) {
@@ -128,18 +131,23 @@ async function generateSubtopicContent({ guide, outline, topic, item }) {
     : '';
 
   console.log(`[subtopic-agent] phase 1: research — "${item.title}"`);
-  const researchNotes = await runResearchPhase(baseContext, item.title);
+  const { notes: researchNotes, usage: u1 } = await runResearchPhase(baseContext, item.title);
 
   console.log(`[subtopic-agent] phase 2: draft — "${item.title}"`);
-  const draft = await runDraftPhase(baseContext, researchNotes, illustrationContext);
+  const { text: draft, usage: u2 } = await runDraftPhase(baseContext, researchNotes, illustrationContext);
 
   console.log(`[subtopic-agent] phase 3: quality check — "${item.title}"`);
-  const feedback = await runQualityCheckPhase(draft, guide.learningLevel, item.title);
+  const { text: feedback, usage: u3 } = await runQualityCheckPhase(draft, guide.learningLevel, item.title);
 
   console.log(`[subtopic-agent] phase 4: refine — "${item.title}"`);
-  const finalHtml = await runRefinePhase(baseContext, draft, feedback, illustrationContext);
+  const { text: finalHtml, usage: u4 } = await runRefinePhase(baseContext, draft, feedback, illustrationContext);
 
-  return { html: finalHtml, illustrationUrls: validIllustrations.map((r) => r.url) };
+  const usage = {
+    promptTokens: (u1?.promptTokens ?? 0) + (u2?.promptTokens ?? 0) + (u3?.promptTokens ?? 0) + (u4?.promptTokens ?? 0),
+    completionTokens: (u1?.completionTokens ?? 0) + (u2?.completionTokens ?? 0) + (u3?.completionTokens ?? 0) + (u4?.completionTokens ?? 0),
+  };
+
+  return { html: finalHtml, illustrationUrls: validIllustrations.map((r) => r.url), usage };
 }
 
 module.exports = { generateSubtopicContent };

@@ -7,9 +7,17 @@ const usersDb = require('../db/users');
 const ai = require('../services/ai.service');
 const guideDeveloper = require('../services/guide-developer');
 const { sendGuideReadyEmail } = require('../services/email.service');
+const { estimateCost } = require('../services/cost-rates');
 const asyncHandler = require('../utils/asyncHandler');
 const config = require('../config');
 const ids = require('../utils/ids');
+
+function getGuideModelId() {
+  if (config.aiProvider === 'claude') return config.anthropicGuideModel;
+  if (config.aiProvider === 'novita') return config.novitaGuideModel;
+  if (config.aiProvider === 'together') return config.togetherGuideModel;
+  return config.openaiGuideModel;
+}
 
 const router = express.Router();
 
@@ -87,7 +95,14 @@ async function generateOutlineInBackground({ guideId, prompt, learningLevel, cov
       }
     }
 
-    const outline = await result.object;
+    const [outline, outlineUsage] = await Promise.all([result.object, result.usage]);
+    try {
+      const { tokensIn, tokensOut, costUsd } = estimateCost(outlineUsage, getGuideModelId());
+      await guides.incrementGuideCost(guideId, tokensIn, tokensOut, costUsd);
+      console.log(`[cost] outline ${guideId} — in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);
+    } catch (err) {
+      console.warn('[cost] failed to record outline cost:', err.message);
+    }
     const topicObjects = outline.sections.map((section, index) => ({
       id: ids.topicId(),
       guideId,

@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS guides (
   illustration_path TEXT,
   share_token TEXT UNIQUE,
   is_public BOOLEAN NOT NULL DEFAULT false,
+  tokens_in INTEGER NOT NULL DEFAULT 0,
+  tokens_out INTEGER NOT NULL DEFAULT 0,
+  cost_usd NUMERIC(10,6) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
