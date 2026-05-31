@@ -63,29 +63,41 @@ function syntheticRegenerate(reason) {
   };
 }
 
+function addUsage(a, b) {
+  return {
+    inputTokens:  (a.inputTokens  ?? 0) + (b.inputTokens  ?? 0),
+    outputTokens: (a.outputTokens ?? 0) + (b.outputTokens ?? 0),
+  };
+}
+
 /**
  * @param {import('../types.js').Slots} slots
  * @param {string} draft
- * @returns {Promise<import('../types.js').ReviewResult>}
+ * @returns {Promise<{ result: import('../types.js').ReviewResult, usage: { inputTokens: number, outputTokens: number } }>}
  */
 export async function review(slots, draft) {
   const system   = buildReviewerSystem(slots);
   const baseTask = buildReviewerTask(slots, draft);
 
+  let totalUsage = { inputTokens: 0, outputTokens: 0 };
+
   async function attempt(task) {
-    const raw = await llm(system, task, { model: getModel('review'), maxTokens: 4096, json: true });
-    return validateReviewResult(JSON.parse(stripCodeFences(raw)));
+    const { text, usage } = await llm(system, task, { model: getModel('review'), maxTokens: 4096, json: true });
+    totalUsage = addUsage(totalUsage, usage);
+    return validateReviewResult(JSON.parse(stripCodeFences(text)));
   }
 
   try {
-    return await attempt(baseTask);
+    const result = await attempt(baseTask);
+    return { result, usage: totalUsage };
   } catch (firstErr) {
     try {
-      return await attempt(
+      const result = await attempt(
         `${baseTask}\n\nReturn ONLY valid JSON matching the schema. No prose, no markdown fences.`,
       );
+      return { result, usage: totalUsage };
     } catch (secondErr) {
-      return syntheticRegenerate(`JSON invalid after retry: ${secondErr.message}`);
+      return { result: syntheticRegenerate(`JSON invalid after retry: ${secondErr.message}`), usage: totalUsage };
     }
   }
 }

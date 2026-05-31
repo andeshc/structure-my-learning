@@ -8,6 +8,8 @@
  * Readability gate is skipped for tiers with fk_max > 12 (only adult_advanced).
  * Generation is capped at MAX_GENERATES total across readability retries and
  * review→regenerate cycles; if the cap is reached, the best available draft is used.
+ *
+ * Returns { html, usage } where usage aggregates token counts across all LLM calls.
  */
 
 import { loadConfig } from '../config/load.js';
@@ -21,22 +23,32 @@ import { sanitizeHtml } from './sanitize.js';
 const MAX_GENERATES = 3;
 const FK_GATE_THRESHOLD = 12;
 
+function addUsage(a, b) {
+  return {
+    inputTokens:  (a.inputTokens  ?? 0) + (b.inputTokens  ?? 0),
+    outputTokens: (a.outputTokens ?? 0) + (b.outputTokens ?? 0),
+  };
+}
+
 /**
  * @param {string} topic
  * @param {string} levelId
  * @param {string} coverageId
  * @param {import('../types.js').Illustration[]} [illustrations]
- * @returns {Promise<string>} final sanitized HTML lesson
+ * @returns {Promise<{ html: string, usage: { inputTokens: number, outputTokens: number } }>}
  */
 export async function generateLesson(topic, levelId, coverageId, illustrations = []) {
   const cfg = loadConfig();
   const slots = resolve(cfg, topic, levelId, coverageId, illustrations);
 
   let generateCount = 0;
+  let totalUsage = { inputTokens: 0, outputTokens: 0 };
 
   async function doGenerate(extra) {
     generateCount++;
-    return generate(slots, extra);
+    const { text, usage } = await generate(slots, extra);
+    totalUsage = addUsage(totalUsage, usage);
+    return text;
   }
 
   // ── 1. initial generate ─────────────────────────────────────────────────────
@@ -55,7 +67,8 @@ export async function generateLesson(topic, levelId, coverageId, illustrations =
   }
 
   // ── 3. review ──────────────────────────────────────────────────────────────
-  const result = await review(slots, draft);
+  const { result, usage: reviewUsage } = await review(slots, draft);
+  totalUsage = addUsage(totalUsage, reviewUsage);
 
   // ── 4. markers_preserved override ──────────────────────────────────────────
   // If markers were altered, do not salvage the draft or revised_essay — regenerate.
@@ -85,5 +98,8 @@ export async function generateLesson(topic, levelId, coverageId, illustrations =
   }
 
   // ── 6. insert images + sanitize ────────────────────────────────────────────
-  return sanitizeHtml(insertImageMarkers(essay, slots._imgs), slots.allowed_tags);
+  return {
+    html:  sanitizeHtml(insertImageMarkers(essay, slots._imgs), slots.allowed_tags),
+    usage: totalUsage,
+  };
 }

@@ -31,15 +31,14 @@ async function generateSubtopicContent({ guide, item }) {
   }));
 
   const { generateLesson } = await import('../lesson/pipeline/orchestrator.js');
-  const html = await generateLesson(
+  const { html, usage } = await generateLesson(
     item.title,
     guide.learningLevel, // matches LevelId values in content-config.json
     guide.coverage,      // 'overview' | 'balanced' | 'comprehensive'
     illustrations,
   );
 
-  // usage is not surfaced by the new pipeline; guide-developer.js handles the missing-usage warning
-  return { html, illustrationUrls: validIllustrations.map((r) => r.url), usage: undefined };
+  return { html, illustrationUrls: validIllustrations.map((r) => r.url), usage };
 }
 
 module.exports = { generateSubtopicContent };

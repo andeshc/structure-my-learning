@@ -53,7 +53,13 @@ async function callAnthropic(system, user, { model, maxTokens, json }) {
     messages,
   });
   const text = response.content[0].text;
-  return json ? `{${text}` : text;
+  return {
+    text: json ? `{${text}` : text,
+    usage: {
+      inputTokens:  response.usage?.input_tokens  ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+    },
+  };
 }
 
 async function callOpenAI(system, user, { model, maxTokens, json }) {
@@ -67,14 +73,20 @@ async function callOpenAI(system, user, { model, maxTokens, json }) {
   };
   if (json) request.response_format = { type: 'json_object' };
   const response = await getOpenAIClient().chat.completions.create(request);
-  return response.choices[0].message.content;
+  return {
+    text: response.choices[0].message.content,
+    usage: {
+      inputTokens:  response.usage?.prompt_tokens     ?? 0,
+      outputTokens: response.usage?.completion_tokens ?? 0,
+    },
+  };
 }
 
 /**
  * @param {string} system
  * @param {string} user
  * @param {{ model?: string, maxTokens?: number, json?: boolean }} [opts]
- * @returns {Promise<string>}
+ * @returns {Promise<{ text: string, usage: { inputTokens: number, outputTokens: number } }>}
  */
 export async function llm(system, user, opts = {}) {
   const {
