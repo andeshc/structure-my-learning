@@ -19,6 +19,7 @@
 - [X] **Discover Tab** I want to implement the discover tab. This will show all the guides that all the user's have shared. But for this to work, we need a share toggle - instead of a share button. We should be able to toggle sharing on/off. How would we implement this? How would be the UX/UI? Think through it.
 - [ ] **5-star review system for guides** A 5-star system of giving the feedback when the user finishes the guide (or anytime in between). This acts as the guide review (which can be used for discover tab)
 - [ ] **Search in Discover tab**
+- [ ] **PWA** Create true PWA and off
 
 
 
