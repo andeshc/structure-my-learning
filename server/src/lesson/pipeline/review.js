@@ -73,11 +73,17 @@ function addUsage(a, b) {
 /**
  * @param {import('../types.js').Slots} slots
  * @param {string} draft
+ * @param {{ heading: string, content: string }[] | null} [promptLog]
  * @returns {Promise<{ result: import('../types.js').ReviewResult, usage: { inputTokens: number, outputTokens: number } }>}
  */
-export async function review(slots, draft) {
+export async function review(slots, draft, promptLog = null) {
   const system   = buildReviewerSystem(slots);
   const baseTask = buildReviewerTask(slots, draft);
+
+  if (promptLog) {
+    promptLog.push({ heading: 'Reviewer System Prompt', content: system   });
+    promptLog.push({ heading: 'Reviewer Task Prompt',   content: baseTask });
+  }
 
   let totalUsage = { inputTokens: 0, outputTokens: 0 };
 
