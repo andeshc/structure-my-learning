@@ -143,9 +143,9 @@ describe('resolve — direct slot copies', () => {
     expect(s.avoid_list).toBe(cfg.levels.early_learner.avoid.join('; '));
   });
 
-  it('passes through html_allowed_tags as allowed_tags', () => {
+  it('allowed_tags equals html_allowed_tags when content type has no extra_tags', () => {
     const s = resolve(cfg, 't', 'high_schooler', 'balanced');
-    expect(s.allowed_tags).toBe(cfg.html_allowed_tags);
+    expect(s.allowed_tags).toEqual(cfg.html_allowed_tags);
   });
 });
 

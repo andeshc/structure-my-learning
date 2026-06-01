@@ -66,10 +66,32 @@ Under each topic, include very granular subtopics. Each subtopic should cover **
 - **Subtopic Title**
 - **Subtopic Description** (1-2 sentences): A focused summary of the specific concept, skill, or technique covered. For practical subjects, describe what the learner will be able to do or build after this subtopic. Mention the teaching approach where relevant (e.g., worked example, code walkthrough, visual demonstration). Write this so a content creator knows exactly what to build.
 
-### 6. Don't include projects or assessments
+### 6. Content type
+
+For each subtopic, classify how its lesson should be taught by adding a `contentType` field.
+Choose exactly one:
+
+- `"coding"`       — teaches a programming skill where the learner should read or write code, and code examples are central (e.g. "Python loops", "writing a SQL join", "React state").
+- `"mathematical"` — centers on equations, formulas, proofs, or quantitative procedures with notation (e.g. "solving quadratics", "matrix multiplication", "Bayes' theorem").
+- `"procedural"`   — a step-by-step process or how-to the learner performs, that is NOT primarily writing code (e.g. "set up a Postgres database", "publish a web app", "create a study schedule").
+- `"conceptual"`   — explanatory / academic: understanding ideas, causes, theories, or descriptions (e.g. "causes of World War I", "how photosynthesis works").
+
+**Subject-type defaults (apply these strictly):**
+
+- **Practical subjects** (programming language, framework, library, tool): the default is `"coding"`. Use `"conceptual"` ONLY for subtopics that are genuinely about understanding — design philosophy, mental models, or "when/why to use X" without any code. Use `"procedural"` for setup, installation, and deployment steps. Everything else is `"coding"`.
+  - Examples in a Python course: "String Processing" → `coding`, "List Comprehensions" → `coding`, "Exception Handling" → `coding`, "Decorators" → `coding`, "Lexical Scope" → `conceptual`, "Install Python" → `procedural`.
+- **Academic/conceptual subjects** (science, history, math): the default is `"conceptual"`. Use `"mathematical"` only when equations or notation are genuinely central to the lesson.
+
+For `"coding"` subtopics, also add a `"codeLanguage"` field: the lowercase language identifier (e.g. `"python"`, `"javascript"`, `"sql"`, `"bash"`). Infer it from the subtopic and the course's primary language.
+
+FALLBACK: if you genuinely cannot decide, use the subject-type default above.
+
+Output these fields on every topic, alongside the existing title, description, and subtopics.
+
+### 7. Don't include projects or assessments
 Don't include Capstone or any other projects, assessments, demonstrations, activities. The user will participate only to consume the content.
 
-### 7. Guide Title
+### 8. Guide Title
 Write a title that reads like a short course or curriculum name — not a question, not a sentence fragment.
 - 3–8 words
 - Specific to what was requested; avoid generic openers like "Introduction to", "Mastering", or "A Beginner's Guide to" unless the request is genuinely introductory

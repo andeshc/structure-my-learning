@@ -142,9 +142,9 @@ describe('sanitizeHtml — disallowed tags stripped', () => {
 // ── attribute stripping ────────────────────────────────────────────────────────
 
 describe('sanitizeHtml — attribute stripping on allowed tags', () => {
-  it('strips class attribute', () => {
+  it('preserves class attribute', () => {
     const out = sanitizeHtml('<p class="lead">Text.</p>', allowed);
-    expect(out).not.toContain('class=');
+    expect(out).toContain('class="lead"');
   });
 
   it('strips id attribute', () => {
@@ -187,7 +187,7 @@ describe('sanitizeHtml — full lesson-like output', () => {
 
     const out = sanitizeHtml(html, allowed);
 
-    expect(out).toContain('<h1>Photosynthesis</h1>');
+    expect(out).toContain('<h1 class="title">Photosynthesis</h1>');
     expect(out).toContain('<strong>convert</strong>');
     expect(out).toContain('<figure>');
     expect(out).toContain('src="https://cdn.example.com/leaf.png"');
@@ -197,6 +197,6 @@ describe('sanitizeHtml — full lesson-like output', () => {
     expect(out).toContain('<p>No inline styles here.</p>');
     expect(out).not.toContain('style=');
     expect(out).not.toContain('<script>');
-    expect(out).not.toContain('class=');
+    expect(out).not.toContain('style=');
   });
 });

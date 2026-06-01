@@ -46,7 +46,7 @@
       "abstraction": "comfortable_with_concrete_touchstone",
       "assumed_knowledge": "basic math, intro science, some critical thinking",
       "tone": "respectful, engaging, never condescending",
-      "baseline_word_count": [300, 600],
+      "baseline_word_count": [600, 1200],
       "concept_cap": 9,
       "avoid": ["childish framing", "patronizing oversimplification"],
       "audience_mindset": "Capable of real abstraction and highly alert to condescension. Respect their intelligence — the failure mode at this age is talking down, not over-complexity."
@@ -63,7 +63,7 @@
       "abstraction": "full_analogies_for_hard_ideas_only",
       "assumed_knowledge": "algebra, foundational sciences, structured reasoning",
       "tone": "intellectually engaging, near-peer, nuance welcome",
-      "baseline_word_count": [500, 900],
+      "baseline_word_count": [700, 1200],
       "concept_cap": 14,
       "avoid": ["over-explaining basics", "flattening real complexity"],
       "audience_mindset": "Near-adult reasoning. They can hold nuance and competing views. Engage them as thinkers, not as passive receivers of facts."
@@ -80,7 +80,7 @@
       "abstraction": "full_one_layer_at_a_time",
       "assumed_knowledge": "general adult life experience only; nothing field-specific",
       "tone": "knowledgeable peer, respectful, never patronizing",
-      "baseline_word_count": [500, 900],
+      "baseline_word_count": [900, 1800],
       "concept_cap": 12,
       "avoid": ["unexplained jargon", "assuming prior exposure", "condescension"],
       "audience_mindset": "A fully capable adult reasoner with ZERO knowledge of this topic. The gap is domain knowledge, not intelligence. Never condescend and never use childish analogies — but never assume prior exposure either. Anchor to common adult experience (work, money, driving, cooking)."
@@ -97,7 +97,7 @@
       "abstraction": "high_assumes_fundamentals",
       "assumed_knowledge": "fundamentals of the field",
       "tone": "peer-to-peer, practical, includes trade-offs and comparisons",
-      "baseline_word_count": [700, 1200],
+      "baseline_word_count": [1000, 2000],
       "concept_cap": 20,
       "avoid": ["re-teaching fundamentals", "basic analogies"],
       "audience_mindset": "Has the fundamentals and wants to deepen and connect. Do not re-teach basics. The value you add is nuance, trade-offs, and how the pieces fit together."
@@ -114,7 +114,7 @@
       "abstraction": "maximal_assumes_deep_field_knowledge",
       "assumed_knowledge": "field internals, current standard practice",
       "tone": "precise, rigorous, peer; engages controversy and open problems",
-      "baseline_word_count": [900, 2000],
+      "baseline_word_count": [1100, 2200],
       "concept_cap": null,
       "avoid": ["explaining known basics", "time-wasting hedging"],
       "audience_mindset": "An expert or near-expert. Over-explanation is insulting; precision and density are the value. Engage with edge cases, tensions, and open questions."
@@ -157,5 +157,43 @@
     "adult_advanced":     "a precise technical label / figure caption"
   },
 
-  "html_allowed_tags": ["h1","h2","h3","p","ul","ol","li","strong","em","blockquote","code","pre","table","thead","tbody","tr","th","td"]
+  "html_allowed_tags": ["h1","h2","h3","p","ul","ol","li","strong","em","blockquote","code","pre","table","thead","tbody","tr","th","td", "div"],
+
+  "content_types": {
+    "conceptual": {
+      "label": "conceptual",
+      "building_blocks": ["a hook that gives a reason to care", "a clear explanation of each idea", "one or two concrete examples", "a short recap"],
+      "generator_directives": "Explain ideas in prose. Lead with why the idea matters, then unfold it. This is the default narrative lesson.",
+      "extra_tags": [],
+      "extra_attrs": {},
+      "review_checks": []
+    },
+    "coding": {
+      "label": "coding",
+      "requires": ["code_language"],
+      "building_blocks": ["the concept in plain language", "a self-contained, runnable code example", "the expected output", "one common pitfall or mistake", "a small practice task for the reader"],
+      "generator_directives": "Teach by showing working {{code_language}} code. Every example must be self-contained and runnable as shown — no '...' placeholders or undefined names. State the expected output after any example that prints. Match code complexity and idiom to the level (heavily commented and minimal for younger/beginner; idiomatic with edge cases for advanced).",
+      "extra_tags": [],
+      "extra_attrs": { "code": ["class"] },
+      "code_class_pattern": "^language-[a-z0-9+#-]+$",
+      "review_checks": ["code_self_contained: every example runs as shown, no placeholders or undefined names", "language_valid: code is valid {{code_language}}", "output_claims: stated outputs are plausible for the code", "complexity_fit: code complexity matches the level"]
+    },
+    "mathematical": {
+      "label": "mathematical",
+      "building_blocks": ["the rule, definition, or theorem", "notation with every symbol defined", "a worked example shown one step per line", "a practice problem"],
+      "generator_directives": "Use LaTeX math: inline as \\( … \\) and display equations as $$ … $$. Define every symbol on first use. Show worked examples one step per line, each following from the last. Match rigor to the level (intuition and pictures for younger/beginner; formal derivations for advanced).",
+      "extra_tags": [],
+      "extra_attrs": {},
+      "render": "katex",
+      "review_checks": ["notation_defined: every symbol is introduced before use", "steps_follow: each derivation step follows from the previous", "delimiters_valid: math uses \\( \\) or $$ $$ and is well-formed LaTeX"]
+    },
+    "procedural": {
+      "label": "procedural",
+      "building_blocks": ["the goal / end result", "prerequisites or materials", "ordered steps (one action each)", "checkpoints or warnings where things go wrong", "how to know it worked"],
+      "generator_directives": "Teach a process. State the goal and prerequisites first, then numbered steps in a single <ol>, one action per step. Use <blockquote> for common-failure warnings. Match detail to the level.",
+      "extra_tags": [],
+      "extra_attrs": {},
+      "review_checks": ["steps_ordered: steps are complete and in the correct order", "prereqs_stated: prerequisites are listed before the steps"]
+    }
+  }
 }

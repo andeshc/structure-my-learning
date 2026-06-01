@@ -3,6 +3,9 @@ import { readFileSync } from 'node:fs';
 const CONFIG_URL = new URL('../../config/content-config.json', import.meta.url);
 
 /** @type {string[]} */
+const CONTENT_TYPE_IDS = ['conceptual', 'coding', 'mathematical', 'procedural'];
+
+/** @type {string[]} */
 const LEVEL_IDS = [
   'early_learner',
   'young_child',
@@ -46,6 +49,10 @@ export function validateConfig(cfg) {
     if (!cfg.posture_explanation?.[policy.posture]) {
       throw new Error(`posture "${policy.posture}" (in image_policy.${id}) has no entry in posture_explanation`);
     }
+  }
+
+  for (const id of CONTENT_TYPE_IDS) {
+    if (!cfg.content_types?.[id]) throw new Error(`Missing content type in content_types: ${id}`);
   }
 
   return cfg;

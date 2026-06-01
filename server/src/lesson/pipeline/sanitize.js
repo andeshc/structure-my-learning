@@ -7,8 +7,9 @@
  * in content-config.json's html_allowed_tags, so the generator is never told
  * it may emit raw <img>.
  *
- * Only <img>'s src and alt attributes are passed through. All other attributes
- * on all tags are stripped (no class, id, style, on*, data-*, etc.).
+ * The class attribute is preserved on all allowed tags. For <img>, src, alt,
+ * and class are passed through. All other attributes are stripped (no id,
+ * style, on*, data-*, etc.).
  */
 
 import { parse } from 'node-html-parser';
@@ -30,14 +31,15 @@ function escapeAttr(s) {
  * Recursively serialize a node, keeping only allowed tags and safe attributes.
  * @param {import('node-html-parser').Node} node
  * @param {Set<string>} allowSet
+ * @param {RegExp | null} codeClassRe - if set, class on <code> must match or is stripped
  * @returns {string}
  */
-function sanitizeNode(node, allowSet) {
+function sanitizeNode(node, allowSet, codeClassRe) {
   // Text node
   if (node.nodeType === 3) return node.rawText;
 
   const tag = node.rawTagName?.toLowerCase();
-  const children = [...(node.childNodes ?? [])].map((c) => sanitizeNode(c, allowSet)).join('');
+  const children = [...(node.childNodes ?? [])].map((c) => sanitizeNode(c, allowSet, codeClassRe)).join('');
 
   // Root node or unknown node type — pass through children
   if (!tag) return children;
@@ -45,28 +47,43 @@ function sanitizeNode(node, allowSet) {
   // Disallowed tag: strip the element, preserve its text content
   if (!allowSet.has(tag)) return children;
 
-  // img: allow only src and alt
+  // img: allow only src, alt, and class
   if (tag === 'img') {
     const src = node.getAttribute('src') ?? '';
     const alt = node.getAttribute('alt') ?? '';
-    return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}">`;
+    const cls = node.getAttribute('class');
+    const clsAttr = cls ? ` class="${escapeAttr(cls)}"` : '';
+    return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${clsAttr}>`;
   }
 
-  // All other allowed tags: no attributes
-  return `<${tag}>${children}</${tag}>`;
+  // code: class must match codeClassRe when set (e.g. language-* for coding type)
+  if (tag === 'code') {
+    const cls = node.getAttribute('class');
+    const validCls = cls && (!codeClassRe || codeClassRe.test(cls)) ? cls : null;
+    const clsAttr = validCls ? ` class="${escapeAttr(validCls)}"` : '';
+    return `<code${clsAttr}>${children}</code>`;
+  }
+
+  // All other allowed tags: preserve class if present, strip everything else
+  const cls = node.getAttribute('class');
+  const clsAttr = cls ? ` class="${escapeAttr(cls)}"` : '';
+  return `<${tag}${clsAttr}>${children}</${tag}>`;
 }
 
 /**
  * Sanitize an HTML string to the given allow-list plus figure/img/figcaption.
  * Strips all disallowed tags (keeping their text content) and all attributes
- * except img's src and alt.
+ * except class (preserved on allowed tags) and img's src/alt.
+ * For coding lessons, class on <code> is constrained to codeClassPattern.
  *
  * @param {string} html
  * @param {string[]} allowed - html_allowed_tags from ContentConfig
+ * @param {{ codeClassPattern?: string | null }} [options]
  * @returns {string}
  */
-export function sanitizeHtml(html, allowed) {
+export function sanitizeHtml(html, allowed, { codeClassPattern } = {}) {
   const allowSet = new Set([...allowed, ...INSERTION_TAGS]);
+  const codeClassRe = codeClassPattern ? new RegExp(codeClassPattern) : null;
   const root = parse(html);
-  return sanitizeNode(root, allowSet);
+  return sanitizeNode(root, allowSet, codeClassRe);
 }

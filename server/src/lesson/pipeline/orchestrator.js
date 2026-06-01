@@ -36,12 +36,12 @@ function addUsage(a, b) {
  * @param {string} levelId
  * @param {string} coverageId
  * @param {import('../types.js').Illustration[]} [illustrations]
- * @param {{ logDir?: string }} [options]
+ * @param {{ logDir?: string, contentType?: string, codeLanguage?: string | null, overview?: string | null, details?: string[] | null }} [options]
  * @returns {Promise<{ html: string, usage: { inputTokens: number, outputTokens: number } }>}
  */
-export async function generateLesson(topic, levelId, coverageId, illustrations = [], { logDir } = {}) {
+export async function generateLesson(topic, levelId, coverageId, illustrations = [], { logDir, contentType, codeLanguage, overview, details } = {}) {
   const cfg = loadConfig();
-  const slots = resolve(cfg, topic, levelId, coverageId, illustrations);
+  const slots = resolve(cfg, topic, levelId, coverageId, illustrations, { contentType, codeLanguage, overview, details });
 
   let generateCount = 0;
   let totalUsage = { inputTokens: 0, outputTokens: 0 };
@@ -106,7 +106,7 @@ export async function generateLesson(topic, levelId, coverageId, illustrations =
   }
 
   return {
-    html:  sanitizeHtml(insertImageMarkers(essay, slots._imgs), slots.allowed_tags),
+    html:  sanitizeHtml(insertImageMarkers(essay, slots._imgs), slots.allowed_tags, { codeClassPattern: slots.code_class_pattern }),
     usage: totalUsage,
   };
 }

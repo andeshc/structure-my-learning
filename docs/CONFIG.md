@@ -166,16 +166,56 @@ The JSON below is canonical; create `content-config.json` from it verbatim. Fiel
     "adult_advanced":     "a precise technical label / figure caption"
   },
 
-  "html_allowed_tags": ["h1","h2","h3","p","ul","ol","li","strong","em","blockquote","code","pre","table","thead","tbody","tr","th","td"]
+  "html_allowed_tags": ["h1","h2","h3","p","ul","ol","li","strong","em","blockquote","code","pre","table","thead","tbody","tr","th","td"],
+
+  "content_types": {
+    "conceptual": {
+      "label": "conceptual",
+      "building_blocks": ["a hook that gives a reason to care", "a clear explanation of each idea", "one or two concrete examples", "a short recap"],
+      "generator_directives": "Explain ideas in prose. Lead with why the idea matters, then unfold it. This is the default narrative lesson.",
+      "extra_tags": [],
+      "extra_attrs": {},
+      "review_checks": []
+    },
+    "coding": {
+      "label": "coding",
+      "requires": ["code_language"],
+      "building_blocks": ["the concept in plain language", "a self-contained, runnable code example", "the expected output", "one common pitfall or mistake", "a small practice task for the reader"],
+      "generator_directives": "Teach by showing working {{code_language}} code. Every example must be self-contained and runnable as shown — no '...' placeholders or undefined names. State the expected output after any example that prints. Match code complexity and idiom to the level (heavily commented and minimal for younger/beginner; idiomatic with edge cases for advanced).",
+      "extra_tags": [],
+      "extra_attrs": { "code": ["class"] },
+      "code_class_pattern": "^language-[a-z0-9+#-]+$",
+      "review_checks": ["code_self_contained: every example runs as shown, no placeholders or undefined names", "language_valid: code is valid {{code_language}}", "output_claims: stated outputs are plausible for the code", "complexity_fit: code complexity matches the level"]
+    },
+    "mathematical": {
+      "label": "mathematical",
+      "building_blocks": ["the rule, definition, or theorem", "notation with every symbol defined", "a worked example shown one step per line", "a practice problem"],
+      "generator_directives": "Use LaTeX math: inline as \\( … \\) and display equations as $$ … $$. Define every symbol on first use. Show worked examples one step per line, each following from the last. Match rigor to the level (intuition and pictures for younger/beginner; formal derivations for advanced).",
+      "extra_tags": [],
+      "extra_attrs": {},
+      "render": "katex",
+      "review_checks": ["notation_defined: every symbol is introduced before use", "steps_follow: each derivation step follows from the previous", "delimiters_valid: math uses \\( \\) or $$ $$ and is well-formed LaTeX"]
+    },
+    "procedural": {
+      "label": "procedural",
+      "building_blocks": ["the goal / end result", "prerequisites or materials", "ordered steps (one action each)", "checkpoints or warnings where things go wrong", "how to know it worked"],
+      "generator_directives": "Teach a process. State the goal and prerequisites first, then numbered steps in a single <ol>, one action per step. Use <blockquote> for common-failure warnings. Match detail to the level.",
+      "extra_tags": [],
+      "extra_attrs": {},
+      "review_checks": ["steps_ordered: steps are complete and in the correct order", "prereqs_stated: prerequisites are listed before the steps"]
+    }
+  }
 }
 ```
+
+> **Adding a content type** is a config-only change: add an entry here with its building blocks, directives, format additions, and review checks — no prompt or code edits. **Mixing types** (e.g. data-science = code + math) is not built yet but is a clean extension: union the two types' `extra_tags`/`extra_attrs` and directives at resolve time.
 
 ## Resolve logic
 
 How runtime inputs become the derived slots. Implement in `prompts/slots.ts`.
 
 ```ts
-function conceptBudget(level: LevelProfile, coverageId: CoverageId, cfg: ContentConfig): number {
+function budget(level: LevelProfile, coverageId: CoverageId, cfg: ContentConfig): number {
   if (level.concept_cap == null) {
     return cfg.advanced_concept_demand[coverageId];          // adult_advanced: topic-driven
   }
@@ -193,15 +233,33 @@ function illustrationsBlock(imgs: Illustration[], maxImages: number): string {
     .map(i => `IMAGE_${i.id}: ${i.prompt}`)
     .join("\n");
 }
+
+// content-type resolution: tags, attrs, and the prompt-injected strings
+function resolvedTags(cfg: ContentConfig, type: ContentType): string[] {
+  return [...cfg.html_allowed_tags, ...(type.extra_tags ?? [])];
+}
+function fillSlots(s: string, ctx: { code_language?: string }): string {
+  return s.replace(/\{\{code_language\}\}/g, ctx.code_language ?? "");
+}
+// generator_directives and review_checks may contain {{code_language}}; fill them at resolve time.
 ```
 
 `resolve()` then maps config fields → `Slots` (see `ARCHITECTURE.md` for the `Slots` shape):
 - direct copies: `level_label`, `audience_mindset`, `vocabulary`, `abstraction`, `analogy_density`, `assumed_knowledge`, `tone`, `concepts_per_section`, `coverage_scope`.
 - destructured pairs: `readability_fk → fk_min/fk_max`, `sentence_words → sentence_min/sentence_max`, word target → `word_min/word_max`.
 - joined: `avoid_list = level.avoid.join("; ")`.
-- derived: `concept_budget`, `illustrations_block`.
+- derived: `concept_budget = budget(...)`, `illustrations_block`.
 - from image policy / maps: `posture`, `max_images`, `posture_explanation[posture]`, `caption_guidance[levelId]`.
-- `allowed_tags = html_allowed_tags` (passed to both the generator prompt fragment and the sanitizer).
+- from content type (`type = content_types[contentType]`):
+  - `content_type_label = type.label`
+  - `building_blocks = type.building_blocks.join("; ")`
+  - `content_directives = fillSlots(type.generator_directives, { code_language })`
+  - `type_review_checks = type.review_checks.map(c => fillSlots(c, { code_language })).join("; ")`
+  - `format_conventions` = the task-prompt bullets for this type (see the format-conventions block in `specs/generation-review-prompts.md`); empty string for `conceptual`.
+  - `allowed_tags = resolvedTags(cfg, type)` and `allowed_tags_inline = allowed_tags.map(t => "<"+t+">").join(" ")`.
+- `code_language` passed through from runtime input (required when `contentType === "coding"`).
+
+`allowed_tags` is passed to both the generator prompt fragment and the sanitizer, so they never drift.
 
 ## Worked examples
 
@@ -220,7 +278,8 @@ Throw on load if any of:
 - `html_allowed_tags` is empty.
 - any `length_multiplier` or `concept_fraction` ≤ 0.
 - a `posture` value has no entry in `posture_explanation`.
+- `content_types` is missing any referenced type, or a type lists a `requires` field with no runtime value supplied (checked at resolve, not load — e.g. `coding` without `code_language`).
 
 ## Tag allow-list note
 
-`html_allowed_tags` is what the **generator** may emit. The **sanitizer** allow-list is this set **plus** `figure`, `img`, `figcaption` (and `img`'s `src`/`alt` attributes), because those are added at insertion. Keep the sanitizer's extra three in `sanitize.ts` as a clearly-commented superset, not in the JSON, so the generator is never told it may emit raw `<img>`.
+`html_allowed_tags` is the **base** generator set; the resolved set for a lesson is base + the content type's `extra_tags` (and `extra_attrs`, e.g. `class` on `<code>` for `coding`, constrained to `code_class_pattern`). The **sanitizer** allow-list is the resolved set **plus** `figure`, `img`, `figcaption` (and `img`'s `src`/`alt`), because those are added at insertion. Build the sanitizer per-lesson from `slots.allowed_tags`; keep the figure-family superset in `sanitize.ts` as a clearly-commented addition, not in the JSON, so the generator is never told it may emit raw `<img>`. For `coding`, the sanitizer must also allow `class` on `<code>` matching `code_class_pattern`, or syntax highlighting silently breaks.

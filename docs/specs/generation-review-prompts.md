@@ -1,35 +1,37 @@
 # Generation + Review Prompt Templates
 
-Consumes `learner-profiles.md` config and the `image_policy` / `caption_guidance` maps from `image-placement.md`. Two LLM calls (generate, review) plus one deterministic readability gate. **The generator outputs an HTML fragment, not markdown.** Illustration placement is folded into generation (option 1): the generator drops `[[IMAGE_<id>]]` markers between block elements where each pre-generated illustration fits, and a deterministic step later swaps each marker for a `<figure>` — no separate placement call. Placeholders use `{{mustache}}` syntax and map to the config fields noted in the variable reference at the end.
+Consumes `learner-profiles.md` config, the `image_policy` / `caption_guidance` maps from `image-placement.md`, and the `content_types` map from `CONFIG.md`. Two LLM calls (generate, review) plus deterministic gates (readability; optional code-execution for `coding` content). **The generator outputs an HTML fragment, not markdown.** Three axes drive it: **level** (how to communicate), **coverage** (how much), and **content_type** (what kind of content — `conceptual` / `coding` / `mathematical` / `procedural` — which sets the building blocks, output format, and review checks). Illustration placement is folded into generation (option 1): the generator drops `[[IMAGE_<id>]]` markers between block elements and a deterministic step swaps each for a `<figure>`. Placeholders use `{{mustache}}` syntax and map to the config fields noted in the variable reference at the end.
 
 ---
 
 ## Pipeline overview
 
 ```
-topic + level + coverage + up to 2 illustration prompts
+topic + level + coverage + content_type (+ code_language) + up to 2 illustration prompts
         │
         ▼
-[ resolve ]  compute concept_budget = min(coverage_demand, level.concept_cap)
-             compute word_target     = level.baseline_word_count × coverage.length_multiplier
-             load image_policy[level] (posture, max_images)
+[ resolve ]  concept_budget = budget(level, coverage)   (see CONFIG.md)
+             word_target    = level.baseline_word_count × coverage.length_multiplier
+             load image_policy[level] and content_types[content_type]
+             allowed_tags   = base + content_type.extra_tags
         │
         ▼
-[ GENERATE ]  call 1  →  draft essay WITH [[IMAGE_id]] markers + ===IMAGES=== trailer
+[ GENERATE ]  call 1  →  draft lesson WITH [[IMAGE_id]] markers + ===IMAGES=== trailer
         │
         ▼
-[ FK GATE ]   deterministic, no LLM  (skip for adult tiers — FK doesn't discriminate there)
-        │           ├─ fail → down-shift instruction, regenerate (max 1–2 retries)
+[ FK GATE ]   deterministic  (younger tiers only — FK saturates for adults)
+        │           ├─ fail → down-shift, regenerate (≤2)
         ▼           └─ pass ↓
-[ REVIEW ]    call 2  →  structured verdict; markers preserved verbatim
+[ CODE GATE ] deterministic  (coding content + sandboxable language only)
+        │           ├─ error → append error, regenerate (≤2)
+        ▼           └─ pass ↓
+[ REVIEW ]    call 2  →  verdict + type_specific checks; markers preserved
         │
-        ├─ pass        → ↓
-        ├─ revise      → use reviewer's revised_essay (markers intact) → ↓
-        └─ regenerate  → discard, regenerate with priority_fixes appended → ↓
-        │
+        ├─ pass / revise / regenerate  → essay
         ▼
-[ INSERT ]    deterministic, no LLM  →  swap [[IMAGE_id]] for image markdown + caption,
-                                        strip trailer  →  final essay with images
+[ INSERT ]    deterministic  →  swap [[IMAGE_id]] for <figure>, strip trailer
+        ▼
+[ SANITIZE ]  deterministic  →  allow-list (resolved tags + figure family) → final lesson HTML
 ```
 
 The review checks *conformance to explicit parameters*, not taste — that's what makes self-review reliable here. The readability gate is fully deterministic so it never depends on the model's self-assessment.
@@ -57,7 +59,7 @@ Add one string per level. Injected into the generator (and reviewer) as framing.
 ## 1. Generator — system prompt
 
 ```
-You are an expert educational writer producing explanatory content for a single, specific audience: {{level_label}}.
+You are an expert educational author producing a lesson for a single, specific audience: {{level_label}}.
 
 WHO YOU ARE WRITING FOR
 {{audience_mindset}}
@@ -66,41 +68,46 @@ NON-NEGOTIABLE RULES FOR THIS AUDIENCE
 - Reading level: target Flesch–Kincaid grade {{fk_min}}–{{fk_max}}.
 - Vocabulary: {{vocabulary}}.
 - Sentences: average {{sentence_min}}–{{sentence_max}} words; vary rhythm naturally.
-- Cognitive load: introduce at most {{concepts_per_section}} new idea(s) per paragraph.
-- Hard concept ceiling: the whole piece must introduce no more than {{concept_budget}} distinct new ideas. If the topic has more, select the {{concept_budget}} most important for this audience and coverage depth, and leave the rest out cleanly rather than cramming.
+- Cognitive load: introduce at most {{concepts_per_section}} new idea(s) per section.
+- Hard concept ceiling: the whole lesson must introduce no more than {{concept_budget}} distinct new ideas. If the topic has more, select the {{concept_budget}} most important for this audience and coverage depth, and leave the rest out cleanly rather than cramming.
 - Abstraction: {{abstraction}}.
 - Analogies / examples: {{analogy_density}}.
 - Assume the reader already knows: {{assumed_knowledge}}. Define anything beyond that on first use — EXCEPT do not define standard terms the rules say to assume.
 - Tone: {{tone}}.
 - Never: {{avoid_list}}.
 
+CONTENT TYPE — {{content_type_label}}
+Build the lesson from these blocks (adapt count/depth to the coverage and concept ceiling): {{building_blocks}}.
+{{content_directives}}
+All content-type elements still obey the audience rules above — calibrate code complexity, mathematical rigor, or step detail to {{level_label}}.
+
 WRITING STANDARDS
-- Accuracy first. If you are unsure of a fact, write around it rather than inventing specifics.
-- Every paragraph earns its place: it either introduces an allowed new idea or deepens one already introduced.
+- Accuracy first. If you are unsure of a fact, write around it rather than inventing specifics. Never present unverified code or math as correct.
+- Every section earns its place: it either introduces an allowed new idea or deepens one already introduced.
 - Open by giving the reader a reason to care, in their terms.
-- No filler, no "in this essay we will," no restating the prompt.
+- No filler, no "in this lesson we will," no restating the prompt.
 - Output is a clean, semantic HTML fragment (tag rules in the task prompt) — never markdown.
 
 ILLUSTRATIONS
-You may be given up to {{max_images}} pre-generated illustrations (each an id + a description of what it depicts). Place an illustration by writing its marker, e.g. [[IMAGE_1]], alone on its own line at the point in the piece it best fits.
+You may be given up to {{max_images}} pre-generated illustrations (each an id + a description of what it depicts). Place an illustration by writing its marker, e.g. [[IMAGE_1]], alone on its own line at the point in the lesson it best fits.
 - Image posture for this audience: {{posture}} — {{posture_explanation}}
 - Place an illustration ONLY where it genuinely fits the surrounding content. If one doesn't fit, leave it unplaced — an omitted weak image is correct, not a failure.
-- Never place two markers adjacently or at the same point; spread them across the piece.
+- Never place two markers adjacently or at the same point; spread them across the lesson.
 - Do not describe the image in the prose or write "as shown below"; the marker is enough.
 ```
 
 ## 2. Generator — task prompt
 
 ```
-Write a {{coverage_mode}} explanatory piece on:
+Write a {{coverage_mode}} {{content_type_label}} lesson on:
 
   {{topic}}
 
-COVERAGE FOR THIS PIECE
+COVERAGE FOR THIS LESSON
 {{coverage_scope}}
 
 TARGETS
-- Length: {{word_min}}–{{word_max}} words.
+- Length: {{word_min}}–{{word_max}} words (counting prose; code and equations don't count toward this).
 - New concepts: at most {{concept_budget}} (the most important ones for this audience).
 
 ILLUSTRATIONS AVAILABLE (place with markers where they fit; omit any that don't)
@@ -109,14 +116,30 @@ ILLUSTRATIONS AVAILABLE (place with markers where they fit; omit any that don't)
 OUTPUT FORMAT
 Output an HTML fragment — no <html>, <head>, or <body> wrapper, and no markdown.
 - Begin with the title in an <h1>.
-- Use only these tags: <h1> <h2> <h3> <p> <ul> <ol> <li> <strong> <em> <blockquote> <code> <pre> <table> <thead> <tbody> <tr> <th> <td>.
-- No inline styles, no class or id attributes, no <script> or <style>.
+- Use only these tags: {{allowed_tags_inline}}.
+- No inline styles, no id attributes, no <script> or <style>.
+{{format_conventions}}
 - Place any [[IMAGE_<id>]] markers on their own line BETWEEN block elements (e.g. between a </p> and the next <p>) — never inside a tag or mid-sentence.
 After the fragment, output a trailer beginning with a line that reads exactly ===IMAGES===
 On the trailer, one line per illustration you were given:
   IMAGE_<id> | placed | <one-line caption calibrated to the reader: {{caption_guidance}}>
   IMAGE_<id> | unused
 Output nothing else — no notes, no explanation of your choices.
+```
+
+`{{allowed_tags_inline}}` is the resolved tag set for this content type (base list + the content type's `extra_tags`), e.g. base only for `conceptual`, or base for `coding` since code uses `<pre><code class="language-…">`. `{{format_conventions}}` is the content type's format guidance, injected as extra bullet lines — empty for `conceptual`, and for the others:
+
+```
+# coding
+- Put every code example in <pre><code class="language-{{code_language}}">…</code></pre> with the code HTML-escaped (&lt; &gt; &amp;). No other class attributes anywhere.
+- Code must be self-contained and runnable as shown — no "..." placeholders or undefined names. After an example that prints output, state the expected output in a <p> or as a comment.
+
+# mathematical
+- Write inline math as \( … \) and display equations as $$ … $$ (LaTeX). Do not wrap math in tags or images.
+- Define every symbol on first use; show worked examples one step per line.
+
+# procedural
+- Put the ordered steps in a single <ol>; one action per <li>. Use <blockquote> for warnings or common-failure notes.
 ```
 
 `{{illustrations_block}}` is a simple rendering of the prompts you were handed, e.g.:
@@ -144,7 +167,7 @@ AUDIENCE SPECIFICATION
 - Reader: {{audience_mindset}}
 - Reading level target: FK grade {{fk_min}}–{{fk_max}}
 - Vocabulary rule: {{vocabulary}}
-- Max new concepts per paragraph: {{concepts_per_section}}
+- Max new concepts per section: {{concepts_per_section}}
 - Hard concept ceiling: {{concept_budget}}
 - Abstraction: {{abstraction}}
 - Analogy density: {{analogy_density}}
@@ -153,6 +176,7 @@ AUDIENCE SPECIFICATION
 - Must never: {{avoid_list}}
 - Length target: {{word_min}}–{{word_max}} words
 - Coverage mode + scope: {{coverage_mode}} — {{coverage_scope}}
+- Content type: {{content_type_label}}
 
 CHECKS
 1. concept_count   — count distinct NEW ideas introduced. Compare to the ceiling.
@@ -160,12 +184,13 @@ CHECKS
 3. tone_register   — does it match the tone, and crucially does it AVOID condescension / talking down for this reader?
 4. scaffolding     — are new ideas anchored as the abstraction + analogy rules require (neither under- nor over-scaffolded)?
 5. coverage_fidelity — does breadth/depth match the coverage mode, or did it overshoot/undershoot?
-6. length          — within target band? (Count visible text only — exclude HTML tags, [[IMAGE_*]] markers, and the ===IMAGES=== trailer.)
+6. length          — within target band? (Count prose only — exclude HTML tags, code, equations, [[IMAGE_*]] markers, and the ===IMAGES=== trailer.)
 7. accuracy_flags  — note any claims that look factually wrong or invented. (Advisory only — you cannot fully verify facts.)
+8. type_specific   — apply the checks for this content type: {{type_review_checks}}. Report each as pass/fail with a short note.
 
 FORMAT — DO NOT ALTER
-The draft is an HTML fragment (allowed tags: h1–h3, p, ul, ol, li, strong, em, blockquote, code, pre, table family). When judging prose, read through the tags; do not penalize the markup itself. If you "revise", keep it as HTML using only those tags — never convert to markdown, never add styles/classes/scripts.
-The draft may also contain [[IMAGE_<id>]] markers and a ===IMAGES=== trailer. Treat these as FIXED tokens: do not delete, rename, duplicate, or invent them, and do not change the trailer's contents. If you choose "revise", carry every marker and the full trailer through into revised_essay unchanged — you may move a marker by at most one paragraph only if the block it sat next to was removed.
+The draft is an HTML fragment using only the tags allowed for this content type ({{allowed_tags_inline}}), plus, for `coding`, a class="language-…" on <code>, and, for `mathematical`, LaTeX in \( \) / $$ $$ delimiters. When judging prose, read through the tags, code, and equations; do not penalize the markup. If you "revise", keep it as HTML using only those tags, keep code and equations intact and correct — never convert to markdown, never add styles/ids/scripts.
+The draft may also contain [[IMAGE_<id>]] markers and a ===IMAGES=== trailer. Treat these as FIXED tokens: do not delete, rename, duplicate, or invent them, and do not change the trailer's contents. If you choose "revise", carry every marker and the full trailer through into revised_essay unchanged — you may move a marker by at most one section only if the block it sat next to was removed.
 
 VERDICT RULE
 - "regenerate" if: concept_count exceeds the ceiling by >50%, OR coverage is fundamentally wrong (e.g. comprehensive when overview was asked), OR multiple hard rules are broken throughout.
@@ -189,6 +214,7 @@ Return ONLY valid JSON matching the schema. No prose, no markdown fences.
     "coverage_fidelity": { "pass": true, "note": "" },
     "length":            { "found": 0, "target": [0, 0], "pass": true },
     "markers_preserved": { "pass": true, "note": "all [[IMAGE_*]] markers and trailer intact" },
+    "type_specific":     { "pass": true, "results": [{ "check": "code_self_contained", "pass": true, "note": "" }] },
     "accuracy_flags":    []
   },
   "priority_fixes": ["ordered list of the most important changes, empty if pass"],
@@ -219,26 +245,46 @@ Skip this gate for `adult_intermediate` and `adult_advanced` — FK saturates an
 
 ---
 
+## 4b. Deterministic code-execution gate (no LLM, `coding` content only)
+
+The strongest quality lever for code lessons, and the same pattern as the readability gate: a real check rather than model self-judgment. Only runs when `content_type === "coding"` and the language is executable in your sandbox (e.g. Python, JS).
+
+```ts
+function codeGate(draft: string, language: string, run: (code: string, lang: string) => RunResult) {
+  // extract each <pre><code class="language-X">…</code></pre> block, HTML-unescape it
+  const blocks = extractCodeBlocks(draft, language);
+  for (const code of blocks) {
+    const res = run(code, language);          // sandboxed; time + memory limited
+    if (res.error) return { pass: false, code, error: res.error };
+  }
+  return { pass: true };
+}
+```
+
+On failure, regenerate with the failing snippet and error appended: *"This example raised `{{error}}`; fix it so every example runs as shown."* Cap at 1–2 retries, then fall through to review (which still flags it via `type_specific`). Run blocks in an isolated, resource-limited sandbox with no network — generated code is untrusted. If you can't sandbox a given language, skip the gate and lean on the reviewer's `type_specific` check instead.
+
+---
+
 ## 5. Orchestration (pseudocode)
 
 ```ts
 async function generateLesson(
-  topic: string, levelId: string, coverageId: string,
-  illustrations: { id: string; prompt: string; url: string }[] = []  // up to 2
+  topic: string, levelId: string, coverageId: string, contentType: string,
+  opts: { codeLanguage?: string; illustrations?: { id: string; prompt: string; url: string }[] } = {}
 ) {
   const level = config.levels[levelId];
   const coverage = config.coverage[coverageId];
   const policy = config.image_policy[levelId];
+  const ctype = config.content_types[contentType];
 
-  // resolve derived targets
-  const conceptBudget = level.concept_cap == null
-    ? coverageDemand(coverageId)                       // advanced: topic-driven
-    : Math.min(coverageDemand(coverageId), level.concept_cap);
+  // resolve derived targets  (budget() defined in CONFIG.md)
+  const conceptBudget = budget(level, coverageId, config);
   const [wMin, wMax] = level.baseline_word_count.map(w =>
     Math.round(w * coverage.length_multiplier));
 
-  const imgs = illustrations.slice(0, policy.max_images);
-  const slots = buildSlots(level, coverage, policy, topic, conceptBudget, wMin, wMax, imgs);
+  const imgs = (opts.illustrations ?? []).slice(0, policy.max_images);
+  const slots = buildSlots(level, coverage, policy, ctype, topic, conceptBudget,
+                           wMin, wMax, imgs, opts.codeLanguage);
 
   let draft = await llm(genSystem(slots), genTask(slots));      // call 1 — emits markers + trailer
 
@@ -248,6 +294,15 @@ async function generateLesson(
       const { grade, pass } = readabilityGate(stripForReadability(draft), ...level.readability_fk);
       if (pass) break;
       draft = await llm(genSystem(slots), downshiftTask(slots, grade));
+    }
+  }
+
+  // deterministic code-execution gate (coding content with a sandboxable language)
+  if (contentType === "coding" && isSandboxable(opts.codeLanguage)) {
+    for (let i = 0; i < 2; i++) {
+      const g = codeGate(draft, opts.codeLanguage!, runSandbox);
+      if (g.pass) break;
+      draft = await llm(genSystem(slots), fixCodeTask(slots, g.error));
     }
   }
 
@@ -265,7 +320,8 @@ async function generateLesson(
   }
 
   // deterministic insertion: swap markers for <figure>, strip trailer, then sanitize
-  return sanitizeHtml(insertImageMarkers(essay, imgs));
+  // sanitizer allow-list = resolved tags for this content type (+ figure family)
+  return sanitizeHtml(insertImageMarkers(essay, imgs), slots.allowed_tags);
 }
 ```
 
@@ -325,11 +381,18 @@ function insertImageMarkers(essay: string, imgs) {
 | `{{assumed_knowledge}}` | `level.assumed_knowledge` |
 | `{{tone}}` | `level.tone` |
 | `{{avoid_list}}` | `level.avoid` (joined) |
-| `{{concept_budget}}` | `min(coverage_demand, level.concept_cap)` |
+| `{{concept_budget}}` | `budget(level, coverage)` — see CONFIG.md |
 | `{{word_min}}` / `{{word_max}}` | `level.baseline_word_count × coverage.length_multiplier` |
 | `{{coverage_mode}}` | coverage key (overview/balanced/comprehensive) |
 | `{{coverage_scope}}` | `coverage.scope` |
 | `{{topic}}` | runtime input |
+| `{{content_type_label}}` | `content_types[type].label` (from `CONFIG.md`) |
+| `{{building_blocks}}` | `content_types[type].building_blocks` (joined) |
+| `{{content_directives}}` | `content_types[type].generator_directives` (slots like `{{code_language}}` resolved) |
+| `{{format_conventions}}` | content type's format bullets for the task prompt (empty for `conceptual`) |
+| `{{type_review_checks}}` | `content_types[type].review_checks` (joined) |
+| `{{allowed_tags_inline}}` | base `html_allowed_tags` + `content_types[type].extra_tags`, rendered as `<tag>` list |
+| `{{code_language}}` | runtime input (required for `coding`) |
 | `{{max_images}}` | `image_policy[level].max_images` (from `image-placement.md`) |
 | `{{posture}}` | `image_policy[level].posture` |
 | `{{posture_explanation}}` | `posture_explanation[posture]` (from `image-placement.md`) |

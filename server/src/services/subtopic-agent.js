@@ -38,7 +38,7 @@ async function generateSubtopicContent({ guide, item }) {
     guide.learningLevel,
     guide.coverage,
     illustrations,
-    { logDir },
+    { logDir, contentType: item.contentType, codeLanguage: item.codeLanguage, overview: item.overview, details: item.details },
   );
 
   return { html, illustrationUrls: validIllustrations.map((r) => r.url), usage };

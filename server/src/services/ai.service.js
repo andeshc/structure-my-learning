@@ -106,6 +106,8 @@ const outlineItemSchema = z.object({
   overview: z.string().min(10).max(400).nullable(),
   details: z.array(z.string().min(2).max(300)).max(12).nullable(),
   illustrationPrompts: z.array(z.string().min(20)).max(2).nullable(),
+  contentType: z.enum(['conceptual', 'coding', 'mathematical', 'procedural']),
+  codeLanguage: z.string().min(1).max(30).nullable(),
 });
 
 const outlineSectionSchema = z.object({
