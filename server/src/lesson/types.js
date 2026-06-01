@@ -9,6 +9,21 @@
 
 /** @typedef {'leading' | 'integrated' | 'supportive' | 'sparing' | 'diagram_only'} Posture */
 
+/** @typedef {'conceptual' | 'coding' | 'mathematical' | 'procedural'} ContentTypeId */
+
+/**
+ * @typedef {Object} ContentTypeProfile
+ * @property {string} label
+ * @property {string[]} building_blocks
+ * @property {string} generator_directives - may contain {{code_language}}; fill at resolve time
+ * @property {string[]} extra_tags - additional HTML tags beyond html_allowed_tags
+ * @property {Record<string, string[]>} extra_attrs - per-tag extra attributes (e.g. { code: ['class'] })
+ * @property {string[]} review_checks - may contain {{code_language}}; fill at resolve time
+ * @property {string[]} [requires] - runtime fields required at resolve (e.g. ['code_language'])
+ * @property {string} [code_class_pattern] - regex pattern constraining code class values (coding only)
+ * @property {string} [render] - client-side renderer hint e.g. 'katex' (mathematical only)
+ */
+
 /**
  * @typedef {Object} LevelProfile
  * @property {string} label
@@ -52,6 +67,7 @@
  * @property {Record<LevelId, string>} caption_guidance
  * @property {string[]} html_allowed_tags - generator output tags; figure/img/figcaption added at insertion
  * @property {Record<CoverageId, number>} advanced_concept_demand - used when concept_cap is null
+ * @property {Record<ContentTypeId, ContentTypeProfile>} content_types
  */
 
 /**
@@ -87,7 +103,15 @@
  * @property {string} posture_explanation
  * @property {string} caption_guidance
  * @property {string} illustrations_block - "IMAGE_1: <prompt>\nIMAGE_2: <prompt>"
- * @property {string[]} allowed_tags
+ * @property {string[]} allowed_tags - base tags + content-type extra_tags
+ * @property {string} content_type_label
+ * @property {string} building_blocks - type.building_blocks joined with '; '
+ * @property {string} content_directives - generator_directives with {{code_language}} filled
+ * @property {string} type_review_checks - review_checks joined with '; ', {{code_language}} filled; '' for conceptual
+ * @property {string | null} code_language - null for non-coding types
+ * @property {string | null} code_class_pattern - pattern for <code class="..."> validation; null for non-coding types
+ * @property {string} subtopic_overview - item.overview from the guide outline, or ''
+ * @property {string} subtopic_details - item.details as bullet lines, or ''
  * @property {LevelId} _levelId - carried for downstream, not a template slot
  * @property {Illustration[]} _imgs - carried for downstream, not a template slot
  */

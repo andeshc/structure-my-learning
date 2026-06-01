@@ -1,3 +1,4 @@
+const path = require('path');
 const { generateTopicIllustrationTool } = require('./ai.service');
 
 /**
@@ -7,6 +8,7 @@ const { generateTopicIllustrationTool } = require('./ai.service');
  * @returns {Promise<{ html: string, illustrationUrls: string[], usage: undefined }>}
  */
 async function generateSubtopicContent({ guide, item }) {
+  const logDir = path.join(__dirname, '../generated-prompts', String(guide.id));
   // Pre-generate illustrations in parallel (same as before)
   const prompts = item.illustrationPrompts?.filter(Boolean) ?? [];
   const illustrationResults = await Promise.all(
@@ -33,9 +35,10 @@ async function generateSubtopicContent({ guide, item }) {
   const { generateLesson } = await import('../lesson/pipeline/orchestrator.js');
   const { html, usage } = await generateLesson(
     item.title,
-    guide.learningLevel, // matches LevelId values in content-config.json
-    guide.coverage,      // 'overview' | 'balanced' | 'comprehensive'
+    guide.learningLevel,
+    guide.coverage,
     illustrations,
+    { logDir, contentType: item.contentType, codeLanguage: item.codeLanguage, overview: item.overview, details: item.details },
   );
 
   return { html, illustrationUrls: validIllustrations.map((r) => r.url), usage };

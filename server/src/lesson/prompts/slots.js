@@ -42,6 +42,16 @@ function illustrationsBlock(imgs, maxImages) {
 }
 
 /**
+ * Replace {{code_language}} placeholders in a template string.
+ * @param {string} s
+ * @param {string | null | undefined} codeLanguage
+ * @returns {string}
+ */
+function fillSlots(s, codeLanguage) {
+  return s.replace(/\{\{code_language\}\}/g, codeLanguage ?? '');
+}
+
+/**
  * Resolve runtime inputs into a fully populated Slots object.
  * Throws for unknown levelId or coverageId.
  *
@@ -50,9 +60,10 @@ function illustrationsBlock(imgs, maxImages) {
  * @param {import('../types.js').LevelId} levelId
  * @param {import('../types.js').CoverageId} coverageId
  * @param {import('../types.js').Illustration[]} [imgs]
+ * @param {{ contentType?: string, codeLanguage?: string | null, overview?: string | null, details?: string[] | null }} [options]
  * @returns {import('../types.js').Slots}
  */
-export function resolve(cfg, topic, levelId, coverageId, imgs = []) {
+export function resolve(cfg, topic, levelId, coverageId, imgs = [], { contentType, codeLanguage, overview, details } = {}) {
   const level = cfg.levels[levelId];
   if (!level) throw new Error(`Unknown levelId: ${levelId}`);
 
@@ -64,6 +75,10 @@ export function resolve(cfg, topic, levelId, coverageId, imgs = []) {
   const [sentence_min, sentence_max] = level.sentence_words;
   const [word_min, word_max] = wordTarget(level, coverageId, cfg);
   const limitedImgs = imgs.slice(0, policy.max_images);
+
+  const resolvedType = contentType ?? 'conceptual';
+  const type = cfg.content_types?.[resolvedType] ?? cfg.content_types?.['conceptual'];
+  const lang = codeLanguage ?? null;
 
   return {
     topic,
@@ -90,7 +105,15 @@ export function resolve(cfg, topic, levelId, coverageId, imgs = []) {
     posture_explanation: cfg.posture_explanation[policy.posture],
     caption_guidance: cfg.caption_guidance[levelId],
     illustrations_block: illustrationsBlock(limitedImgs, policy.max_images),
-    allowed_tags: cfg.html_allowed_tags,
+    allowed_tags: [...cfg.html_allowed_tags, ...(type?.extra_tags ?? [])],
+    content_type_label:  type?.label ?? resolvedType,
+    building_blocks:     (type?.building_blocks ?? []).join('; '),
+    content_directives:  fillSlots(type?.generator_directives ?? '', lang),
+    type_review_checks:  (type?.review_checks ?? []).map(c => fillSlots(c, lang)).join('; '),
+    code_language:       lang,
+    code_class_pattern:  type?.code_class_pattern ?? null,
+    subtopic_overview:   overview ?? '',
+    subtopic_details:    details?.length ? details.map(d => `- ${d}`).join('\n') : '',
     _levelId: levelId,
     _imgs: limitedImgs,
   };

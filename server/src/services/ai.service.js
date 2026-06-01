@@ -106,6 +106,8 @@ const outlineItemSchema = z.object({
   overview: z.string().min(10).max(400).nullable(),
   details: z.array(z.string().min(2).max(300)).max(12).nullable(),
   illustrationPrompts: z.array(z.string().min(20)).max(2).nullable(),
+  contentType: z.enum(['conceptual', 'coding', 'mathematical', 'procedural']),
+  codeLanguage: z.string().min(1).max(30).nullable(),
 });
 
 const outlineSectionSchema = z.object({
@@ -218,7 +220,21 @@ function setAiMocks(mocks) {
   testMocks = mocks || {};
 }
 
-function streamOutline({ prompt, learningLevel, coverage }) {
+function saveOutlinePromptLog(guideId, system, userPrompt) {
+  try {
+    const dir = path.join(__dirname, '../generated-prompts', String(guideId));
+    fs.mkdirSync(dir, { recursive: true });
+    const content = [
+      `## System Prompt\n\n${system}`,
+      `## User Prompt\n\n${userPrompt}`,
+    ].join('\n\n---\n\n') + '\n';
+    fs.writeFileSync(path.join(dir, '_outline.md'), content);
+  } catch (err) {
+    console.warn('[prompt-logger] outline save failed:', err.message);
+  }
+}
+
+function streamOutline({ prompt, learningLevel, coverage, guideId }) {
   if (testMocks.generateOutline) {
     const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, learningLevel, coverage }))
       .then((r) => outlineSchema.parse(r));
@@ -258,6 +274,8 @@ Additional output rules:
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
     .replace('`{{LEARNING_LEVEL}}`', learningLevel)
     .replace('`{{COVERAGE}}`', coverage);
+
+  if (guideId) saveOutlinePromptLog(guideId, system, userPrompt);
 
   if (getObjectMode() === 'tool') {
     const resultPromise = generateObject({

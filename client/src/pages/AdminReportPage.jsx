@@ -3,7 +3,11 @@ import { Navigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 
-const ADMIN_EMAIL = 'support@structuremylearning.com';
+const ADMIN_EMAILS = new Set([
+  'support@structuremylearning.com',
+  'andeshc@gmail.com',
+  'andeshc@outlook.com',
+]);
 
 const levelLabels = {
   early_learner: 'Early Learner',
@@ -32,7 +36,7 @@ export default function AdminReportPage() {
   const [error, setError] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
 
-  if (user && user.email !== ADMIN_EMAIL) return <Navigate to="/dashboard" replace />;
+  if (user && !ADMIN_EMAILS.has(user.email)) return <Navigate to="/dashboard" replace />;
 
   useEffect(() => {
     apiRequest('/api/admin/report')

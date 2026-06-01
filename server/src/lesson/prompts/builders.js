@@ -19,7 +19,7 @@ const tagList = (s) => s.allowed_tags.map((t) => `<${t}>`).join(' ');
  */
 export function buildGeneratorSystem(s) {
   let text =
-    `You are an expert educational writer producing explanatory content for a single, specific audience: ${s.level_label}.
+    `You are StructureMyLearning's expert educator. You write a rich, beautifully structured HTML lesson for one topic inside a personalized learning guide for a single, specific audience: ${s.level_label}.
 
 WHO YOU ARE WRITING FOR
 ${s.audience_mindset}
@@ -41,7 +41,15 @@ WRITING STANDARDS
 - Every paragraph earns its place: it either introduces an allowed new idea or deepens one already introduced.
 - Open by giving the reader a reason to care, in their terms.
 - No filler, no "in this essay we will," no restating the prompt.
-- Output is a clean, semantic HTML fragment (tag rules in the task prompt) — never markdown.`;
+- Output is a clean, semantic HTML fragment (tag rules in the task prompt) — never markdown.
+- Don't include Capstone or any other projects, assessments, demonstrations, activities. The user will participate only to consume the content.`;
+
+  text +=
+    `\n\nCONTENT TYPE: ${s.content_type_label}
+${s.content_directives}
+
+LESSON STRUCTURE
+Present the material in this order: ${s.building_blocks}.`;
 
   if (hasImgs(s)) {
     text +=
@@ -71,11 +79,13 @@ export function buildGeneratorTask(s, extra = '') {
     ? `Write a short read-aloud script a caregiver can read aloud on:`
     : `Write a ${s.coverage_mode} explanatory piece on:`;
 
+  const contextBlock = [s.subtopic_overview, s.subtopic_details].filter(Boolean).join('\n');
+
   let text =
     `${brief}
 
   ${s.topic}
-
+${contextBlock ? `\nSUBTOPIC CONTEXT\n${contextBlock}\n` : ''}
 COVERAGE FOR THIS PIECE
 ${s.coverage_scope}
 
@@ -102,7 +112,19 @@ Output an HTML fragment — no <html>, <head>, or <body> wrapper, and no markdow
 Output an HTML fragment — no <html>, <head>, or <body> wrapper, and no markdown.
 - Begin with the title in an <h1>.
 - Use only these tags: ${tags}.
-- No inline styles, no class or id attributes, no <script> or <style>.
+- No inline styles, no id attributes, no <script> or <style>.
+- Major sections: <h2>...</h2>
+- Sub-sections: <h3>...</h3>
+- Body paragraphs: <p>...</p>. Dont split the paragraphs to make them too small. If a piece of text should be a an undevided paragraph, thod split it.
+- Key concept callout (if required): <div class="callout-info"><p class="callout-label">Key Concept</p><p>...</p></div>
+- Analogy callout (if required): <div class="callout-tip"><p class="callout-label">Analogy</p><p>...</p></div>
+- Warning / common mistake (if required): <div class="callout-warning"><p class="callout-label">Common Mistake</p><p>...</p></div>. Add this only if you want to call out a genuinely common mistake.
+- Code blocks (if required): <pre><code class="language-python">...</code></pre>
+  Replace "python" with the correct Prism language identifier (javascript, typescript, bash, sql, json, css, html, java, go, rust, etc.). Prism handles all syntax colouring — do not add any classes to <pre>.
+- Bullet lists: <ul><li>...</li></ul>
+- Numbered steps (if required): <ol class="steps-list"><li>...</li></ol>
+- Simple comparison table (if required): <div class="table-wrapper"><table><thead><tr><th>...</th></tr></thead><tbody><tr><td>...</td></tr></tbody></table></div>
+
 - Place any [[IMAGE_<id>]] markers on their own line BETWEEN block elements (e.g. between a </p> and the next <p>) — never inside a tag or mid-sentence.`;
   }
 
@@ -160,6 +182,7 @@ CHECKS
 5. coverage_fidelity — does breadth/depth match the coverage mode, or did it overshoot/undershoot?
 6. length          — within target band? (Count visible text only — exclude HTML tags, [[IMAGE_*]] markers, and the ===IMAGES=== trailer.)
 7. accuracy_flags  — note any claims that look factually wrong or invented. (Advisory only — you cannot fully verify facts.)
+${s.type_review_checks ? `\nTYPE-SPECIFIC CHECKS (${s.content_type_label})\n${s.type_review_checks.split('; ').map(c => `- ${c}`).join('\n')}` : ''}
 
 FORMAT — DO NOT ALTER
 The draft is an HTML fragment (allowed tags: ${tags}). When judging prose, read through the tags; do not penalize the markup itself. If you "revise", keep it as HTML using only those tags — never convert to markdown, never add styles/classes/scripts.
@@ -171,7 +194,23 @@ VERDICT RULE
 - "pass" if: no real violations.
 
 OUTPUT
-Return ONLY valid JSON matching the schema. No prose, no markdown fences.`
+Return ONLY valid JSON with this exact structure. No prose, no markdown fences.
+
+{
+  "verdict": "pass" | "revise" | "regenerate",
+  "checks": {
+    "concept_count":     { "found": <number>, "ceiling": <number>, "pass": <bool> },
+    "vocabulary":        { "pass": <bool>, "violations": ["<term: reason>", ...] },
+    "tone_register":     { "pass": <bool>, "note": "<optional string>" },
+    "scaffolding":       { "pass": <bool>, "note": "<optional string>" },
+    "coverage_fidelity": { "pass": <bool>, "note": "<optional string>" },
+    "length":            { "found": <word count>, "target": [${s.word_min}, ${s.word_max}], "pass": <bool> },
+    "markers_preserved": { "pass": <bool>, "note": "<optional string>" },
+    "accuracy_flags":    ["<claim: concern>", ...]
+  },
+  "priority_fixes": ["<fix description>", ...],
+  "revised_essay": "<full HTML essay — ONLY when verdict is revise>"
+}`
   );
 }
 
