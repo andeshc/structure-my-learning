@@ -77,7 +77,7 @@ function LevelDropdown({ value, onChange }) {
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-charcoal/15 bg-white shadow-lg">
+        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-charcoal/15 bg-white shadow-lg">
           <div className="px-3 pb-1 pt-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-charcoal-200">Young learners</p>
           </div>
