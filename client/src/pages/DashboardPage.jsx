@@ -289,7 +289,7 @@ function GuideCard({ guide, index, onDelete }) {
           </button>
 
           {isMenuOpen && (
-            <div className="absolute right-0 top-9 z-20 w-36 rounded-lg border border-slate-200 bg-white p-1" role="menu">
+            <div className="absolute right-0 top-9 z-50 w-36 rounded-lg border border-slate-200 bg-white p-1" role="menu">
               <button
                 className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
                 type="button"
