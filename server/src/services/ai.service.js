@@ -5,6 +5,7 @@ const { z } = require('zod');
 const config = require('../config');
 const { getGuideModel, getContentModel, clampTokens, getObjectMode } = require('./llm');
 const imageService = require('./image.service');
+const contentConfig = require('../config/content-config.json');
 
 const guidePromptTemplate = fs.readFileSync(
   path.join(__dirname, '../prompts/guide-generation-prompt.md'),
@@ -48,6 +49,46 @@ const coverageGuidance = {
   balanced:      'Balanced — cover core concepts with solid depth. Include important subtopics but stay focused; avoid tangents.',
   comprehensive: 'Comprehensive — go deep on every topic. Include edge cases, nuances, and related concepts; maximise breadth and depth.',
 };
+
+const ILLUSTRATION_POSTURE_INSTRUCTION = {
+  leading:      'Generate illustration prompts for most subtopics — illustrations lead the lesson for this audience. Describe warm, concrete, friendly scenes directly related to the concept. Avoid anything abstract or symbolic.',
+  integrated:   'Generate illustration prompts where a diagram, chart, or concrete scene would meaningfully aid comprehension. Set to null for purely text-based topics.',
+  supportive:   'Generate illustration prompts only when a diagram or chart clearly adds value beyond the text. Most subtopics can be null.',
+  sparing:      'Generate illustration prompts only for processes, step-by-step comparisons, or system overviews. Set to null for most subtopics — text is usually sufficient for this audience.',
+  diagram_only: 'Generate illustration prompts only for subtopics that genuinely require a technical diagram or chart (no decorative images). Describe clean, labelled technical diagrams. Most subtopics should be null.',
+};
+
+/**
+ * Build a rich learner-profile block for use in prompts, derived from content-config.json.
+ * Replaces the old one-liner learningLevelGuidance[levelId] strings.
+ */
+function buildLearnerProfileBlock(levelId, coverageId) {
+  const level  = contentConfig.levels[levelId];
+  const policy = contentConfig.image_policy[levelId];
+  if (!level || !policy) return `Level: ${levelId}\nCoverage: ${coverageId}`;
+
+  const posture = policy.posture;
+  const postureExplanation = contentConfig.posture_explanation[posture] ?? '';
+  const captionGuidance    = contentConfig.caption_guidance[levelId]    ?? '';
+  const maxImages          = policy.max_images;
+  const illustrationNote   = ILLUSTRATION_POSTURE_INSTRUCTION[posture] ?? ILLUSTRATION_POSTURE_INSTRUCTION.integrated;
+
+  return `Learner profile:
+- Level: ${level.label}
+- Audience mindset: ${level.audience_mindset}
+- Vocabulary: ${level.vocabulary}
+- Tone: ${level.tone}
+- Abstraction: ${level.abstraction}
+- Analogies: ${level.analogy_density}
+- Avoid: ${level.avoid.join('; ')}
+- Coverage: ${coverageId} — ${coverageGuidance[coverageId]}
+
+Illustration guidance for this audience:
+- Image posture: ${posture} — ${postureExplanation}
+- Max illustration prompts per subtopic: ${maxImages}
+- Caption style: ${captionGuidance}
+- Rule: ${illustrationNote}`;
+}
 
 const maxSubtopics = {
   early_learner:      { overview: 8,  balanced: 12, comprehensive: 18 },
@@ -192,9 +233,8 @@ function streamOutline({ prompt, learningLevel, coverage }) {
     ? `- The total number of items across ALL sections must not exceed ${max}. Distribute items across sections accordingly — do not exceed this budget.`
     : '';
 
-  const learnerProfile = `Learner profile:
-- Level: ${learningLevel} — ${learningLevelGuidance[learningLevel]}
-- Coverage: ${coverage} — ${coverageGuidance[coverage]}`;
+  const learnerProfile = buildLearnerProfileBlock(learningLevel, coverage);
+  const maxImages = contentConfig.image_policy[learningLevel]?.max_images ?? 2;
 
   const system = `${guidePromptSections['System Prompt']}
 
@@ -212,7 +252,7 @@ Additional output rules:
 - Do not include content lessons yet.
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.
-- For each subtopic where a diagram, chart, process flow, or visual would meaningfully aid comprehension, populate "illustrationPrompts" with 1–2 detailed image-generation prompts (describe the visual composition, key elements, labels, and layout in full). Set the field to null for subtopics that are purely conceptual or text-only.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
+- For "illustrationPrompts": follow the illustration guidance in the learner profile above. When generating prompts, describe the visual composition, key elements, labels, and layout in full. Generate at most ${maxImages} prompt(s) per subtopic.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
 
   const userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
@@ -454,8 +494,7 @@ async function generateAdditionalSections({ guideTitle, existingSections, userPr
     mode: getObjectMode(),
     system: `You are StructureMyLearning's curriculum designer. Generate 1–3 additional learning guide sections based on a user's request. The new sections must complement the existing outline without duplicating any topic already covered.`,
     prompt: `Guide title: "${guideTitle}"
-Learner level: ${learningLevel} — ${learningLevelGuidance[learningLevel]}
-Coverage: ${coverage} — ${coverageGuidance[coverage]}
+${buildLearnerProfileBlock(learningLevel, coverage)}
 
 Existing sections (do not duplicate):
 - ${existingTitles}
