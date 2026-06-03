@@ -51,7 +51,7 @@ export function insertImageMarkers(essay, imgs) {
     if (!urlOf[id]) return '';  // unplaced or dropped marker → removed
     const cap = caption[id];
     return (
-      `<figure><img src="${escapeAttr(urlOf[id])}" alt="${escapeAttr(cap ?? '')}">` +
+      `<figure><img src="${escapeAttr(urlOf[id])}" alt="${escapeAttr(cap ?? '')}" class="lesson-illustration">` +
       (cap ? `<figcaption>${escapeHtml(cap)}</figcaption>` : '') +
       `</figure>`
     );
