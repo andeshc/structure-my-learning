@@ -24,7 +24,7 @@ const CALLOUT_STYLES = {
 };
 
 function transformHtml(html) {
-  if (!html || !html.includes('class=')) return html;
+  if (!html || (!html.includes('class=') && !html.includes('<figure'))) return html;
 
   const root = parse(html, { blockTextElements: { pre: true, code: true } });
 
@@ -88,7 +88,12 @@ function transformHtml(html) {
     }
   });
 
-  // 7. ol — steps-list (CSS counter) or bare
+  // 7. img inside figure — ensure lesson-illustration class
+  root.querySelectorAll('figure img').forEach(el => {
+    el.setAttribute('class', 'lesson-illustration');
+  });
+
+  // 8. ol — steps-list (CSS counter) or bare
   root.querySelectorAll('ol').forEach(el => {
     const cls = el.getAttribute('class') || '';
     if (cls.includes('space-y') || cls === 'steps-list') {
