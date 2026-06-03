@@ -16,6 +16,7 @@ jobs:
       - name: Redeploy on Railway
         run: |
           bash <(curl -fsSL https://railway.com/install.sh)
+          source "$HOME/.railway/env"
           railway redeploy --service ${{ secrets.RAILWAY_SERVICE_ID }} --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
