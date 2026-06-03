@@ -15,7 +15,10 @@ jobs:
     steps:
       - name: Redeploy on Railway
         run: |
-          npm install -g @railway/cli@latest
-          railway redeploy --service ${{ secrets.RAILWAY_SERVICE_ID }} --yes
+          curl -fsSX POST "https://backboard.railway.com/graphql/v2" \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"mutation { serviceInstanceRedeploy(serviceId: \\\"$RAILWAY_SERVICE_ID\\\") }\"}"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
