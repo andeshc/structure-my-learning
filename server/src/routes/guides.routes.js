@@ -84,7 +84,7 @@ async function guideWithTopics(guide, userId) {
 
 async function generateOutlineInBackground({ guideId, prompt, learningLevel, coverage }) {
   try {
-    const result = ai.streamOutline({ prompt, learningLevel, coverage, guideId });
+    const result = ai.streamOutline({ prompt, learningLevel, coverage });
     let lastSavedCount = 0;
 
     for await (const partial of result.partialObjectStream) {

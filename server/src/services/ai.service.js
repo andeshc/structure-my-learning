@@ -220,21 +220,7 @@ function setAiMocks(mocks) {
   testMocks = mocks || {};
 }
 
-function saveOutlinePromptLog(guideId, system, userPrompt) {
-  try {
-    const dir = path.join(__dirname, '../generated-prompts', String(guideId));
-    fs.mkdirSync(dir, { recursive: true });
-    const content = [
-      `## System Prompt\n\n${system}`,
-      `## User Prompt\n\n${userPrompt}`,
-    ].join('\n\n---\n\n') + '\n';
-    fs.writeFileSync(path.join(dir, '_outline.md'), content);
-  } catch (err) {
-    console.warn('[prompt-logger] outline save failed:', err.message);
-  }
-}
-
-function streamOutline({ prompt, learningLevel, coverage, guideId }) {
+function streamOutline({ prompt, learningLevel, coverage }) {
   if (testMocks.generateOutline) {
     const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, learningLevel, coverage }))
       .then((r) => outlineSchema.parse(r));
@@ -275,7 +261,6 @@ Additional output rules:
     .replace('`{{LEARNING_LEVEL}}`', learningLevel)
     .replace('`{{COVERAGE}}`', coverage);
 
-  if (guideId) saveOutlinePromptLog(guideId, system, userPrompt);
 
   if (getObjectMode() === 'tool') {
     const resultPromise = generateObject({

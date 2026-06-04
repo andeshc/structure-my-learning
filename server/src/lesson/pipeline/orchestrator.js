@@ -19,7 +19,6 @@ import { readabilityGate, stripForReadability } from './readability.js';
 import { review } from './review.js';
 import { insertImageMarkers } from './insert.js';
 import { sanitizeHtml } from './sanitize.js';
-import { savePromptFile, slug } from '../prompt-logger.js';
 
 const MAX_GENERATES = 3;
 const FK_GATE_THRESHOLD = 12;
@@ -36,20 +35,19 @@ function addUsage(a, b) {
  * @param {string} levelId
  * @param {string} coverageId
  * @param {import('../types.js').Illustration[]} [illustrations]
- * @param {{ logDir?: string, contentType?: string, codeLanguage?: string | null, overview?: string | null, details?: string[] | null }} [options]
+ * @param {{ contentType?: string, codeLanguage?: string | null, overview?: string | null, details?: string[] | null }} [options]
  * @returns {Promise<{ html: string, usage: { inputTokens: number, outputTokens: number } }>}
  */
-export async function generateLesson(topic, levelId, coverageId, illustrations = [], { logDir, contentType, codeLanguage, overview, details } = {}) {
+export async function generateLesson(topic, levelId, coverageId, illustrations = [], { contentType, codeLanguage, overview, details } = {}) {
   const cfg = loadConfig();
   const slots = resolve(cfg, topic, levelId, coverageId, illustrations, { contentType, codeLanguage, overview, details });
 
   let generateCount = 0;
   let totalUsage = { inputTokens: 0, outputTokens: 0 };
-  const promptLog = logDir ? [] : null;
 
   async function doGenerate(extra) {
     generateCount++;
-    const { text, usage } = await generate(slots, extra, generateCount === 1 ? promptLog : null);
+    const { text, usage } = await generate(slots, extra);
     totalUsage = addUsage(totalUsage, usage);
     return text;
   }
@@ -70,7 +68,7 @@ export async function generateLesson(topic, levelId, coverageId, illustrations =
   }
 
   // ── 3. review ──────────────────────────────────────────────────────────────
-  const { result, usage: reviewUsage } = await review(slots, draft, promptLog);
+  const { result, usage: reviewUsage } = await review(slots, draft);
   totalUsage = addUsage(totalUsage, reviewUsage);
 
   // ── 4. markers_preserved override ──────────────────────────────────────────
@@ -101,10 +99,6 @@ export async function generateLesson(topic, levelId, coverageId, illustrations =
   }
 
   // ── 6. insert images + sanitize ────────────────────────────────────────────
-  if (logDir && promptLog?.length) {
-    savePromptFile(logDir, `${slug(topic)}.md`, promptLog);
-  }
-
   return {
     html:  sanitizeHtml(insertImageMarkers(essay, slots._imgs), slots.allowed_tags, { codeClassPattern: slots.code_class_pattern }),
     usage: totalUsage,
