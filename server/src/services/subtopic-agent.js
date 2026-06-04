@@ -1,4 +1,3 @@
-const path = require('path');
 const { generateTopicIllustrationTool } = require('./ai.service');
 
 /**
@@ -8,8 +7,7 @@ const { generateTopicIllustrationTool } = require('./ai.service');
  * @returns {Promise<{ html: string, illustrationUrls: string[], usage: undefined }>}
  */
 async function generateSubtopicContent({ guide, item }) {
-  const logDir = path.join(__dirname, '../generated-prompts', String(guide.id));
-  // Pre-generate illustrations in parallel (same as before)
+  // Pre-generate illustrations in parallel
   const prompts = item.illustrationPrompts?.filter(Boolean) ?? [];
   const illustrationResults = await Promise.all(
     prompts.map(async (prompt, i) => {
@@ -38,7 +36,7 @@ async function generateSubtopicContent({ guide, item }) {
     guide.learningLevel,
     guide.coverage,
     illustrations,
-    { logDir, contentType: item.contentType, codeLanguage: item.codeLanguage, overview: item.overview, details: item.details },
+    { contentType: item.contentType, codeLanguage: item.codeLanguage, overview: item.overview, details: item.details },
   );
 
   return { html, illustrationUrls: validIllustrations.map((r) => r.url), usage };
