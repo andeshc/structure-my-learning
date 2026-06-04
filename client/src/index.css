@@ -183,6 +183,16 @@ html { overflow-x: hidden; }
   border-radius: 0.75rem;
 }
 
+.lesson-content figcaption {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: #64748b; /* slate-500 */
+  text-align: center;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
 /* Steps list — CSS counter replaces numbered span badges */
 .lesson-content ol.steps-list {
   list-style: none;
