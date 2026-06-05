@@ -495,21 +495,24 @@ async function refineOutline({ guideTitle, existingSections, userPrompt, learnin
 
   const { object } = await generateObject({
     model: getGuideModel(),
-    schema: z.object({ sections: z.array(outlineSectionSchema).min(1).max(60) }),
+    schema: z.object({
+      newSections: z.array(outlineSectionSchema).min(1).max(20),
+      insertAfterIndex: z.number().int().min(-1),
+    }),
     mode: getObjectMode(),
-    system: `You are StructureMyLearning's curriculum designer. You are refining an existing learning guide outline based on a user's feedback. Return the COMPLETE updated sections array — preserve unmodified sections exactly as they are, incorporate the user's requested changes, and insert any new sections at the most pedagogically appropriate position based on the learning progression (not just at the end).`,
+    system: `You are StructureMyLearning's curriculum designer. A user wants to add new sections to an existing guide outline. Return ONLY the new sections to insert, plus insertAfterIndex — the 0-based index of the existing section after which they should be inserted (-1 = before all existing sections). Do NOT reproduce existing sections in your output.`,
     prompt: `Guide title: "${guideTitle}"
 ${buildLearnerProfileBlock(learningLevel, coverage)}
 
-Current outline (${existingSections.length} sections):
+Existing sections (context only — do NOT reproduce these in your output):
 ${sectionSummary}
 
-User's refinement request: "${userPrompt}"
+User's request: "${userPrompt}"
 
-Return the complete updated sections array including all subtopics. For sections you are not modifying, reproduce them exactly. Insert new sections at the most appropriate position for the learning flow.`,
+Return only the new sections to add and the insertAfterIndex indicating where they fit best in the learning progression.`,
   });
 
-  return object.sections;
+  return { newSections: object.newSections, insertAfterIndex: object.insertAfterIndex };
 }
 
 async function generateAdditionalSections({ guideTitle, existingSections, userPrompt, learningLevel, coverage }) {

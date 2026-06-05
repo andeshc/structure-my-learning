@@ -238,9 +238,8 @@ router.post('/:guideId/refine', asyncHandler(async (req, res, next) => {
   }
 
   const existingSections = guide.outline?.sections ?? [];
-  const existingTitleSet = new Set(existingSections.map((s) => s.title));
 
-  const updatedSections = await ai.refineOutline({
+  const { newSections, insertAfterIndex } = await ai.refineOutline({
     guideTitle: guide.title,
     existingSections,
     userPrompt: input.userPrompt,
@@ -248,10 +247,16 @@ router.post('/:guideId/refine', asyncHandler(async (req, res, next) => {
     coverage: guide.coverage,
   });
 
-  const newSectionIndices = updatedSections
-    .map((s, i) => ({ s, i }))
-    .filter(({ s }) => !existingTitleSet.has(s.title))
-    .map(({ i }) => i);
+  const clampedIdx = Math.max(-1, Math.min(insertAfterIndex, existingSections.length - 1));
+  const spliceAt = clampedIdx + 1;
+
+  const updatedSections = [
+    ...existingSections.slice(0, spliceAt),
+    ...newSections,
+    ...existingSections.slice(spliceAt),
+  ];
+
+  const newSectionIndices = newSections.map((_, i) => spliceAt + i);
 
   const updatedOutline = { ...(guide.outline ?? {}), sections: updatedSections };
 
