@@ -488,6 +488,30 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
   return _streamLesson({ baseContext, onEvent });
 }
 
+async function refineOutline({ guideTitle, existingSections, userPrompt, learningLevel, coverage }) {
+  const sectionSummary = existingSections.map((s, i) =>
+    `Section ${i + 1}: "${s.title}" — ${s.description}\n   Subtopics: ${s.items?.map((st) => `"${st.title}"`).join(', ') || 'none'}`
+  ).join('\n\n');
+
+  const { object } = await generateObject({
+    model: getGuideModel(),
+    schema: z.object({ sections: z.array(outlineSectionSchema).min(1).max(60) }),
+    mode: getObjectMode(),
+    system: `You are StructureMyLearning's curriculum designer. You are refining an existing learning guide outline based on a user's feedback. Return the COMPLETE updated sections array — preserve unmodified sections exactly as they are, incorporate the user's requested changes, and insert any new sections at the most pedagogically appropriate position based on the learning progression (not just at the end).`,
+    prompt: `Guide title: "${guideTitle}"
+${buildLearnerProfileBlock(learningLevel, coverage)}
+
+Current outline (${existingSections.length} sections):
+${sectionSummary}
+
+User's refinement request: "${userPrompt}"
+
+Return the complete updated sections array including all subtopics. For sections you are not modifying, reproduce them exactly. Insert new sections at the most appropriate position for the learning flow.`,
+  });
+
+  return object.sections;
+}
+
 async function generateAdditionalSections({ guideTitle, existingSections, userPrompt, learningLevel, coverage }) {
   const existingTitles = existingSections.map((s) => s.title).join('\n- ');
 
@@ -531,6 +555,7 @@ module.exports = {
   chatWithTutor,
   generateAdditionalSections,
   generateGuideIllustration,
+  refineOutline,
   streamOutline,
   streamSubtopicContent,
   setAiMocks,

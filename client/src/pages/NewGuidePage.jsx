@@ -198,7 +198,7 @@ export default function NewGuidePage() {
           disabled={isSubmitting}
           className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-2.5 font-medium text-white hover:bg-teal-800 disabled:opacity-60"
         >
-          {isSubmitting ? 'Creating…' : 'Generate guide'}
+          {isSubmitting ? 'Creating…' : 'Generate Guide Outline'}
         </button>
       </form>
     </section>

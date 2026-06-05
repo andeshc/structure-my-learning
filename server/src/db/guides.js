@@ -106,6 +106,22 @@ async function appendSectionsToGuide({ id, outlineJson, topics }) {
   });
 }
 
+async function replaceGuideTopics({ guideId, outlineJson, topics }) {
+  await withTransaction(async (client) => {
+    await client.query('DELETE FROM topics WHERE guide_id = $1', [guideId]);
+    await client.query(
+      'UPDATE guides SET outline_json = $1, updated_at = NOW() WHERE id = $2',
+      [outlineJson, guideId]
+    );
+    for (const topic of topics) {
+      await client.query(
+        'INSERT INTO topics (id, guide_id, position, title, description) VALUES ($1, $2, $3, $4, $5)',
+        [topic.id, topic.guideId, topic.position, topic.title, topic.description]
+      );
+    }
+  });
+}
+
 async function setGuideIllustration(id, illustrationPath) {
   await query(
     `UPDATE guides SET illustration_path = $1, updated_at = NOW() WHERE id = $2`,
@@ -328,6 +344,7 @@ async function getGuidesCreatedCount(userId) {
 
 module.exports = {
   appendSectionsToGuide,
+  replaceGuideTopics,
   setGuidePublic,
   listPublicGuides,
   completeGuide,
