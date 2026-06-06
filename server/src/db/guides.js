@@ -20,6 +20,8 @@ function toGuide(row) {
     ownerName: row.owner_name || null,
     shareToken: row.share_token || null,
     isPublic: Boolean(row.is_public),
+    clarifications: row.clarifications ?? null,
+    freeText: row.free_text ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -54,10 +56,12 @@ async function createGuideWithTopics({ guide, topics }) {
   });
 }
 
-async function createPendingGuide({ id, userId, prompt, learningLevel, coverage }) {
+async function createPendingGuide({ id, userId, prompt, learningLevel, coverage, clarifications, freeText }) {
   await query(
-    `INSERT INTO guides (id, user_id, title, prompt, learning_level, coverage, status) VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
-    [id, userId, prompt.slice(0, 90), prompt, learningLevel, coverage]
+    `INSERT INTO guides (id, user_id, title, prompt, learning_level, coverage, clarifications, free_text, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
+    [id, userId, prompt.slice(0, 90), prompt, learningLevel, coverage,
+     clarifications ? JSON.stringify(clarifications) : null, freeText ?? null]
   );
 }
 
@@ -100,6 +104,22 @@ async function appendSectionsToGuide({ id, outlineJson, topics }) {
     for (const topic of topics) {
       await client.query(
         `INSERT INTO topics (id, guide_id, position, title, description) VALUES ($1, $2, $3, $4, $5)`,
+        [topic.id, topic.guideId, topic.position, topic.title, topic.description]
+      );
+    }
+  });
+}
+
+async function replaceGuideTopics({ guideId, outlineJson, topics }) {
+  await withTransaction(async (client) => {
+    await client.query('DELETE FROM topics WHERE guide_id = $1', [guideId]);
+    await client.query(
+      'UPDATE guides SET outline_json = $1, updated_at = NOW() WHERE id = $2',
+      [outlineJson, guideId]
+    );
+    for (const topic of topics) {
+      await client.query(
+        'INSERT INTO topics (id, guide_id, position, title, description) VALUES ($1, $2, $3, $4, $5)',
         [topic.id, topic.guideId, topic.position, topic.title, topic.description]
       );
     }
@@ -328,6 +348,7 @@ async function getGuidesCreatedCount(userId) {
 
 module.exports = {
   appendSectionsToGuide,
+  replaceGuideTopics,
   setGuidePublic,
   listPublicGuides,
   completeGuide,

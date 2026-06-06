@@ -21,14 +21,31 @@ function getGuideModelId() {
 
 const router = express.Router();
 
-const createGuideSchema = z.object({
+const goalShape = {
   prompt: z.string().trim().min(5).max(500),
   learningLevel: z.enum(['early_learner', 'young_child', 'middle_schooler', 'high_schooler', 'adult_beginner', 'adult_intermediate', 'adult_advanced']),
   coverage: z.enum(['overview', 'balanced', 'comprehensive']),
+};
+
+const clarifyingQuestionsRequestSchema = z.object(goalShape);
+
+const clarificationsSchema = z.array(z.object({
+  question: z.string().min(1).max(200),
+  answers: z.array(z.string().min(1).max(120)).min(1).max(6),
+})).max(8).optional();
+
+const createGuideSchema = z.object({
+  ...goalShape,
+  clarifications: clarificationsSchema,
+  freeText: z.string().trim().max(400).optional(),
 });
 
 const extendGuideSchema = z.object({
   userPrompt: z.string().trim().min(3).max(300),
+});
+
+const refineGuideSchema = z.object({
+  userPrompt: z.string().trim().min(3).max(500),
 });
 
 const finalizeGuideSchema = z.object({
@@ -82,9 +99,9 @@ async function guideWithTopics(guide, userId) {
   };
 }
 
-async function generateOutlineInBackground({ guideId, prompt, learningLevel, coverage }) {
+async function generateOutlineInBackground({ guideId, prompt, learningLevel, coverage, clarifications, freeText }) {
   try {
-    const result = ai.streamOutline({ prompt, learningLevel, coverage });
+    const result = ai.streamOutline({ prompt, learningLevel, coverage, clarifications, freeText });
     let lastSavedCount = 0;
 
     for await (const partial of result.partialObjectStream) {
@@ -137,6 +154,12 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ guides: await guides.listGuidesForUser(req.user.id) });
 }));
 
+router.post('/clarifying-questions', asyncHandler(async (req, res) => {
+  const input = clarifyingQuestionsRequestSchema.parse(req.body);
+  const result = await ai.generateClarifyingQuestions(input);
+  res.json(result);
+}));
+
 router.post('/', asyncHandler(async (req, res, next) => {
   // SUSPENDED: guide creation cap temporarily disabled
   // const count = await guides.getGuidesCreatedCount(req.user.id);
@@ -147,10 +170,25 @@ router.post('/', asyncHandler(async (req, res, next) => {
   // }
   const input = createGuideSchema.parse(req.body);
   const guideId = ids.guideId();
-  await guides.createPendingGuide({ id: guideId, userId: req.user.id, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
+  await guides.createPendingGuide({
+    id: guideId,
+    userId: req.user.id,
+    prompt: input.prompt,
+    learningLevel: input.learningLevel,
+    coverage: input.coverage,
+    clarifications: input.clarifications,
+    freeText: input.freeText,
+  });
   await guides.incrementGuidesCreatedCount(req.user.id);
   await guides.setNeedsReview(guideId, true);
-  generateOutlineInBackground({ guideId, prompt: input.prompt, learningLevel: input.learningLevel, coverage: input.coverage });
+  generateOutlineInBackground({
+    guideId,
+    prompt: input.prompt,
+    learningLevel: input.learningLevel,
+    coverage: input.coverage,
+    clarifications: input.clarifications,
+    freeText: input.freeText,
+  });
   res.json({ guideId });
 }));
 
@@ -215,6 +253,67 @@ router.post('/:guideId/extend', asyncHandler(async (req, res, next) => {
   });
 
   res.json({ sections });
+}));
+
+router.post('/:guideId/refine', asyncHandler(async (req, res, next) => {
+  const { guideId } = req.params;
+  const input = refineGuideSchema.parse(req.body);
+
+  const guide = await guides.findOwnedGuideForUser(guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+  if (!guide.needsReview) {
+    const error = new Error('Guide is already finalized.');
+    error.status = 400;
+    return next(error);
+  }
+
+  const existingSections = guide.outline?.sections ?? [];
+
+  const { newSections, insertAfterIndex } = await ai.refineOutline({
+    guideTitle: guide.title,
+    existingSections,
+    userPrompt: input.userPrompt,
+    learningLevel: guide.learningLevel,
+    coverage: guide.coverage,
+  });
+
+  const clampedIdx = Math.max(-1, Math.min(insertAfterIndex, existingSections.length - 1));
+  const spliceAt = clampedIdx + 1;
+
+  const updatedSections = [
+    ...existingSections.slice(0, spliceAt),
+    ...newSections,
+    ...existingSections.slice(spliceAt),
+  ];
+
+  const newSectionIndices = newSections.map((_, i) => spliceAt + i);
+
+  const updatedOutline = { ...(guide.outline ?? {}), sections: updatedSections };
+
+  const topicObjects = updatedSections.map((section, index) => ({
+    id: ids.topicId(),
+    guideId,
+    position: index + 1,
+    title: section.title,
+    description: section.description,
+  }));
+
+  await guides.replaceGuideTopics({
+    guideId,
+    outlineJson: JSON.stringify(updatedOutline),
+    topics: topicObjects,
+  });
+
+  const topicsByPosition = {};
+  topicObjects.forEach((t) => { topicsByPosition[t.position] = t.id; });
+  await subtopicsDb.initSubtopicsForGuide(updatedSections, topicsByPosition);
+
+  const updatedGuide = await guides.findGuideForUser(guideId, req.user.id);
+  res.json({ guide: await guideWithTopics(updatedGuide, req.user.id), newSectionIndices });
 }));
 
 router.post('/:guideId/finalize', asyncHandler(async (req, res, next) => {

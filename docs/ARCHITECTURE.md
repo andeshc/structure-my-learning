@@ -2,6 +2,41 @@
 
 Data flow, types, and module contracts for the lesson pipeline. Prompt bodies are in `specs/generation-review-prompts.md`; config values in `CONFIG.md`. This doc is the implementation contract.
 
+## Guide creation flow
+
+```
+/guides/new  →  user enters prompt + learningLevel + coverage
+     │
+     │  handleSubmit (navigate only, no API call)
+     ▼
+/guides/new/clarify  ─────────────────────────────────────────────────
+     │                                                                 │
+     │  POST /api/guides/clarifying-questions                          │
+     │  { prompt, learningLevel, coverage }                            │
+     │                                                                 │
+     │  ← { skip: true }   → auto-submit with clarifications: []       │
+     │  ← { skip: false,                                               │
+     │       questions: [...] }  → user picks answers                  │
+     │                                                                 │
+     │  "Generate" / "Skip & generate"                                 │
+     ▼
+POST /api/guides
+{ prompt, learningLevel, coverage, clarifications?, freeText? }
+     │
+     ├─ createPendingGuide (persists clarifications + free_text to DB)
+     ├─ generateOutlineInBackground (fires & forgets)
+     │      └─ ai.streamOutline — appends "Learner clarifications" block
+     │                            to user prompt when clarifications present
+     └─ res.json({ guideId })
+          │
+          ▼
+     /guides/:guideId  (polling for outline completion)
+```
+
+**Endpoint:** `POST /api/guides/clarifying-questions` — auth required, body validated by `clarifyingQuestionsRequestSchema`. Calls `ai.generateClarifyingQuestions` which uses `server/src/prompts/clarifying-questions-prompt.md`. Returns `{ skip: boolean, reason?, questions: [...] }`.
+
+**Prompt spec:** `server/src/prompts/clarifying-questions-prompt.md` — same `## Section Name` structure as `guide-generation-prompt.md`, parsed by `parsePromptSections` in `ai.service.js`.
+
 ## Data flow
 
 ```

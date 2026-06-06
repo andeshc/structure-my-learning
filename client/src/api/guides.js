@@ -11,6 +11,13 @@ export function createGuide(payload) {
   });
 }
 
+export function fetchClarifyingQuestions(payload) {
+  return apiRequest('/api/guides/clarifying-questions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getGuide(guideId) {
   return apiRequest(`/api/guides/${guideId}`);
 }
@@ -40,6 +47,13 @@ export function getGuideOutlineStatus(guideId) {
 
 export function extendGuide(guideId, userPrompt) {
   return apiRequest(`/api/guides/${guideId}/extend`, {
+    method: 'POST',
+    body: JSON.stringify({ userPrompt }),
+  });
+}
+
+export function refineGuide(guideId, userPrompt) {
+  return apiRequest(`/api/guides/${guideId}/refine`, {
     method: 'POST',
     body: JSON.stringify({ userPrompt }),
   });
