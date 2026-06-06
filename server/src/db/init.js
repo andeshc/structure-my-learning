@@ -77,6 +77,12 @@ async function initDb() {
     await query(`ALTER TABLE guides ADD COLUMN tokens_out INTEGER NOT NULL DEFAULT 0`);
     await query(`ALTER TABLE guides ADD COLUMN cost_usd NUMERIC(10,6) NOT NULL DEFAULT 0`);
   }
+  if (gc.length && !gc.includes('clarifications')) {
+    await query(`ALTER TABLE guides ADD COLUMN clarifications JSONB`);
+  }
+  if (gc.length && !gc.includes('free_text')) {
+    await query(`ALTER TABLE guides ADD COLUMN free_text TEXT`);
+  }
   // Allow guides.user_id to be NULL for tombstoned guides (owner deleted, adopters retain access)
   if (gc.length) {
     await query(`ALTER TABLE guides ALTER COLUMN user_id DROP NOT NULL`);

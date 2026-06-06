@@ -12,6 +12,11 @@ const guidePromptTemplate = fs.readFileSync(
   'utf8'
 );
 
+const clarifyingQuestionsPromptTemplate = fs.readFileSync(
+  path.join(__dirname, '../prompts/clarifying-questions-prompt.md'),
+  'utf8'
+);
+
 function parsePromptSections(markdown) {
   const sections = {};
   const lines = markdown.split('\n');
@@ -33,6 +38,7 @@ function parsePromptSections(markdown) {
 }
 
 const guidePromptSections = parsePromptSections(guidePromptTemplate);
+const clarifyingQuestionsPromptSections = parsePromptSections(clarifyingQuestionsPromptTemplate);
 
 const learningLevelGuidance = {
   early_learner:      'Very young child (ages 3–5); use the simplest words, one idea at a time, no assumed background.',
@@ -214,15 +220,30 @@ HTML structure and component patterns:
 
 const fallbackIllustrationPath = '/static/guide-illustrations/generic-guide.svg';
 
+const clarifyingQuestionsSchema = z.object({
+  skip: z.boolean(),
+  reason: z.string().nullable(),
+  questions: z.array(z.object({
+    id: z.string().min(1).max(40),
+    question: z.string().min(1).max(160),
+    rationale: z.string().max(200).nullable(),
+    allowMultiple: z.boolean(),
+    options: z.array(z.object({
+      id: z.string().min(1).max(40),
+      label: z.string().min(1).max(80),
+    })).min(2).max(6),
+  })).max(5),
+});
+
 let testMocks = {};
 
 function setAiMocks(mocks) {
   testMocks = mocks || {};
 }
 
-function streamOutline({ prompt, learningLevel, coverage }) {
+function streamOutline({ prompt, learningLevel, coverage, clarifications, freeText }) {
   if (testMocks.generateOutline) {
-    const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, learningLevel, coverage }))
+    const outlinePromise = Promise.resolve(testMocks.generateOutline({ prompt, learningLevel, coverage, clarifications, freeText }))
       .then((r) => outlineSchema.parse(r));
     return {
       partialObjectStream: (async function* () { yield await outlinePromise; })(),
@@ -254,13 +275,19 @@ Additional output rules:
 - Do not include content lessons yet.
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.
-- For "illustrationPrompts": follow the illustration guidance in the learner profile above. When generating prompts, describe the visual composition, key elements, labels, and layout in full. Generate at most ${maxImages} prompt(s) per subtopic.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}`;
+- For "illustrationPrompts": follow the illustration guidance in the learner profile above. When generating prompts, describe the visual composition, key elements, labels, and layout in full. Generate at most ${maxImages} prompt(s) per subtopic.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}
+- If a "Learner clarifications" block is present in the user prompt, treat its content as authoritative refinements of the learning goal — let it shape topic selection, emphasis, and examples.`;
 
-  const userPrompt = guidePromptSections['User Prompt']
+  let userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
     .replace('`{{LEARNING_LEVEL}}`', learningLevel)
     .replace('`{{COVERAGE}}`', coverage);
 
+  if (clarifications?.length > 0 || freeText) {
+    const lines = (clarifications || []).map((c) => `- ${c.question}: ${c.answers.join(', ')}`);
+    if (freeText) lines.push(`Additional notes: ${freeText}`);
+    userPrompt += `\n\nLearner clarifications (treat as authoritative refinements of the learning goal):\n${lines.join('\n')}`;
+  }
 
   if (getObjectMode() === 'tool') {
     const resultPromise = generateObject({
@@ -277,6 +304,38 @@ Additional output rules:
     };
   }
   return streamObject({ model: getGuideModel(), schema: outlineSchema, system, prompt: userPrompt });
+}
+
+async function generateClarifyingQuestions({ prompt, learningLevel, coverage }) {
+  if (testMocks.generateClarifyingQuestions) {
+    return clarifyingQuestionsSchema.parse(
+      await testMocks.generateClarifyingQuestions({ prompt, learningLevel, coverage })
+    );
+  }
+
+  const system = `${clarifyingQuestionsPromptSections['System Prompt']}\n\n${clarifyingQuestionsPromptSections['Instructions']}`;
+  const userPrompt = clarifyingQuestionsPromptSections['User Prompt']
+    .replace('`{{SUBJECT}}`', `"${prompt}"`)
+    .replace('`{{LEARNING_LEVEL}}`', learningLevel)
+    .replace('`{{COVERAGE}}`', coverage);
+
+  const { object, usage } = await generateObject({
+    model: getGuideModel(),
+    schema: clarifyingQuestionsSchema,
+    mode: getObjectMode(),
+    system,
+    prompt: userPrompt,
+  });
+
+  try {
+    const { estimateCost } = require('./cost-rates');
+    const { tokensIn, tokensOut, costUsd } = estimateCost(usage, config.anthropicGuideModel || config.openaiGuideModel);
+    console.log(`[cost] clarifying-questions in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);
+  } catch (err) {
+    console.warn('[cost] failed to log clarifying-questions cost:', err.message);
+  }
+
+  return object;
 }
 
 function guideIllustrationPrompt({ outline, prompt }) {
@@ -557,6 +616,7 @@ module.exports = {
   learningLevelGuidance,
   chatWithTutor,
   generateAdditionalSections,
+  generateClarifyingQuestions,
   generateGuideIllustration,
   refineOutline,
   streamOutline,
