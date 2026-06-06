@@ -45,6 +45,13 @@ export function extendGuide(guideId, userPrompt) {
   });
 }
 
+export function refineGuide(guideId, userPrompt) {
+  return apiRequest(`/api/guides/${guideId}/refine`, {
+    method: 'POST',
+    body: JSON.stringify({ userPrompt }),
+  });
+}
+
 export function finalizeGuide(guideId, extraSections) {
   return apiRequest(`/api/guides/${guideId}/finalize`, {
     method: 'POST',

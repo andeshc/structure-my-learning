@@ -488,6 +488,33 @@ Importance: ${item.importance}${item.details && item.details.length > 0 ? `\nKey
   return _streamLesson({ baseContext, onEvent });
 }
 
+async function refineOutline({ guideTitle, existingSections, userPrompt, learningLevel, coverage }) {
+  const sectionSummary = existingSections.map((s, i) =>
+    `Section ${i + 1}: "${s.title}" — ${s.description}\n   Subtopics: ${s.items?.map((st) => `"${st.title}"`).join(', ') || 'none'}`
+  ).join('\n\n');
+
+  const { object } = await generateObject({
+    model: getGuideModel(),
+    schema: z.object({
+      newSections: z.array(outlineSectionSchema).min(1).max(20),
+      insertAfterIndex: z.number().int().min(-1),
+    }),
+    mode: getObjectMode(),
+    system: `You are StructureMyLearning's curriculum designer. A user wants to add new sections to an existing guide outline. Return ONLY the new sections to insert, plus insertAfterIndex — the 0-based index of the existing section after which they should be inserted (-1 = before all existing sections). Do NOT reproduce existing sections in your output.`,
+    prompt: `Guide title: "${guideTitle}"
+${buildLearnerProfileBlock(learningLevel, coverage)}
+
+Existing sections (context only — do NOT reproduce these in your output):
+${sectionSummary}
+
+User's request: "${userPrompt}"
+
+Return only the new sections to add and the insertAfterIndex indicating where they fit best in the learning progression.`,
+  });
+
+  return { newSections: object.newSections, insertAfterIndex: object.insertAfterIndex };
+}
+
 async function generateAdditionalSections({ guideTitle, existingSections, userPrompt, learningLevel, coverage }) {
   const existingTitles = existingSections.map((s) => s.title).join('\n- ');
 
@@ -531,6 +558,7 @@ module.exports = {
   chatWithTutor,
   generateAdditionalSections,
   generateGuideIllustration,
+  refineOutline,
   streamOutline,
   streamSubtopicContent,
   setAiMocks,

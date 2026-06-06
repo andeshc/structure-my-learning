@@ -1,17 +1,15 @@
 import {
   ArrowLeft,
   CheckCircle,
-  ChevronLeft,
   Layers,
   Link2,
-  PlusCircle,
   Share2,
   Trash2,
   Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { deleteGuide, developGuide, extendGuide, finalizeGuide, getGuide, getGuideOutlineStatus, toggleSharing } from '../api/guides';
+import { deleteGuide, developGuide, finalizeGuide, getGuide, getGuideOutlineStatus, refineGuide, toggleSharing } from '../api/guides';
 import LoadingPanel from '../components/LoadingPanel';
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
@@ -75,233 +73,181 @@ function SectionSkeleton() {
   );
 }
 
-function OutlinePollingView({ guide, onReady, onFailed }) {
-  const navigate = useNavigate();
-  const [sections, setSections] = useState(guide.outline?.sections ?? []);
-  const [title, setTitle] = useState(guide.outline?.title ?? '');
-  const prevCountRef = useRef(sections.length);
-  const bottomRef = useRef(null);
-  const userScrolledRef = useRef(false);
-  const guideId = guide.id;
-  const prompt = guide.prompt;
+// ─── Refinement panel (shown when needsReview) ───────────────────────────────
 
-  // Auto-scroll detection
-  useEffect(() => {
-    const onScroll = () => {
-      const nearBottom = window.scrollY + window.innerHeight >= document.body.scrollHeight - 120;
-      userScrolledRef.current = !nearBottom;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+function RefinementPanel({ onRefine, isRefining, onFinalize, isFinalizing, disabled }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
 
-  const visibleCount = sections.filter((s) => s.title?.trim()).length;
-
-  // Scroll to bottom when new section arrives
-  useEffect(() => {
-    if (!userScrolledRef.current) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [visibleCount]);
-
-  // Polling loop
-  useEffect(() => {
-    let stopped = false;
-
-    async function poll() {
-      try {
-        const data = await getGuideOutlineStatus(guideId);
-        if (stopped) return;
-
-        const incoming = data.outline?.sections ?? [];
-        if (incoming.length > prevCountRef.current) {
-          prevCountRef.current = incoming.length;
-          setSections(incoming);
-          if (data.outline?.title) setTitle(data.outline.title);
-        }
-
-        if (data.status === 'ready') {
-          stopped = true;
-          const full = await getGuide(guideId);
-          onReady(full.guide);
-          return;
-        }
-        if (data.status === 'failed') {
-          stopped = true;
-          const full = await getGuide(guideId);
-          onFailed(full.guide);
-          return;
-        }
-      } catch { /* ignore transient poll errors */ }
-    }
-
-    const timer = setInterval(poll, 500);
-    poll(); // immediate first tick
-    return () => { stopped = true; clearInterval(timer); };
-  }, [guideId, onReady, onFailed]);
-
-  const visibleSections = sections.filter((s) => s.title?.trim());
-  const progressPct = visibleSections.length === 0
-    ? 8
-    : Math.min(90, Math.round((visibleSections.length / 5) * 85) + 8);
-
-  return (
-    <div className="mx-auto w-full max-w-2xl pt-8">
-      <style>{`@keyframes sectionIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }`}</style>
-
-      <button
-        onClick={() => navigate('/guides/new')}
-        className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700"
-      >
-        <ChevronLeft size={15} />
-        Change prompt
-      </button>
-
-      <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Building your guide</p>
-      <p className="mt-2 text-xl font-semibold leading-snug text-slate-800 line-clamp-2">"{prompt}"</p>
-
-      <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full rounded-full bg-teal-600"
-          style={{ width: `${progressPct}%`, transition: 'width 0.6s ease' }}
-        />
-      </div>
-      <p className="mt-2 text-xs text-slate-500">
-        {visibleSections.length === 0
-          ? 'Generating outline…'
-          : `${visibleSections.length} section${visibleSections.length === 1 ? '' : 's'} ready`}
-      </p>
-
-      {title && <h2 className="mt-8 text-2xl font-bold text-slate-950">{title}</h2>}
-
-      <div className="mt-4 flex flex-col gap-2">
-        {visibleSections.map((section, i) => (
-          <div
-            key={i}
-            className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
-            style={{ animation: 'sectionIn 0.35s ease forwards' }}
-          >
-            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-              {i + 1}
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-800">{section.title}</p>
-              {section.description && (
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-500 line-clamp-2">{section.description}</p>
-              )}
-            </div>
-          </div>
-        ))}
-        {Array.from({ length: Math.max(1, 5 - visibleSections.length) }).map((_, i) => (
-          <SectionSkeleton key={`sk-${i}`} />
-        ))}
-      </div>
-
-      <div ref={bottomRef} />
-    </div>
-  );
-}
-
-// ─── Review view (status === 'ready' && needsReview) ─────────────────────────
-
-function ReviewView({ guide, onFinalize, isFinalizing }) {
-  const [extraSections, setExtraSections] = useState([]);
-  const [addMoreText, setAddMoreText] = useState('');
-  const [isExtending, setIsExtending] = useState(false);
-  const [extendError, setExtendError] = useState('');
-
-  const originalSections = guide.outline?.sections ?? [];
-
-  async function handleExtend(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!addMoreText.trim()) return;
-    setIsExtending(true);
-    setExtendError('');
+    if (!text.trim()) return;
+    setError('');
     try {
-      const { sections } = await extendGuide(guide.id, addMoreText.trim());
-      setExtraSections((prev) => [...prev, ...sections]);
-      setAddMoreText('');
+      await onRefine(text.trim());
+      setText('');
     } catch (err) {
-      setExtendError(err.message || 'Failed to generate sections.');
-    } finally {
-      setIsExtending(false);
+      setError(err.message || 'Failed to refine the outline.');
     }
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl pt-8">
-      <div className="mb-6 flex items-center gap-3">
-        <CheckCircle className="shrink-0 text-teal-700" size={22} />
-        <div>
-          <p className="font-semibold text-slate-900">Your guide is ready</p>
-          <p className="mt-0.5 text-sm text-slate-500 line-clamp-1">"{guide.prompt}"</p>
+    <div className={`mt-4 rounded-xl border border-teal-200 bg-white p-4 shadow-sm transition-opacity ${disabled ? 'pointer-events-none opacity-40' : ''}`}>
+      <p className="text-sm font-semibold text-slate-800">Review your guide outline below</p>
+      <p className="mt-0.5 text-xs text-slate-500">
+        Describe any changes you'd like — we'll update the outline for you. Or finalize it as-is.
+      </p>
+      <form onSubmit={handleSubmit} className="mt-3">
+        <textarea
+          className="min-h-[60px] w-full resize-none rounded-md border border-charcoal/15 px-3 py-2 text-sm outline-none focus:border-teal-700"
+          placeholder="e.g. Add a section on practical applications between Fundamentals and Advanced Topics"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          disabled={isRefining || isFinalizing}
+          rows={2}
+          maxLength={500}
+        />
+        <div className="mt-2 flex items-center justify-between gap-2">
+          {text.trim() ? (
+            <button
+              type="submit"
+              disabled={isRefining || isFinalizing}
+              className="rounded-md border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-50"
+            >
+              {isRefining ? 'Refining…' : 'Refine'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onFinalize}
+              disabled={isFinalizing || isRefining}
+              className="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-60"
+            >
+              {isFinalizing ? 'Finalizing…' : 'Finalize Guide →'}
+            </button>
+          )}
         </div>
-      </div>
+      </form>
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
 
-      <div className="flex flex-col gap-2">
-        {originalSections.map((section, i) => (
-          <div key={i} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-              {i + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-800">{section.title}</p>
-              {section.description && (
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-500 line-clamp-2">{section.description}</p>
-              )}
-            </div>
-          </div>
-        ))}
-        {extraSections.map((section, i) => (
-          <div key={`extra-${i}`} className="flex items-start gap-3 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3">
-            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal-200 text-xs font-bold text-teal-800">
-              {originalSections.length + i + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-slate-800">{section.title}</p>
-                <span className="rounded-full border border-teal-200 bg-teal-100 px-2 py-0.5 text-[10px] font-semibold text-teal-700">
-                  Added by you
-                </span>
-              </div>
-              {section.description && (
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-500 line-clamp-2">{section.description}</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+// ─── Building panel (shown while outline streams) ────────────────────────────
 
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-4">
-        <p className="mb-3 text-sm font-medium text-slate-700">Want to add anything else to this guide?</p>
-        <form onSubmit={handleExtend} className="flex gap-2">
-          <input
-            className="flex-1 rounded-md border border-charcoal/15 px-3 py-2 text-sm outline-none focus:border-teal-700"
-            placeholder="e.g. add a section on practical applications"
-            value={addMoreText}
-            onChange={(e) => setAddMoreText(e.target.value)}
-            disabled={isExtending}
-            maxLength={300}
-          />
-          <button
-            type="submit"
-            disabled={isExtending || !addMoreText.trim()}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-50"
-          >
-            <PlusCircle size={15} />
-            {isExtending ? 'Adding…' : 'Add'}
-          </button>
-        </form>
-        {extendError && <p className="mt-2 text-xs text-red-600">{extendError}</p>}
+function BuildingPanel({ visibleCount }) {
+  const pct = visibleCount === 0 ? 8 : Math.min(90, Math.round((visibleCount / 5) * 85) + 8);
+  return (
+    <div className="mt-4 rounded-xl border border-teal-200 bg-white p-4 shadow-sm">
+      <p className="text-sm font-semibold text-slate-800">Building your guide outline…</p>
+      <p className="mt-0.5 text-xs text-slate-500">
+        {visibleCount === 0 ? 'Generating outline…' : `${visibleCount} section${visibleCount === 1 ? '' : 's'} ready`}
+      </p>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full rounded-full bg-teal-600" style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={() => onFinalize(extraSections)}
-          disabled={isFinalizing}
-          className="rounded-md bg-teal-700 px-5 py-2.5 font-medium text-white hover:bg-teal-800 disabled:opacity-60"
-        >
-          {isFinalizing ? 'Starting…' : 'Finalize guide →'}
+// ─── Inline header refinement ────────────────────────────────────────────────
+
+function InlineHeaderRefinement({ onRefine, isRefining, onFinalize, isFinalizing }) {
+  const [text, setText] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setError('');
+    try { await onRefine(text.trim()); setText(''); setExpanded(false); }
+    catch (err) { setError(err.message || 'Failed to refine.'); }
+  }
+
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-4">
+      <p className="text-sm font-semibold text-slate-700">Does this outline look right?</p>
+      <p className="mt-0.5 text-xs text-slate-400">Finalize to start generating lessons, or suggest a change first.</p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button onClick={onFinalize} disabled={isFinalizing || isRefining || expanded} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60">
+          {isFinalizing ? 'Finalizing…' : 'Finalize Guide →'}
+        </button>
+        <button type="button" onClick={() => setExpanded((v) => !v)} disabled={isRefining || isFinalizing} className="text-sm font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline">
+          {expanded ? 'Never mind' : 'Suggest a change'}
         </button>
       </div>
+      {expanded && (
+        <form onSubmit={handleSubmit} className="mt-3">
+          <textarea
+            className="min-h-[60px] w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-teal-500"
+            placeholder="e.g. Add a section on practical applications between Fundamentals and Advanced Topics"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={isRefining || isFinalizing}
+            rows={2}
+            maxLength={500}
+            autoFocus
+          />
+          <div className="mt-2">
+            <button type="submit" disabled={!text.trim() || isRefining} className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-100 disabled:opacity-50">
+              {isRefining ? 'Refining…' : 'Refine outline'}
+            </button>
+          </div>
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+        </form>
+      )}
+    </div>
+  );
+}
+
+// ─── Trailing action card ────────────────────────────────────────────────────
+
+function TrailingRefinementCard({ onRefine, isRefining, onFinalize, isFinalizing }) {
+  const [text, setText] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setError('');
+    try { await onRefine(text.trim()); setText(''); setExpanded(false); }
+    catch (err) { setError(err.message || 'Failed to refine.'); }
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-5">
+      <p className="text-sm font-semibold text-slate-700">Does this outline look right?</p>
+      <p className="mt-0.5 text-xs text-slate-400">Finalize to start generating lessons, or suggest a change first.</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button onClick={onFinalize} disabled={isFinalizing || isRefining || expanded} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60">
+          {isFinalizing ? 'Finalizing…' : 'Finalize Guide →'}
+        </button>
+        <button type="button" onClick={() => setExpanded((v) => !v)} disabled={isRefining || isFinalizing} className="text-sm font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline">
+          {expanded ? 'Never mind' : 'Suggest a change'}
+        </button>
+      </div>
+      {expanded && (
+        <form onSubmit={handleSubmit} className="mt-3">
+          <textarea
+            className="min-h-[60px] w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-teal-500"
+            placeholder="e.g. Add a section on practical applications between Fundamentals and Advanced Topics"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={isRefining || isFinalizing}
+            rows={2}
+            maxLength={500}
+            autoFocus
+          />
+          <div className="mt-2">
+            <button type="submit" disabled={!text.trim() || isRefining} className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-100 disabled:opacity-50">
+              {isRefining ? 'Refining…' : 'Refine outline'}
+            </button>
+          </div>
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+        </form>
+      )}
     </div>
   );
 }
@@ -359,7 +305,7 @@ function SubtopicStatusButton({ item, topicId, subtopicIndex, onRetry }) {
   return <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">Pending</span>;
 }
 
-function ItemGroup({ items, topicId, onRetry }) {
+function ItemGroup({ items, topicId, onRetry, isReviewMode }) {
   return (
     <ul className="divide-y divide-slate-100">
       {items.map((item, i) => (
@@ -371,7 +317,7 @@ function ItemGroup({ items, topicId, onRetry }) {
                 <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
               )}
             </div>
-            {topicId && <SubtopicStatusButton item={item} topicId={topicId} subtopicIndex={i} onRetry={onRetry} />}
+            {!isReviewMode && topicId && <SubtopicStatusButton item={item} topicId={topicId} subtopicIndex={i} onRetry={onRetry} />}
           </div>
         </li>
       ))}
@@ -379,7 +325,7 @@ function ItemGroup({ items, topicId, onRetry }) {
   );
 }
 
-function TopicRow({ section, sectionIndex, topic, isNext, onRetry }) {
+function TopicRow({ section, sectionIndex, topic, isNext, isNew, onRetry, isReviewMode }) {
   const hasSubtopics = section.items && section.items.length > 0;
   const label = statusLabel(topic, isNext);
 
@@ -387,7 +333,9 @@ function TopicRow({ section, sectionIndex, topic, isNext, onRetry }) {
     <div
       id={`section-${sectionIndex + 1}`}
       className={`scroll-mt-8 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border transition-all ${
-        isNext ? 'border-teal-200 bg-teal-50/40 shadow-sm' : 'border-slate-200 bg-white'
+        isNew ? 'border-blue-300 bg-blue-50/40 shadow-sm'
+        : isNext ? 'border-teal-200 bg-teal-50/40 shadow-sm'
+        : 'border-slate-200 bg-white'
       }`}
     >
       <div className="flex items-start gap-4 p-4">
@@ -396,6 +344,8 @@ function TopicRow({ section, sectionIndex, topic, isNext, onRetry }) {
             ? 'bg-emerald-100 text-emerald-700'
             : isNext
             ? 'bg-teal-100 text-teal-700'
+            : isNew
+            ? 'bg-blue-100 text-blue-700'
             : 'bg-slate-200 text-slate-700'
         }`}>
           {sectionIndex + 1}
@@ -404,7 +354,12 @@ function TopicRow({ section, sectionIndex, topic, isNext, onRetry }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-slate-950">{section.title}</span>
-            {label && (
+            {isNew && (
+              <span className="inline-flex h-5 shrink-0 translate-y-px items-center rounded bg-blue-100 px-1.5 text-[10px] font-semibold text-blue-700">
+                Added
+              </span>
+            )}
+            {!isNew && label && (
               <span className={`inline-flex h-5 shrink-0 translate-y-px items-center rounded px-1.5 text-[10px] font-semibold ${statusClass(topic, isNext)}`}>
                 {label}
               </span>
@@ -416,7 +371,7 @@ function TopicRow({ section, sectionIndex, topic, isNext, onRetry }) {
 
       {hasSubtopics && (
         <div className="border-t border-slate-100 px-4 pb-3 pt-0">
-          <ItemGroup items={section.items} topicId={topic?.id} onRetry={onRetry} />
+          <ItemGroup items={section.items} topicId={topic?.id} onRetry={onRetry} isReviewMode={isReviewMode} />
         </div>
       )}
     </div>
@@ -433,11 +388,20 @@ export default function GuideDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
+  const [newSectionIndices, setNewSectionIndices] = useState([]);
   const [isPublic, setIsPublic] = useState(false);
   const [shareUrl, setShareUrl] = useState(null);
   const [isTogglingShare, setIsTogglingShare] = useState(false);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
-
+  const [streamingSections, setStreamingSections] = useState([]);
+  const [streamingTitle, setStreamingTitle] = useState('');
+  const [streamingTags, setStreamingTags] = useState([]);
+  const prevSectionCountRef = useRef(0);
+  const bottomRef = useRef(null);
+  const userScrolledRef = useRef(false);
+  const scrollToBottomAfterTransitionRef = useRef(false);
+  const scrollToSectionRef = useRef(null);
   useEffect(() => {
     let cancelled = false;
     async function fetchGuide() {
@@ -481,8 +445,72 @@ export default function GuideDetailPage() {
     return () => clearInterval(timer);
   }, [guide?.isBeingDeveloped, guideId]);
 
+  // Scroll detection while streaming
+  useEffect(() => {
+    if (guide?.status !== 'pending') return;
+    const onScroll = () => {
+      const nearBottom = window.scrollY + window.innerHeight >= document.body.scrollHeight - 120;
+      userScrolledRef.current = !nearBottom;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [guide?.status]);
+
+  // Outline streaming poll
+  useEffect(() => {
+    if (!guide || guide.status !== 'pending') return;
+    const initial = guide.outline?.sections ?? [];
+    setStreamingSections(initial);
+    prevSectionCountRef.current = initial.length;
+    let stopped = false;
+
+    async function poll() {
+      try {
+        const data = await getGuideOutlineStatus(guide.id);
+        if (stopped) return;
+        const incoming = data.outline?.sections ?? [];
+        const newCount = incoming.length;
+        if (newCount !== prevSectionCountRef.current) prevSectionCountRef.current = newCount;
+        setStreamingSections(incoming);
+        if (data.outline?.title) setStreamingTitle(data.outline.title);
+        if (data.outline?.tags?.length) setStreamingTags(data.outline.tags);
+        if (data.status === 'ready' || data.status === 'failed') {
+          stopped = true;
+          const full = await getGuide(guide.id);
+          scrollToBottomAfterTransitionRef.current = true;
+          setGuide(full.guide);
+        }
+      } catch { /* ignore transient errors */ }
+    }
+
+    const timer = setInterval(poll, 500);
+    poll();
+    return () => { stopped = true; clearInterval(timer); };
+  }, [guide?.id, guide?.status]);
+
+  // Auto-scroll as sections arrive
+  useEffect(() => {
+    if (guide?.status !== 'pending' || userScrolledRef.current) return;
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [streamingSections.length, guide?.status]);
+
+  // Scroll to bottom when streaming completes and the full guide view renders
+  useEffect(() => {
+    if (!scrollToBottomAfterTransitionRef.current) return;
+    scrollToBottomAfterTransitionRef.current = false;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }, [guide?.status]);
+
+  // Scroll to first new section after a refinement
+  useEffect(() => {
+    if (scrollToSectionRef.current == null) return;
+    const idx = scrollToSectionRef.current;
+    scrollToSectionRef.current = null;
+    document.getElementById(`section-${idx + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [newSectionIndices]);
+
   const summary = useMemo(() => {
-    if (!guide || guide.status !== 'ready' || guide.needsReview) return null;
+    if (!guide || guide.status !== 'ready') return null;
     const completed = guide.topics.filter((topic) => topic.isCompleted).length;
     const nextTopic = guide.topics.find((topic) => !topic.isCompleted) || guide.topics[0];
     const nextIndex = nextTopic ? guide.topics.findIndex((topic) => topic.id === nextTopic.id) : -1;
@@ -508,10 +536,24 @@ export default function GuideDetailPage() {
     } catch { /* ignore */ }
   }
 
-  async function handleFinalize(extraSections) {
-    setIsFinalizing(true);
+  async function handleRefine(userPrompt) {
+    setIsRefining(true);
     try {
-      await finalizeGuide(guideId, extraSections);
+      const data = await refineGuide(guideId, userPrompt);
+      const indices = data.newSectionIndices ?? [];
+      if (indices.length > 0) scrollToSectionRef.current = indices[0];
+      setGuide(data.guide);
+      setNewSectionIndices(indices);
+    } finally {
+      setIsRefining(false);
+    }
+  }
+
+  async function handleFinalize() {
+    setIsFinalizing(true);
+    setNewSectionIndices([]);
+    try {
+      await finalizeGuide(guideId, []);
       const data = await getGuide(guideId);
       setGuide(data.guide);
     } finally {
@@ -569,32 +611,6 @@ export default function GuideDetailPage() {
     );
   }
 
-  // Outline is still generating — show polling/streaming view
-  if (guide.status === 'pending') {
-    return (
-      <OutlinePollingView
-        guide={guide}
-        onReady={(readyGuide) => setGuide(readyGuide)}
-        onFailed={(failedGuide) => setGuide(failedGuide)}
-      />
-    );
-  }
-
-  // Outline is complete but user hasn't finalised yet — show review phase
-  if (guide.needsReview) {
-    return (
-      <ReviewView
-        guide={guide}
-        onFinalize={handleFinalize}
-        isFinalizing={isFinalizing}
-      />
-    );
-  }
-
-  if (!summary) {
-    return <LoadingPanel title="Loading guide" detail="Fetching the stored outline." />;
-  }
-
   return (
     <section>
       {/* Top bar */}
@@ -632,180 +648,265 @@ export default function GuideDetailPage() {
         )}
       </div>
 
-      {/* Hero */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-
-        {/* ── Top: guide details + illustration ── */}
-        {/* Mobile: content then full-width image stacked */}
-        {/* Desktop: fixed h-64 grid — left content, right image at exact 3:2 (384×256) */}
-        <div className="lg:grid lg:h-64 lg:grid-cols-[minmax(0,1fr)_384px]">
-
-          {/* Left / top: metadata */}
-          <div className="flex flex-col gap-3 p-5 lg:overflow-hidden lg:p-6">
-            <div className="flex flex-wrap items-center gap-2">
-              {guide.isAdopted && guide.ownerName ? (
-                <span className="text-xs font-bold uppercase tracking-wide text-teal-700">
-                  By {guide.ownerName}
-                </span>
-              ) : (
-                <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
-                  {formatLearningLevel(guide.learningLevel)}
-                </span>
-              )}
-              {guide.coverage && guide.coverage !== 'balanced' && (
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {guide.coverage.charAt(0).toUpperCase() + guide.coverage.slice(1)}
-                </span>
-              )}
-              {summary.tags.map((tag) => (
-                <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <h1 className="line-clamp-2 text-2xl font-bold leading-tight text-slate-950 lg:text-3xl">{guide.title}</h1>
-
-            <div className="max-w-sm">
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-700">{summary.subtopicPct}% complete</span>
-                <span className="text-xs text-slate-400">{summary.completed} of {summary.total} topics done</span>
+      {(guide.status === 'pending' || guide.needsReview) ? (
+        /* Compact review-mode header */
+        <div className="rounded-xl border border-slate-200 bg-white p-4 lg:p-5">
+          <div className="flex items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {guide.isAdopted && guide.ownerName ? (
+                  <span className="text-xs font-bold uppercase tracking-wide text-teal-700">By {guide.ownerName}</span>
+                ) : (
+                  <span className="text-xs font-bold uppercase tracking-wide text-blue-600">{formatLearningLevel(guide.learningLevel)}</span>
+                )}
+                {guide.coverage && guide.coverage !== 'balanced' && (
+                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                    {guide.coverage.charAt(0).toUpperCase() + guide.coverage.slice(1)}
+                  </span>
+                )}
+                {(guide.status === 'pending' ? streamingTags : (summary?.tags ?? [])).map((tag) => (
+                  <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{tag}</span>
+                ))}
               </div>
-              <progress className="h-2 w-full overflow-hidden rounded-full" max="100" value={summary.subtopicPct}>
-                {summary.subtopicPct}%
-              </progress>
+              <h1 className="mt-1.5 line-clamp-2 text-xl font-bold leading-tight text-slate-950 lg:text-2xl">
+                {guide.status === 'pending' ? (streamingTitle || guide.title) : guide.title}
+              </h1>
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              {summary.nextTopic && (
-                <button
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                  onClick={() => document.getElementById(`section-${summary.nextIndex + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                >
-                  <Layers size={17} />
-                  {summary.subtopicPct === 100 ? 'Review guide' : summary.completed === 0 ? 'Start learning' : 'Continue'}
-                </button>
-              )}
-              {!guide.isAdopted && guide.outline?.sections?.some((s) => s.items?.some((item) => item.devStatus === 'pending' || item.devStatus === 'failed')) && (
-                <button
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700"
-                  onClick={handleDevelop}
-                >
-                  {guide.isBeingDeveloped ? 'Developing…' : 'Resume development'}
-                </button>
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#fbf4e8]">
+              {guide.illustrationUrl ? (
+                <img className="h-full w-full object-cover" src={guide.illustrationUrl} alt="" />
+              ) : (
+                <FallbackIllustration title={guide.title} />
               )}
             </div>
           </div>
-
-          {/* Right / bottom: illustration */}
-          {/* Mobile: full width at correct 3:2 ratio */}
-          {/* Desktop: fills the 384×256 column exactly = 3:2 */}
-          <div className="aspect-[3/2] border-t border-slate-100 bg-[#fbf4e8] lg:aspect-auto lg:border-l lg:border-t-0">
-            {guide.illustrationUrl ? (
-              <img className="h-full w-full object-cover" src={guide.illustrationUrl} alt={`${guide.title} illustration`} />
-            ) : (
-              <FallbackIllustration title={guide.title} />
-            )}
-          </div>
+          {guide.needsReview && (
+            <InlineHeaderRefinement
+              onRefine={handleRefine}
+              isRefining={isRefining}
+              onFinalize={handleFinalize}
+              isFinalizing={isFinalizing}
+            />
+          )}
         </div>
+      ) : (
+        /* Full hero */
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
 
-        {/* ── Bottom: sharing strip — owners only ── */}
-        {/* Fixed-height row, isolated from guide content above */}
-        {!guide.isAdopted && (
-          <div className="border-t border-slate-100">
-            {isPublic ? (
-              /* Public state */
-              <div className="px-5 py-4 lg:px-6">
-                {/* Header row */}
-                <div className="flex items-center justify-between gap-3">
+          <div className="lg:grid lg:h-64 lg:grid-cols-[minmax(0,1fr)_384px]">
+
+            <div className="flex flex-col gap-3 p-5 lg:overflow-hidden lg:p-6">
+              <div className="flex flex-wrap items-center gap-2">
+                {guide.isAdopted && guide.ownerName ? (
+                  <span className="text-xs font-bold uppercase tracking-wide text-teal-700">
+                    By {guide.ownerName}
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold uppercase tracking-wide text-blue-600">
+                    {formatLearningLevel(guide.learningLevel)}
+                  </span>
+                )}
+                {guide.coverage && guide.coverage !== 'balanced' && (
+                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                    {guide.coverage.charAt(0).toUpperCase() + guide.coverage.slice(1)}
+                  </span>
+                )}
+                {summary.tags.map((tag) => (
+                  <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <h1 className="line-clamp-2 text-2xl font-bold leading-tight text-slate-950 lg:text-3xl">{guide.title}</h1>
+
+              <div className="max-w-sm">
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-700">{summary.subtopicPct}% complete</span>
+                  <span className="text-xs text-slate-400">{summary.completed} of {summary.total} topics done</span>
+                </div>
+                <progress className="h-2 w-full overflow-hidden rounded-full" max="100" value={summary.subtopicPct}>
+                  {summary.subtopicPct}%
+                </progress>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {summary.nextTopic && (
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                    onClick={() => document.getElementById(`section-${summary.nextIndex + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  >
+                    <Layers size={17} />
+                    {summary.subtopicPct === 100 ? 'Review guide' : summary.completed === 0 ? 'Start learning' : 'Continue'}
+                  </button>
+                )}
+                {!guide.isAdopted && guide.outline?.sections?.some((s) => s.items?.some((item) => item.devStatus === 'pending' || item.devStatus === 'failed')) && (
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700"
+                    onClick={handleDevelop}
+                  >
+                    {guide.isBeingDeveloped ? 'Developing…' : 'Resume development'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="aspect-[3/2] border-t border-slate-100 bg-[#fbf4e8] lg:aspect-auto lg:border-l lg:border-t-0">
+              {guide.illustrationUrl ? (
+                <img className="h-full w-full object-cover" src={guide.illustrationUrl} alt={`${guide.title} illustration`} />
+              ) : (
+                <FallbackIllustration title={guide.title} />
+              )}
+            </div>
+          </div>
+
+          {!guide.isAdopted && (
+            <div className="border-t border-slate-100">
+              {isPublic ? (
+                <div className="px-5 py-4 lg:px-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-100">
+                        <CheckCircle size={16} className="text-emerald-600" />
+                      </span>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-800">Shared publicly</span>
+                          {guide.adoptionCount > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-xs font-semibold text-teal-700">
+                              <Users size={11} />
+                              {guide.adoptionCount} {guide.adoptionCount === 1 ? 'adoption' : 'adoptions'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-slate-400">Visible in Discover — anyone can adopt it</p>
+                      </div>
+                    </div>
+                    <button
+                      className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-600 disabled:opacity-50"
+                      disabled={isTogglingShare}
+                      onClick={handleShareToggle}
+                    >
+                      Make private
+                    </button>
+                  </div>
+                  {shareUrl && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="w-0 min-w-0 flex-1 truncate rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] text-slate-500">
+                        {shareUrl}
+                      </span>
+                      <button
+                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
+                        onClick={handleCopyShareLink}
+                      >
+                        <Link2 size={12} />
+                        {shareLinkCopied ? 'Copied!' : 'Copy link'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 px-5 py-4 lg:px-6">
                   <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-100">
-                      <CheckCircle size={16} className="text-emerald-600" />
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-100">
+                      <Share2 size={16} className="text-teal-700" />
                     </span>
                     <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-800">Shared publicly</span>
-                        {guide.adoptionCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-xs font-semibold text-teal-700">
-                            <Users size={11} />
-                            {guide.adoptionCount} {guide.adoptionCount === 1 ? 'adoption' : 'adoptions'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-400">Visible in Discover — anyone can adopt it</p>
+                      <p className="text-sm font-semibold text-slate-800">Share this guide</p>
+                      <p className="mt-0.5 text-xs text-slate-500">Let others discover and adopt it from the community</p>
                     </div>
                   </div>
                   <button
-                    className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-600 disabled:opacity-50"
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
                     disabled={isTogglingShare}
                     onClick={handleShareToggle}
                   >
-                    Make private
+                    <Share2 size={14} />
+                    {isTogglingShare ? 'Sharing…' : 'Share publicly'}
                   </button>
                 </div>
-                {/* URL row — full width so the URL gets maximum space */}
-                {shareUrl && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="w-0 min-w-0 flex-1 truncate rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] text-slate-500">
-                      {shareUrl}
-                    </span>
-                    <button
-                      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
-                      onClick={handleCopyShareLink}
-                    >
-                      <Link2 size={12} />
-                      {shareLinkCopied ? 'Copied!' : 'Copy link'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Private state */
-              <div className="flex items-center justify-between gap-3 px-5 py-4 lg:px-6">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-100">
-                    <Share2 size={16} className="text-teal-700" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">Share this guide</p>
-                    <p className="mt-0.5 text-xs text-slate-500">Let others discover and adopt it from the community</p>
-                  </div>
-                </div>
-                <button
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:opacity-50"
-                  disabled={isTogglingShare}
-                  onClick={handleShareToggle}
-                >
-                  <Share2 size={14} />
-                  {isTogglingShare ? 'Sharing…' : 'Share publicly'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
-      </div>
+        </div>
+      )}
+
+      {guide.status === 'pending' && (
+        <BuildingPanel visibleCount={streamingSections.filter((s) => s.title?.trim()).length} />
+      )}
+      {guide.status === 'pending' && (
+        <RefinementPanel onRefine={handleRefine} isRefining={isRefining} onFinalize={handleFinalize} isFinalizing={isFinalizing} disabled />
+      )}
 
       {/* Topic list */}
-      <div className="mt-6 grid gap-3">
-        {guide.outline.sections.map((section, sectionIndex) => (
-          <TopicRow
-            key={`${section.title}-${sectionIndex}`}
-            section={section}
-            sectionIndex={sectionIndex}
-            topic={guide.topics[sectionIndex]}
-            isNext={sectionIndex === summary.nextIndex}
-            onRetry={handleDevelop}
-          />
-        ))}
-      </div>
+      {guide.status === 'pending' ? (
+        <>
+          <style>{`@keyframes sectionIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
+          <div className="mt-6 grid gap-3">
+            {streamingSections.map((section, i) => section.title?.trim() && (
+              <div
+                key={i}
+                style={{ animation: 'sectionIn 0.35s ease both' }}
+                className="rounded-lg border border-slate-200 bg-white shadow-sm"
+              >
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800">{section.title}</p>
+                    {section.description && <p className="mt-0.5 text-xs text-slate-500">{section.description}</p>}
+                  </div>
+                </div>
+                {section.items?.some((item) => item.title?.trim()) && (
+                  <ul className="border-t border-slate-100 px-4 pb-3 pt-2 space-y-1.5">
+                    {section.items.map((item, j) => item.title?.trim() && (
+                      <li key={j} className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+                        {item.title}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+            <SectionSkeleton />
+            <SectionSkeleton />
+            <div ref={bottomRef} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="mt-6 grid gap-3">
+            {guide.outline.sections.map((section, sectionIndex) => (
+              <TopicRow
+                key={`${section.title}-${sectionIndex}`}
+                section={section}
+                sectionIndex={sectionIndex}
+                topic={guide.topics[sectionIndex]}
+                isNext={!guide.needsReview && summary && sectionIndex === summary.nextIndex}
+                isNew={guide.needsReview && newSectionIndices.includes(sectionIndex)}
+                onRetry={handleDevelop}
+                isReviewMode={guide.needsReview}
+              />
+            ))}
+          </div>
+          {guide.needsReview && (
+            <TrailingRefinementCard
+              onRefine={handleRefine}
+              isRefining={isRefining}
+              onFinalize={handleFinalize}
+              isFinalizing={isFinalizing}
+            />
+          )}
+        </>
+      )}
 
-      <p className="mt-8 flex items-center gap-1.5 text-xs text-slate-400">
+      {guide.status === 'ready' && !guide.needsReview && <p className="mt-8 flex items-center gap-1.5 text-xs text-slate-400">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
           <path d="M10 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 1ZM5.05 3.05a.75.75 0 0 1 1.06 0l1.062 1.06A.75.75 0 1 1 6.11 5.173L5.05 4.11a.75.75 0 0 1 0-1.06ZM14.95 3.05a.75.75 0 0 1 0 1.06l-1.06 1.063a.75.75 0 0 1-1.062-1.061l1.061-1.062a.75.75 0 0 1 1.06 0ZM3 9.25a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H3ZM15.5 9.25a.75.75 0 0 0 0 1.5H17a.75.75 0 0 0 0-1.5h-1.5ZM6.172 13.768a.75.75 0 0 0-1.06 1.06l1.06 1.062a.75.75 0 0 0 1.062-1.061l-1.062-1.061ZM14.89 14.828a.75.75 0 0 0-1.061-1.06l-1.062 1.06a.75.75 0 1 0 1.061 1.062l1.062-1.062ZM10 15.5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15.5ZM10 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
         </svg>
         AI-generated content — verify important information independently.
-      </p>
+      </p>}
     </section>
   );
 }

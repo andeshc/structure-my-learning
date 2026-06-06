@@ -31,6 +31,10 @@ const extendGuideSchema = z.object({
   userPrompt: z.string().trim().min(3).max(300),
 });
 
+const refineGuideSchema = z.object({
+  userPrompt: z.string().trim().min(3).max(500),
+});
+
 const finalizeGuideSchema = z.object({
   extraSections: z.array(z.object({
     title: z.string().min(1),
@@ -215,6 +219,67 @@ router.post('/:guideId/extend', asyncHandler(async (req, res, next) => {
   });
 
   res.json({ sections });
+}));
+
+router.post('/:guideId/refine', asyncHandler(async (req, res, next) => {
+  const { guideId } = req.params;
+  const input = refineGuideSchema.parse(req.body);
+
+  const guide = await guides.findOwnedGuideForUser(guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+  if (!guide.needsReview) {
+    const error = new Error('Guide is already finalized.');
+    error.status = 400;
+    return next(error);
+  }
+
+  const existingSections = guide.outline?.sections ?? [];
+
+  const { newSections, insertAfterIndex } = await ai.refineOutline({
+    guideTitle: guide.title,
+    existingSections,
+    userPrompt: input.userPrompt,
+    learningLevel: guide.learningLevel,
+    coverage: guide.coverage,
+  });
+
+  const clampedIdx = Math.max(-1, Math.min(insertAfterIndex, existingSections.length - 1));
+  const spliceAt = clampedIdx + 1;
+
+  const updatedSections = [
+    ...existingSections.slice(0, spliceAt),
+    ...newSections,
+    ...existingSections.slice(spliceAt),
+  ];
+
+  const newSectionIndices = newSections.map((_, i) => spliceAt + i);
+
+  const updatedOutline = { ...(guide.outline ?? {}), sections: updatedSections };
+
+  const topicObjects = updatedSections.map((section, index) => ({
+    id: ids.topicId(),
+    guideId,
+    position: index + 1,
+    title: section.title,
+    description: section.description,
+  }));
+
+  await guides.replaceGuideTopics({
+    guideId,
+    outlineJson: JSON.stringify(updatedOutline),
+    topics: topicObjects,
+  });
+
+  const topicsByPosition = {};
+  topicObjects.forEach((t) => { topicsByPosition[t.position] = t.id; });
+  await subtopicsDb.initSubtopicsForGuide(updatedSections, topicsByPosition);
+
+  const updatedGuide = await guides.findGuideForUser(guideId, req.user.id);
+  res.json({ guide: await guideWithTopics(updatedGuide, req.user.id), newSectionIndices });
 }));
 
 router.post('/:guideId/finalize', asyncHandler(async (req, res, next) => {
