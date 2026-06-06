@@ -9,6 +9,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import LandingPage from './pages/LandingPage';
+import ClarifyGoalPage from './pages/ClarifyGoalPage';
 import GuideDetailPage from './pages/GuideDetailPage';
 import NewGuidePage from './pages/NewGuidePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -48,6 +49,7 @@ export default function App() {
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="discover" element={<DiscoverPage />} />
                   <Route path="guides/new" element={<NewGuidePage />} />
+                  <Route path="guides/new/clarify" element={<ClarifyGoalPage />} />
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />
                   <Route path="topics/:topicId/subtopics/:position" element={<SubtopicDetailPage />} />
                   <Route path="account" element={<AccountPage />} />

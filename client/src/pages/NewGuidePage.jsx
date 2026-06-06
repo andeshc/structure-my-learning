@@ -1,7 +1,6 @@
 import { ChevronDown, Layers, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { createGuide } from '../api/guides';
 
 const youngLearners = [
   { value: 'early_learner',   label: 'Early learner',   note: 'Ages 3–5' },
@@ -126,17 +125,13 @@ export default function NewGuidePage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault();
     setError('');
     setIsSubmitting(true);
-    try {
-      const { guideId } = await createGuide({ prompt, learningLevel, coverage });
-      navigate(`/guides/${guideId}`);
-    } catch (err) {
-      setError(err.message || 'Failed to create guide.');
-      setIsSubmitting(false);
-    }
+    setTimeout(() => {
+      navigate('/guides/new/clarify', { state: { prompt, learningLevel, coverage } });
+    }, 120);
   }
 
   return (
@@ -146,7 +141,10 @@ export default function NewGuidePage() {
         Describe what you want to learn and we'll build a structured guide around it.
       </p>
 
-      <form className="mt-6" onSubmit={handleSubmit}>
+      <form
+        className={`mt-6 transition-opacity duration-150 ${isSubmitting ? 'opacity-60 pointer-events-none' : ''}`}
+        onSubmit={handleSubmit}
+      >
         {/* Primary input */}
         <div className="rounded-lg border border-charcoal/10 bg-white p-4">
           <label className="block text-sm font-semibold text-charcoal" htmlFor="prompt">
@@ -196,9 +194,18 @@ export default function NewGuidePage() {
 
         <button
           disabled={isSubmitting}
-          className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-2.5 font-medium text-white hover:bg-teal-800 disabled:opacity-60"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 font-medium text-white hover:bg-teal-800 disabled:opacity-60"
         >
-          {isSubmitting ? 'Creating…' : 'Generate Guide Outline'}
+          {isSubmitting ? (
+            <>
+              Preparing a few quick questions
+              <span className="flex items-center gap-0.5">
+                <span className="h-1 w-1 rounded-full bg-white/80 animate-pulse" style={{ animationDelay: '0ms' }} />
+                <span className="h-1 w-1 rounded-full bg-white/80 animate-pulse" style={{ animationDelay: '150ms' }} />
+                <span className="h-1 w-1 rounded-full bg-white/80 animate-pulse" style={{ animationDelay: '300ms' }} />
+              </span>
+            </>
+          ) : 'Generate Guide Outline'}
         </button>
       </form>
     </section>
