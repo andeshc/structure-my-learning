@@ -13,6 +13,7 @@ function toUser(row) {
     signupProvider: row.signup_provider,
     referralSource: row.referral_source,
     referralSourceOther: row.referral_source_other,
+    plan: row.plan,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

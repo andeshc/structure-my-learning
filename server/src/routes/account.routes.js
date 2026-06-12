@@ -2,6 +2,10 @@ const bcrypt = require('bcrypt');
 const express = require('express');
 const { z } = require('zod');
 const users = require('../db/users');
+const guides = require('../db/guides');
+const payments = require('../db/payments');
+const { dodo } = require('../lib/dodo');
+const config = require('../config');
 const asyncHandler = require('../utils/asyncHandler');
 
 const router = express.Router();
@@ -17,6 +21,7 @@ function publicUser(user) {
     emailVerified: user.emailVerified,
     signupProvider: user.signupProvider,
     referralSource: user.referralSource,
+    plan: user.plan,
     createdAt: user.createdAt,
   };
 }
@@ -79,6 +84,36 @@ router.patch('/', asyncHandler(async (req, res) => {
     passwordHash,
   });
   res.json({ user: publicUser(updated) });
+}));
+
+router.get('/billing', asyncHandler(async (req, res) => {
+  const plan = req.user.plan;
+  const guidesCreatedCount = await guides.getGuidesCreatedCount(req.user.id);
+  let subscription = null;
+  if (plan === 'pro') {
+    const sub = await payments.findSubscriptionByUserId(req.user.id);
+    if (sub) {
+      subscription = {
+        status: sub.status,
+        currentPeriodEnd: sub.current_period_end,
+        cancelled: sub.status === 'cancelled',
+      };
+    }
+  }
+  res.json({ plan, guidesCreatedCount, guideLimit: config.freeGuideLimit, subscription });
+}));
+
+router.post('/billing/cancel', asyncHandler(async (req, res) => {
+  if (req.user.plan !== 'pro') {
+    return res.status(400).json({ error: 'No active Pro subscription to cancel.' });
+  }
+  const sub = await payments.findSubscriptionByUserId(req.user.id);
+  if (!sub || sub.status !== 'active') {
+    return res.status(400).json({ error: 'No active subscription found.' });
+  }
+  await dodo.subscriptions.update(sub.id, { cancel_at_next_billing_date: true });
+  await payments.setSubscriptionStatus(sub.id, 'cancelled');
+  res.json({ cancelAt: sub.current_period_end });
 }));
 
 module.exports = router;

@@ -161,13 +161,15 @@ router.post('/clarifying-questions', asyncHandler(async (req, res) => {
 }));
 
 router.post('/', asyncHandler(async (req, res, next) => {
-  // SUSPENDED: guide creation cap temporarily disabled
-  // const count = await guides.getGuidesCreatedCount(req.user.id);
-  // if (count >= 3) {
-  //   const err = new Error('Guide limit reached. Upgrade to create more guides.');
-  //   err.status = 403;
-  //   return next(err);
-  // }
+  if (req.user.plan === 'free') {
+    const count = await guides.getGuidesCreatedCount(req.user.id);
+    if (count >= config.freeGuideLimit) {
+      const err = new Error(`Free plan limit reached (${config.freeGuideLimit} guides). Upgrade to create more.`);
+      err.status = 403;
+      err.code = 'UPGRADE_REQUIRED';
+      return next(err);
+    }
+  }
   const input = createGuideSchema.parse(req.body);
   const guideId = ids.guideId();
   await guides.createPendingGuide({
