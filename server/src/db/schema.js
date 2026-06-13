@@ -138,6 +138,36 @@ CREATE INDEX IF NOT EXISTS idx_subtopics_topic_position ON subtopics(topic_id, p
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_guide_adoptions_user ON guide_adoptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subtopic_progress_user ON subtopic_progress(user_id, subtopic_id);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  customer_id TEXT,
+  current_period_end TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ltd_purchases (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ltd_seat_counter (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  seats_sold INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
 `;
 
 module.exports = schema;

@@ -12,6 +12,8 @@ async function cols(table) {
 async function initDb() {
   await query(schema);
 
+  await query(`INSERT INTO ltd_seat_counter (id, seats_sold) VALUES (1, 0) ON CONFLICT (id) DO NOTHING`);
+
   const uc = await cols('users');
   if (uc.length && !uc.includes('email_verified')) {
     await query(`ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE`);
@@ -86,6 +88,16 @@ async function initDb() {
   // Allow guides.user_id to be NULL for tombstoned guides (owner deleted, adopters retain access)
   if (gc.length) {
     await query(`ALTER TABLE guides ALTER COLUMN user_id DROP NOT NULL`);
+  }
+
+  if (uc.length && !uc.includes('plan')) {
+    await query(`ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'
+      CHECK (plan IN ('free','pro','ltd'))`);
+  }
+
+  const subc = await cols('subscriptions');
+  if (subc.length && !subc.includes('customer_id')) {
+    await query('ALTER TABLE subscriptions ADD COLUMN customer_id TEXT');
   }
 
   if (uc.length && !uc.includes('guides_created_count')) {

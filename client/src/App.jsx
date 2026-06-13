@@ -24,6 +24,7 @@ import AdminReportPage from './pages/AdminReportPage';
 import SharedGuidePage from './pages/SharedGuidePage';
 import SharedSubtopicPage from './pages/SharedSubtopicPage';
 import DiscoverPage from './pages/DiscoverPage';
+import UpgradeReturnPage from './pages/UpgradeReturnPage';
 
 export default function App() {
   return (
@@ -42,6 +43,9 @@ export default function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/upgrade/return" element={<UpgradeReturnPage />} />
+              </Route>
               <Route element={<AppShell />}>
                 <Route path="share/:shareToken" element={<SharedGuidePage />} />
               <Route path="share/:shareToken/topics/:topicId/subtopics/:position" element={<SharedSubtopicPage />} />

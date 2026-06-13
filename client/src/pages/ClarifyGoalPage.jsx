@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { createGuide, fetchClarifyingQuestions } from '../api/guides';
+import UpgradeModal from '../components/UpgradeModal';
 
 function QuestionSkeleton({ index, visible }) {
   return (
@@ -84,6 +85,7 @@ export default function ClarifyGoalPage() {
   const [answers, setAnswers] = useState({});
   const [freeText, setFreeText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const prefersReducedMotion = useRef(
     typeof window !== 'undefined' &&
@@ -126,8 +128,11 @@ export default function ClarifyGoalPage() {
         freeText: freeText.trim() || undefined,
       });
       navigate(`/guides/${guideId}`);
-    } catch {
+    } catch (err) {
       setIsSubmitting(false);
+      if (err.code === 'UPGRADE_REQUIRED') {
+        setUpgradeOpen(true);
+      }
     }
   }
 
@@ -169,6 +174,8 @@ export default function ClarifyGoalPage() {
   const isLoading = !questions && !fetchError && !skipMessage;
 
   return (
+    <>
+    <UpgradeModal isOpen={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     <section className={`max-w-2xl ${pageClass}`}>
       {/* Header */}
       <div>
@@ -289,5 +296,6 @@ export default function ClarifyGoalPage() {
         </>
       )}
     </section>
+    </>
   );
 }
