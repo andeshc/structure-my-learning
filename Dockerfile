@@ -2,8 +2,9 @@
 FROM node:20-alpine AS client-builder
 WORKDIR /build
 
-COPY client/package*.json ./client/
-RUN cd client && npm ci
+COPY package*.json ./
+COPY client/package.json ./client/
+RUN npm ci --workspace=client
 
 COPY client/ ./client/
 RUN cd client && npm run build
