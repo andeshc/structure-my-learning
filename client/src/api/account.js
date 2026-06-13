@@ -7,3 +7,11 @@ export function setup(payload) {
 export function updateProfile(payload) {
   return apiRequest('/api/account', { method: 'PATCH', body: JSON.stringify(payload) });
 }
+
+export function getBilling() {
+  return apiRequest('/api/account/billing');
+}
+
+export function cancelSubscription() {
+  return apiRequest('/api/account/billing/cancel', { method: 'POST' });
+}

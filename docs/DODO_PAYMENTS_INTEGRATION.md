@@ -1,7 +1,5 @@
 # Dodo Payments Integration Plan
 
-Stack: Express + SQLite + React/Vite
-
 ---
 
 ## 1. Dashboard Setup

@@ -37,6 +37,7 @@ function publicUser(user) {
     emailVerified: user.emailVerified,
     signupProvider: user.signupProvider,
     referralSource: user.referralSource,
+    plan: user.plan,
     createdAt: user.createdAt,
   };
 }

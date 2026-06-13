@@ -17,6 +17,9 @@ const adminRouter = require('./routes/admin.routes');
 const shareRouter = require('./routes/share.routes');
 const discoverRouter = require('./routes/discover.routes');
 const guidesDb = require('./db/guides');
+const checkoutRouter = require('./routes/checkout.routes');
+const webhooksRouter = require('./routes/webhooks.routes');
+const ltdRouter = require('./routes/ltd.routes');
 const { requireAuth } = require('./middleware/auth');
 const { requireAdmin } = require('./middleware/admin');
 const { aiRateLimit, authRateLimit } = require('./middleware/rateLimit');
@@ -32,6 +35,8 @@ app.use(cors({
 }));
 
 app.use(cookieParser());
+// Webhook must be mounted BEFORE express.json() to preserve the raw body for signature verification
+app.use('/api/webhooks/dodo', express.raw({ type: 'application/json' }), webhooksRouter);
 app.use(express.json());
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(passport.initialize());
@@ -48,6 +53,8 @@ app.use('/api/contact', authRateLimit, contactRouter);
 app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 app.use('/api/share', shareRouter);
 app.use('/api/discover', requireAuth, discoverRouter);
+app.use('/api/checkout', requireAuth, checkoutRouter);
+app.use('/api', ltdRouter);
 app.use('/api', geoRouter);
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Route not found.' });

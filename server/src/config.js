@@ -63,4 +63,22 @@ module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
   aiRateLimitPerHour: parseInt(process.env.AI_RATE_LIMIT_PER_HOUR || '200', 10),
   authRateLimitPer15Min: parseInt(process.env.AUTH_RATE_LIMIT_PER_15_MIN || '300', 10),
+  ltdSeatLimit: parseInt(process.env.LTD_SEAT_LIMIT || '200', 10),
+  freeGuideLimit: parseInt(process.env.FREE_GUIDE_LIMIT || '3', 10),
+  dodo: {
+    env: process.env.DODO_ENV || 'test_mode',
+    brandId: process.env.DODO_BRAND_ID || '',
+    apiKeyTest: process.env.DODO_API_KEY_TEST || '',
+    apiKeyLive: process.env.DODO_API_KEY_LIVE || '',
+    webhookKeyTest: process.env.DODO_WEBHOOK_KEY_TEST || '',
+    webhookKeyLive: process.env.DODO_WEBHOOK_KEY_LIVE || '',
+    products: {
+      pro_monthly_in:  process.env.DODO_PROD_PRO_MONTHLY_IN || '',
+      pro_annual_in:   process.env.DODO_PROD_PRO_ANNUAL_IN || '',
+      pro_monthly_usd: process.env.DODO_PROD_PRO_MONTHLY_USD || '',
+      pro_annual_usd:  process.env.DODO_PROD_PRO_ANNUAL_USD || '',
+      ltd_in:          process.env.DODO_PROD_LTD_IN || '',
+      ltd_usd:         process.env.DODO_PROD_LTD_USD || '',
+    },
+  },
 };
