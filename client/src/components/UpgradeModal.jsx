@@ -5,8 +5,8 @@ import { getLtdStatus } from '../api/payments';
 import { useUpgrade } from '../hooks/useUpgrade';
 
 const PRICES = {
-  INR: { annual: '₹299', monthly: '₹399', ltd: '₹5,999' },
-  USD: { annual: '$9',   monthly: '$12',  ltd: '$149'   },
+  INR: { annual: '₹299', monthly: '₹399', ltd: '₹5,999', annualTotal: '₹3,588', monthlyTotal: '₹4,788' },
+  USD: { annual: '$9',   monthly: '$12',  ltd: '$149',   annualTotal: '$108',    monthlyTotal: '$144'   },
 };
 
 const PRO_FEATURES = [
@@ -108,7 +108,9 @@ export default function UpgradeModal({ isOpen, onClose }) {
               <span className="text-sm text-charcoal-400">/month</span>
             </div>
             <p className="text-xs text-charcoal-400 mt-0.5">
-              {billingCycle === 'annual' ? 'Billed annually' : 'Billed monthly'}
+              {billingCycle === 'annual' ? (
+                <>Billed <s>{prices.monthlyTotal}</s> {prices.annualTotal} annually</>
+              ) : 'Billed monthly'}
             </p>
             <ul className="mt-3 space-y-1.5">
               {PRO_FEATURES.map((f) => (

@@ -8,8 +8,8 @@ import { getLtdStatus } from '../api/payments';
 import { useUpgrade } from '../hooks/useUpgrade';
 
 const PRICES = {
-  INR: { annual: '₹299', monthly: '₹399', ltd: '₹5,999' },
-  USD: { annual: '$9',   monthly: '$12',  ltd: '$149'   },
+  INR: { annual: '₹299', monthly: '₹399', ltd: '₹5,999', annualTotal: '₹3,588', monthlyTotal: '₹4,788' },
+  USD: { annual: '$9',   monthly: '$12',  ltd: '$149',   annualTotal: '$108',    monthlyTotal: '$144'   },
 };
 
 const FREE_FEATURES = [
@@ -134,12 +134,12 @@ export default function PricingPage() {
         {/* Cards */}
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           {/* Free */}
-          <div className="rounded-xl border border-charcoal/10 bg-white p-6">
+          <div className="flex flex-col rounded-xl border border-charcoal/10 bg-white p-6">
             <p className="text-xs font-semibold uppercase tracking-widest text-charcoal-400">Free</p>
             <p className="mt-3 text-4xl font-semibold text-charcoal">Free</p>
             <p className="mt-1 text-sm text-charcoal-400">No credit card required</p>
             <div className="my-5 border-t border-charcoal/8" />
-            <FeatureList features={FREE_FEATURES} />
+            <div className="flex-1"><FeatureList features={FREE_FEATURES} /></div>
             <Link
               to="/register"
               className="mt-8 block w-full rounded-md border border-charcoal/20 px-4 py-2.5 text-center text-sm font-medium text-charcoal transition-colors hover:bg-charcoal/5"
@@ -149,17 +149,19 @@ export default function PricingPage() {
           </div>
 
           {/* Pro */}
-          <div className="rounded-xl border border-charcoal/10 bg-white p-6 ring-2 ring-teal-700 shadow-sm">
+          <div className="flex flex-col rounded-xl border border-charcoal/10 bg-white p-6 ring-2 ring-teal-700 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-widest text-teal-700">Pro</p>
             <div className="mt-3 flex items-end gap-1">
               <p className="text-4xl font-semibold text-charcoal">{prices[billingCycle]}</p>
               <p className="mb-1 text-sm text-charcoal-400">/month</p>
             </div>
             <p className="mt-1 text-sm text-charcoal-400">
-              {billingCycle === 'annual' ? 'Billed annually' : 'Billed monthly'}
+              {billingCycle === 'annual' ? (
+                <>Billed <s>{prices.monthlyTotal}</s> {prices.annualTotal} annually</>
+              ) : 'Billed monthly'}
             </p>
             <div className="my-5 border-t border-charcoal/8" />
-            <FeatureList features={PRO_FEATURES} />
+            <div className="flex-1"><FeatureList features={PRO_FEATURES} /></div>
             <button
               disabled={busy}
               onClick={() => handleUpgrade(proKey)}
@@ -170,14 +172,14 @@ export default function PricingPage() {
           </div>
 
           {/* Lifetime */}
-          <div className="rounded-xl border border-charcoal/10 bg-white p-6">
+          <div className="flex flex-col rounded-xl border border-charcoal/10 bg-white p-6">
             <p className="text-xs font-semibold uppercase tracking-widest text-charcoal-400">Lifetime</p>
             <p className="mt-3 text-4xl font-semibold text-charcoal">{prices.ltd}</p>
             <p className="mt-1 text-sm text-charcoal-400">
               {ltdStatus ? `${ltdStatus.seats_remaining} seats left` : 'One-time payment'}
             </p>
             <div className="my-5 border-t border-charcoal/8" />
-            <FeatureList features={LTD_FEATURES} />
+            <div className="flex-1"><FeatureList features={LTD_FEATURES} /></div>
             <button
               disabled={busy || ltdStatus?.sold_out}
               onClick={() => handleUpgrade('ltd')}
