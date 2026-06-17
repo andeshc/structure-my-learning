@@ -69,6 +69,11 @@ export default function AuthPage({ mode }) {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastUsedProvider] = useState(() => localStorage.getItem('lastAuthProvider') || null);
+
+  function saveProvider(provider) {
+    localStorage.setItem('lastAuthProvider', provider);
+  }
   const isRegister = mode === 'register';
 
   function updateField(event) {
@@ -90,6 +95,7 @@ export default function AuthPage({ mode }) {
       } else {
         await auth.signIn({ email: form.email, password: form.password });
       }
+      saveProvider('email');
       navigate(location.state?.from || '/', { replace: true });
     } catch (submitError) {
       if (submitError.code === 'EMAIL_NOT_VERIFIED') {
@@ -180,24 +186,28 @@ export default function AuthPage({ mode }) {
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-2">
-            <a className="flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/google">
-              <GoogleIcon /> Google
-            </a>
-            <a className="flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/github">
-              <GitHubIcon /> GitHub
-            </a>
-            <a className="flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/apple">
-              <AppleIcon /> Apple
-            </a>
-            <a className="flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/facebook">
-              <FacebookIcon /> Facebook
-            </a>
-            <a className="flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/linkedin">
-              <LinkedInIcon /> LinkedIn
-            </a>
-            <a className="flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/microsoft">
-              <MicrosoftIcon /> Microsoft
-            </a>
+            {[
+              { key: 'google',    href: '/api/auth/google',    icon: <GoogleIcon />,    label: 'Google'    },
+              { key: 'github',    href: '/api/auth/github',    icon: <GitHubIcon />,    label: 'GitHub'    },
+              { key: 'apple',     href: '/api/auth/apple',     icon: <AppleIcon />,     label: 'Apple'     },
+              { key: 'facebook',  href: '/api/auth/facebook',  icon: <FacebookIcon />,  label: 'Facebook'  },
+              { key: 'linkedin',  href: '/api/auth/linkedin',  icon: <LinkedInIcon />,  label: 'LinkedIn'  },
+              { key: 'microsoft', href: '/api/auth/microsoft', icon: <MicrosoftIcon />, label: 'Microsoft' },
+            ].map(({ key, href, icon, label }) => (
+              <a
+                key={key}
+                href={href}
+                onClick={() => saveProvider(key)}
+                className="relative flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5"
+              >
+                {icon} {label}
+                {lastUsedProvider === key && (
+                  <span className="absolute -top-2 -right-2 rounded-full bg-teal-700 px-1.5 py-px text-[10px] font-semibold leading-tight text-white">
+                    Last used
+                  </span>
+                )}
+              </a>
+            ))}
           </div>
 
           <div className="relative my-6">
