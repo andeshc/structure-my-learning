@@ -56,9 +56,9 @@ export default function PricingPage() {
 
   useEffect(() => {
     if (!FORCED_CURRENCY) {
-      fetch('/api/geo')
-        .then((r) => r.json())
-        .then((data) => setCurrency(data.country === 'IN' ? 'INR' : 'USD'))
+      fetch('https://ipapi.co/country_code/')
+        .then((r) => r.text())
+        .then((code) => setCurrency(code.trim() === 'IN' ? 'INR' : 'USD'))
         .catch(() => {});
     }
 

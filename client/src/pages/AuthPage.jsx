@@ -24,6 +24,41 @@ function GoogleIcon() {
   );
 }
 
+function AppleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden="true" fill="currentColor">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden="true" fill="#1877F2">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden="true" fill="#0A66C2">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+  );
+}
+
+function MicrosoftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden="true">
+      <path d="M11.4 24H0V12.6h11.4V24z" fill="#F1511B"/>
+      <path d="M24 24H12.6V12.6H24V24z" fill="#80CC28"/>
+      <path d="M11.4 11.4H0V0h11.4v11.4z" fill="#00ADEF"/>
+      <path d="M24 11.4H12.6V0H24v11.4z" fill="#FBBC09"/>
+    </svg>
+  );
+}
+
 export default function AuthPage({ mode }) {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -34,6 +69,11 @@ export default function AuthPage({ mode }) {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastUsedProvider] = useState(() => localStorage.getItem('lastAuthProvider') || null);
+
+  function saveProvider(provider) {
+    localStorage.setItem('lastAuthProvider', provider);
+  }
   const isRegister = mode === 'register';
 
   function updateField(event) {
@@ -55,6 +95,7 @@ export default function AuthPage({ mode }) {
       } else {
         await auth.signIn({ email: form.email, password: form.password });
       }
+      saveProvider('email');
       navigate(location.state?.from || '/', { replace: true });
     } catch (submitError) {
       if (submitError.code === 'EMAIL_NOT_VERIFIED') {
@@ -144,13 +185,29 @@ export default function AuthPage({ mode }) {
             {isRegister ? 'Three free guides to start. No credit card required.' : 'Welcome back. Pick up where you left off.'}
           </p>
 
-          <div className="mt-6 grid gap-2">
-            <a className="flex items-center justify-center gap-2.5 rounded-md border border-charcoal/15 px-4 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/google">
-              <GoogleIcon /> Login with Google
-            </a>
-            <a className="flex items-center justify-center gap-2.5 rounded-md border border-charcoal/15 px-4 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5" href="/api/auth/github">
-              <GitHubIcon /> Login with GitHub
-            </a>
+          <div className="mt-6 grid grid-cols-1 gap-2">
+            {[
+              { key: 'google',    href: '/api/auth/google',    icon: <GoogleIcon />,    label: 'Login with Google'    },
+              { key: 'github',    href: '/api/auth/github',    icon: <GitHubIcon />,    label: 'Login with GitHub'    },
+              { key: 'apple',     href: '/api/auth/apple',     icon: <AppleIcon />,     label: 'Login with Apple'     },
+              { key: 'facebook',  href: '/api/auth/facebook',  icon: <FacebookIcon />,  label: 'Login with Facebook'  },
+              { key: 'linkedin',  href: '/api/auth/linkedin',  icon: <LinkedInIcon />,  label: 'Login with LinkedIn'  },
+              { key: 'microsoft', href: '/api/auth/microsoft', icon: <MicrosoftIcon />, label: 'Login with Microsoft' },
+            ].map(({ key, href, icon, label }) => (
+              <a
+                key={key}
+                href={href}
+                onClick={() => saveProvider(key)}
+                className="relative flex items-center justify-center gap-2 rounded-md border border-charcoal/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-charcoal/5"
+              >
+                {icon} {label}
+                {lastUsedProvider === key && (
+                  <span className="absolute -top-2 -right-2 rounded-full bg-teal-700 px-1.5 py-px text-[10px] font-semibold leading-tight text-white">
+                    Last used
+                  </span>
+                )}
+              </a>
+            ))}
           </div>
 
           <div className="relative my-6">
