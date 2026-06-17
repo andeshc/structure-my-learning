@@ -38,6 +38,7 @@ app.use(cookieParser());
 // Webhook must be mounted BEFORE express.json() to preserve the raw body for signature verification
 app.use('/api/webhooks/dodo', express.raw({ type: 'application/json' }), webhooksRouter);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // required for Apple Sign In POST callback
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(passport.initialize());
 

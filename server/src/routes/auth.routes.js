@@ -195,4 +195,69 @@ router.get('/github/callback',
   }
 );
 
+router.get('/apple',
+  config.apple.clientId
+    ? passport.authenticate('apple', { session: false })
+    : oauthUnavailable
+);
+
+// Apple sends the callback as a POST with form-encoded body
+router.post('/apple/callback',
+  config.apple.clientId
+    ? passport.authenticate('apple', { failureRedirect: `${config.appUrl}/login`, session: false })
+    : oauthUnavailable,
+  async (req, res) => {
+    await tokenService.issueAuth(res, req.user);
+    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+  }
+);
+
+router.get('/facebook',
+  config.facebook.clientId && config.facebook.clientSecret
+    ? passport.authenticate('facebook', { scope: ['email'], session: false })
+    : oauthUnavailable
+);
+
+router.get('/facebook/callback',
+  config.facebook.clientId && config.facebook.clientSecret
+    ? passport.authenticate('facebook', { failureRedirect: `${config.appUrl}/login`, session: false })
+    : oauthUnavailable,
+  async (req, res) => {
+    await tokenService.issueAuth(res, req.user);
+    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+  }
+);
+
+router.get('/linkedin',
+  config.linkedin.clientId && config.linkedin.clientSecret
+    ? passport.authenticate('linkedin', { session: false })
+    : oauthUnavailable
+);
+
+router.get('/linkedin/callback',
+  config.linkedin.clientId && config.linkedin.clientSecret
+    ? passport.authenticate('linkedin', { failureRedirect: `${config.appUrl}/login`, session: false })
+    : oauthUnavailable,
+  async (req, res) => {
+    await tokenService.issueAuth(res, req.user);
+    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+  }
+);
+
+router.get('/microsoft',
+  config.microsoft.clientId && config.microsoft.clientSecret
+    ? passport.authenticate('microsoft', { session: false })
+    : oauthUnavailable
+);
+
+router.get('/microsoft/callback',
+  config.microsoft.clientId && config.microsoft.clientSecret
+    ? passport.authenticate('microsoft', { failureRedirect: `${config.appUrl}/login`, session: false })
+    : oauthUnavailable,
+  async (req, res) => {
+    await tokenService.issueAuth(res, req.user);
+    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+  }
+);
+
 module.exports = router;
