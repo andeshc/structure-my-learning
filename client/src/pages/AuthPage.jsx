@@ -185,7 +185,7 @@ export default function AuthPage({ mode }) {
             {isRegister ? 'Three free guides to start. No credit card required.' : 'Welcome back. Pick up where you left off.'}
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-2">
+          <div className="mt-6 grid grid-cols-1 gap-2">
             {[
               { key: 'google',    href: '/api/auth/google',    icon: <GoogleIcon />,    label: 'Login with Google'    },
               { key: 'github',    href: '/api/auth/github',    icon: <GitHubIcon />,    label: 'Login with GitHub'    },
