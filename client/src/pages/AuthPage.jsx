@@ -187,12 +187,12 @@ export default function AuthPage({ mode }) {
 
           <div className="mt-6 grid grid-cols-2 gap-2">
             {[
-              { key: 'google',    href: '/api/auth/google',    icon: <GoogleIcon />,    label: 'Google'    },
-              { key: 'github',    href: '/api/auth/github',    icon: <GitHubIcon />,    label: 'GitHub'    },
-              { key: 'apple',     href: '/api/auth/apple',     icon: <AppleIcon />,     label: 'Apple'     },
-              { key: 'facebook',  href: '/api/auth/facebook',  icon: <FacebookIcon />,  label: 'Facebook'  },
-              { key: 'linkedin',  href: '/api/auth/linkedin',  icon: <LinkedInIcon />,  label: 'LinkedIn'  },
-              { key: 'microsoft', href: '/api/auth/microsoft', icon: <MicrosoftIcon />, label: 'Microsoft' },
+              { key: 'google',    href: '/api/auth/google',    icon: <GoogleIcon />,    label: 'Login with Google'    },
+              { key: 'github',    href: '/api/auth/github',    icon: <GitHubIcon />,    label: 'Login with GitHub'    },
+              { key: 'apple',     href: '/api/auth/apple',     icon: <AppleIcon />,     label: 'Login with Apple'     },
+              { key: 'facebook',  href: '/api/auth/facebook',  icon: <FacebookIcon />,  label: 'Login with Facebook'  },
+              { key: 'linkedin',  href: '/api/auth/linkedin',  icon: <LinkedInIcon />,  label: 'Login with LinkedIn'  },
+              { key: 'microsoft', href: '/api/auth/microsoft', icon: <MicrosoftIcon />, label: 'Login with Microsoft' },
             ].map(({ key, href, icon, label }) => (
               <a
                 key={key}
