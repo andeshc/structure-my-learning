@@ -29,6 +29,13 @@ html { overflow-x: hidden; }
 
 .lesson-content > * + * { margin-top: 1rem; }
 
+/* KaTeX display math can be wider than the column (e.g. large matrices) —
+   let it scroll horizontally instead of overflowing the layout. */
+.lesson-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .lesson-content h1,
 .lesson-content h2,
 .lesson-content h3,

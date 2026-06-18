@@ -1,19 +1,3 @@
-import DOMPurify from 'dompurify';
-import Prism from 'prismjs';
-import 'prismjs/themes/prism-tomorrow.css';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-go';
-import 'prismjs/components/prism-rust';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-markup';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -25,17 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { getSharedSubtopic, adoptGuide } from '../api/share';
-
-const PURIFY_CONFIG = {
-  USE_PROFILES: { html: true, svg: true, svgFilters: true },
-  ADD_TAGS: [],
-  FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
-};
-
-function sanitize(html) {
-  return DOMPurify.sanitize(html, PURIFY_CONFIG);
-}
+import LessonContent from '../components/LessonContent';
 
 function SubtopicStatusPanel({ devStatus }) {
   if (devStatus === 'developing') {
@@ -126,7 +100,6 @@ export default function SharedSubtopicPage() {
   const [readingProgress, setReadingProgress] = useState(0);
   const [adding, setAdding] = useState(false);
   const articleRef = useRef(null);
-  const contentRef = useRef(null);
 
   // Redirect to share page if not authenticated
   useEffect(() => {
@@ -177,12 +150,6 @@ export default function SharedSubtopicPage() {
 
     return () => controller.abort();
   }, [shareToken, topicId, positionParam, auth.isAuthenticated]);
-
-  useEffect(() => {
-    if (contentRef.current) {
-      Prism.highlightAllUnder(contentRef.current);
-    }
-  }, [data]);
 
   useEffect(() => {
     if (!articleRef.current) return;
@@ -410,11 +377,7 @@ export default function SharedSubtopicPage() {
           {/* Lesson content */}
           <div className="mt-6 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border border-slate-200 bg-white p-6 lg:p-8 min-h-[200px]">
             {displayedHtml ? (
-              <div
-                ref={contentRef}
-                className="lesson-content"
-                dangerouslySetInnerHTML={{ __html: sanitize(displayedHtml) }}
-              />
+              <LessonContent html={displayedHtml} />
             ) : (
               <SubtopicStatusPanel devStatus={subtopic?.devStatus} />
             )}
