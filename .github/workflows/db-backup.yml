@@ -1,0 +1,86 @@
+# Off-platform Postgres backup → Backblaze B2.
+#
+# Independent of Railway so the database (incl. payment data) is recoverable
+# even if the Railway account/project is lost. Complements — does not replace —
+# Railway's native managed backups.
+#
+# Required GitHub repo secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_PUBLIC_URL    Railway Postgres PUBLIC proxy URL (NOT *.railway.internal).
+#                          Enable public networking on the Postgres service to get it.
+#   B2_APPLICATION_KEY_ID  Backblaze B2 key id (see key scope below).
+#   B2_APPLICATION_KEY     Backblaze B2 application key.
+#   B2_BUCKET_NAME         Target bucket.
+#   B2_BUCKET_REGION       e.g. us-west-004
+#   BACKUP_ALERT_WEBHOOK   (optional) Slack/Discord incoming webhook for failures.
+#
+# B2 key scope (least privilege — append-only):
+#   - Capability: writeFiles only (B2 web UI "Write Only"). PutObject + multipart
+#     upload need only writeFiles. NOT deleteFiles (lifecycle rule prunes),
+#     NOT readFiles/listFiles (CI never reads the dumps back).
+#   - Restrict to the single backups bucket; if the bucket is shared across apps,
+#     also restrict to name prefix `db-backups/structure-my-learning/`.
+#   - Never use the B2 account/master key. Create a dedicated named key.
+#   - Restores use a SEPARATE read-capable key, used only during DR — not stored
+#     here. (If an upload ever errors on access, add listFiles+readFiles as a
+#     fallback; still no delete.)
+#
+# Retention: configure a B2 lifecycle rule on prefix
+#   db-backups/structure-my-learning/  (e.g. keep last 30 days).
+#
+# Restore a dump into a target database:
+#   aws s3 cp "s3://$BUCKET/db-backups/structure-my-learning/YYYY/MM/DD/HHMMSS.sql.gz" - \
+#     --endpoint-url "https://s3.$REGION.backblazeb2.com" \
+#     | gunzip | psql "$TARGET_DATABASE_URL"
+#
+# Note: scheduled/dispatch runs only fire from the default branch (main).
+
+name: DB Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'      # 03:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PG_VERSION: '18.4'        # must be >= the Railway Postgres server version (`SELECT version();`)
+      DATABASE_URL: ${{ secrets.DATABASE_PUBLIC_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.B2_BUCKET_REGION }}
+      BUCKET: ${{ secrets.B2_BUCKET_NAME }}
+      ALERT_WEBHOOK: ${{ secrets.BACKUP_ALERT_WEBHOOK }}
+    steps:
+      - name: Dump + compress + verify
+        run: |
+          set -euo pipefail
+          KEY="db-backups/structure-my-learning/$(date -u +'%Y/%m/%d/%H%M%S').sql.gz"
+          echo "KEY=$KEY" >> "$GITHUB_ENV"
+          # pg_dump from a pinned client image so its version is explicit and >= server.
+          docker run --rm -i "postgres:${PG_VERSION}-alpine" \
+            pg_dump --no-owner --no-acl "$DATABASE_URL" | gzip -9 > dump.sql.gz
+          # Catch truncated/empty dumps before they masquerade as a good backup.
+          gunzip -t dump.sql.gz
+          test "$(stat -c%s dump.sql.gz)" -gt 1000
+
+      - name: Upload to B2
+        run: |
+          set -euo pipefail
+          aws s3 cp dump.sql.gz "s3://${BUCKET}/${KEY}" \
+            --endpoint-url "https://s3.${AWS_DEFAULT_REGION}.backblazeb2.com"
+          echo "Uploaded s3://${BUCKET}/${KEY}"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          [ -n "${ALERT_WEBHOOK:-}" ] || exit 0
+          curl -fsS -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"❌ DB backup failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+            "$ALERT_WEBHOOK"
