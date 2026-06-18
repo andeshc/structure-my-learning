@@ -1,19 +1,3 @@
-import DOMPurify from 'dompurify';
-import Prism from 'prismjs';
-import 'prismjs/themes/prism-tomorrow.css';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-go';
-import 'prismjs/components/prism-rust';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-markup';
 import {
   AlertTriangle,
   Bot,
@@ -27,20 +11,26 @@ import {
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getSubtopic, updateSubtopicProgress } from '../api/guides';
 import { getAccessToken } from '../api/client';
+import { useToast } from '../context/ToastContext';
+import LessonContent from '../components/LessonContent';
 
-const PURIFY_CONFIG = {
-  USE_PROFILES: { html: true, svg: true, svgFilters: true },
-  ADD_TAGS: [],
-  FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
-};
+// Average adult reading speed (words/min). We require ~50% of the resulting
+// estimate as active dwell time before auto-completing — lenient by design.
+const READING_WPM = 265;
+const TIME_GATE_FRACTION = 0.5;
+const MIN_READ_SECONDS = 8;
+const MAX_READ_SECONDS = 90;
+const SCROLL_COMPLETE_THRESHOLD = 95;
 
-function sanitize(html) {
-  return DOMPurify.sanitize(html, PURIFY_CONFIG);
+function countWords(html) {
+  if (!html) return 0;
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ');
+  const matches = text.trim().match(/\S+/g);
+  return matches ? matches.length : 0;
 }
 
 function SubtopicStatusPanel({ devStatus }) {
@@ -176,15 +166,23 @@ function ImportanceBadge() {
 export default function SubtopicDetailPage() {
   const { topicId, position: positionParam } = useParams();
   const position = parseInt(positionParam, 10);
+  const { showToast } = useToast();
 
   const [data, setData] = useState(null);
   const [loadingContent, setLoadingContent] = useState(false);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
+  const [activeSeconds, setActiveSeconds] = useState(0);
   const [showMobileAi, setShowMobileAi] = useState(false);
   const articleRef = useRef(null);
-  const contentRef = useRef(null);
+  const autoCompletedRef = useRef(false);
+
+  const requiredSeconds = useMemo(() => {
+    const words = countWords(data?.subtopic?.contentHtml);
+    const estimate = (words / READING_WPM) * 60 * TIME_GATE_FRACTION;
+    return Math.min(MAX_READ_SECONDS, Math.max(MIN_READ_SECONDS, estimate));
+  }, [data?.subtopic?.contentHtml]);
 
   useEffect(() => {
     if (document.querySelector('script[data-tailwind-cdn]')) return;
@@ -215,6 +213,8 @@ export default function SubtopicDetailPage() {
   useEffect(() => {
     const controller = new AbortController();
     setReadingProgress(0);
+    setActiveSeconds(0);
+    autoCompletedRef.current = false;
     setLoadingContent(true);
     setError('');
 
@@ -263,17 +263,10 @@ export default function SubtopicDetailPage() {
     return () => container.removeEventListener('scroll', onScroll);
   }, [data]);
 
-  useEffect(() => {
-    if (contentRef.current) {
-      Prism.highlightAllUnder(contentRef.current);
-    }
-  }, [data]);
-
-  async function toggleComplete() {
-    if (!data) return;
+  async function applyProgress(nextValue) {
     setIsSaving(true);
     try {
-      const res = await updateSubtopicProgress(topicId, position, !data.subtopic.isCompleted);
+      const res = await updateSubtopicProgress(topicId, position, nextValue);
       setData((prev) => ({
         ...prev,
         subtopic: { ...prev.subtopic, isCompleted: res.isCompleted },
@@ -282,12 +275,47 @@ export default function SubtopicDetailPage() {
           si.position === position ? { ...si, isCompleted: res.isCompleted } : si
         ),
       }));
+      return res.isCompleted;
     } catch (saveError) {
       setError(saveError.message);
+      throw saveError;
     } finally {
       setIsSaving(false);
     }
   }
+
+  function toggleComplete() {
+    if (!data) return;
+    applyProgress(!data.subtopic.isCompleted).catch(() => {});
+  }
+
+  // Accumulate active dwell time — only while the tab is visible (Page
+  // Visibility API). Runs once content is loaded; reset on subtopic change.
+  const contentLoaded = Boolean(data?.subtopic?.contentHtml);
+  useEffect(() => {
+    if (!contentLoaded) return undefined;
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        setActiveSeconds((s) => s + 1);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [contentLoaded, topicId, positionParam]);
+
+  // Auto-mark complete once the reader has reached the end AND spent enough
+  // active time. Fires at most once per subtopic; never un-completes.
+  useEffect(() => {
+    if (!contentLoaded || autoCompletedRef.current) return;
+    if (data?.subtopic?.isCompleted) return;
+    if (readingProgress < SCROLL_COMPLETE_THRESHOLD) return;
+    if (activeSeconds < requiredSeconds) return;
+    autoCompletedRef.current = true;
+    applyProgress(true)
+      .then((completed) => {
+        if (completed) showToast({ type: 'info', message: 'Marked as complete' });
+      })
+      .catch(() => { autoCompletedRef.current = false; });
+  }, [contentLoaded, data?.subtopic?.isCompleted, readingProgress, activeSeconds, requiredSeconds]);
 
   if (error) {
     return <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>;
@@ -498,11 +526,7 @@ export default function SubtopicDetailPage() {
                 <div className="h-4 w-2/3 rounded bg-slate-100" />
               </div>
             ) : displayedHtml ? (
-              <div
-                ref={contentRef}
-                className="lesson-content"
-                dangerouslySetInnerHTML={{ __html: sanitize(displayedHtml) }}
-              />
+              <LessonContent html={displayedHtml} />
             ) : (
               <SubtopicStatusPanel devStatus={subtopic?.devStatus} />
             )}
