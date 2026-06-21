@@ -2,6 +2,13 @@ require('dotenv').config();
 
 const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
 
+// In production, object storage is mandatory: without it, generated images
+// would silently land on ephemeral container disk and be lost on redeploy.
+// Fail fast at boot rather than degrading quietly. (Region has a default.)
+if ((process.env.NODE_ENV || 'development') === 'production') {
+  required.push('B2_APPLICATION_KEY_ID', 'B2_APPLICATION_KEY', 'B2_BUCKET_NAME', 'CDN_URL');
+}
+
 for (const key of required) {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);

@@ -79,7 +79,16 @@ async function generateImage({ model, prompt, key, aspectRatio, size, quality })
     return storageService.uploadImage(buffer, key);
   }
 
-  // Local fallback — save under server/public/{key}
+  // Never silently write to ephemeral disk in production — it would be lost on
+  // the next redeploy, leaving dangling image URLs in the DB. (Startup config
+  // validation should already prevent this; this is the backstop.)
+  if (config.nodeEnv === 'production') {
+    throw new Error(
+      'Object storage (B2) is not configured; refusing to write images to ephemeral disk in production.'
+    );
+  }
+
+  // Local fallback (development only) — save under server/public/{key}
   const localPath = path.join(__dirname, '../../public', key);
   fs.mkdirSync(path.dirname(localPath), { recursive: true });
   fs.writeFileSync(localPath, buffer);
