@@ -168,6 +168,28 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+
+CREATE TABLE IF NOT EXISTS collections (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL CHECK (name <> ''),
+  description TEXT,
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS collection_guides (
+  collection_id TEXT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+  guide_id      TEXT NOT NULL REFERENCES guides(id) ON DELETE CASCADE,
+  position      INTEGER NOT NULL DEFAULT 0,
+  added_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (collection_id, guide_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_collections_user_position ON collections(user_id, position);
+CREATE INDEX IF NOT EXISTS idx_collection_guides_collection ON collection_guides(collection_id, position);
+CREATE INDEX IF NOT EXISTS idx_collection_guides_guide ON collection_guides(guide_id);
 `;
 
 module.exports = schema;

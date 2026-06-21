@@ -22,6 +22,7 @@ function toGuide(row) {
     isPublic: Boolean(row.is_public),
     clarifications: row.clarifications ?? null,
     freeText: row.free_text ?? null,
+    collections: Array.isArray(row.collections) ? row.collections : [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -138,10 +139,21 @@ async function markGuideFailed(id) {
 }
 
 async function listGuidesForUser(userId) {
+  const collectionsSub = `(
+    SELECT COALESCE(
+      json_agg(json_build_object('id', c.id, 'name', c.name) ORDER BY cg.position),
+      '[]'::json
+    )
+    FROM collection_guides cg
+    JOIN collections c ON c.id = cg.collection_id AND c.user_id = $1
+    WHERE cg.guide_id = g.id
+  ) AS collections`;
+
   const rows = await getAll(
     `SELECT g.*, u.name AS owner_name, false AS is_adopted,
        COUNT(DISTINCT t.id) AS topic_count,
-       ${subtopicProgressCount('$1')}
+       ${subtopicProgressCount('$1')},
+       ${collectionsSub}
      FROM guides g
      JOIN users u ON u.id = g.user_id
      LEFT JOIN topics t ON t.guide_id = g.id
@@ -152,7 +164,8 @@ async function listGuidesForUser(userId) {
 
      SELECT g.*, u.name AS owner_name, true AS is_adopted,
        COUNT(DISTINCT t.id) AS topic_count,
-       ${subtopicProgressCount('$1')}
+       ${subtopicProgressCount('$1')},
+       ${collectionsSub}
      FROM guides g
      LEFT JOIN users u ON u.id = g.user_id
      LEFT JOIN topics t ON t.guide_id = g.id
@@ -347,6 +360,7 @@ async function getGuidesCreatedCount(userId) {
 }
 
 module.exports = {
+  toGuide,
   appendSectionsToGuide,
   replaceGuideTopics,
   setGuidePublic,
