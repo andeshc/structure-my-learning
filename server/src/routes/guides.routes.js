@@ -1,6 +1,7 @@
 const express = require('express');
 const { z } = require('zod');
 const guides = require('../db/guides');
+const collections = require('../db/collections');
 const topicsDb = require('../db/topics');
 const subtopicsDb = require('../db/subtopics');
 const usersDb = require('../db/users');
@@ -152,6 +153,21 @@ async function generateOutlineInBackground({ guideId, prompt, learningLevel, cov
 
 router.get('/', asyncHandler(async (req, res) => {
   res.json({ guides: await guides.listGuidesForUser(req.user.id) });
+}));
+
+// Collections this guide belongs to (for the Add-to-collection menu).
+router.get('/:guideId/collections', asyncHandler(async (req, res, next) => {
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
+  if (!guide) {
+    const error = new Error('Guide not found.');
+    error.status = 404;
+    return next(error);
+  }
+  const collectionIds = await collections.listCollectionIdsForGuide({
+    userId: req.user.id,
+    guideId: req.params.guideId,
+  });
+  res.json({ collectionIds });
 }));
 
 router.post('/clarifying-questions', asyncHandler(async (req, res) => {
