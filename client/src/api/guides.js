@@ -72,3 +72,7 @@ export function toggleSharing(guideId, isPublic) {
     body: JSON.stringify({ public: isPublic }),
   });
 }
+
+export function listGuideCollections(guideId) {
+  return apiRequest(`/api/guides/${guideId}/collections`);
+}

@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 import AccountPage from './pages/AccountPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import AuthPage from './pages/AuthPage';
+import CollectionDetailPage from './pages/CollectionDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import LandingPage from './pages/LandingPage';
 import ClarifyGoalPage from './pages/ClarifyGoalPage';
@@ -55,6 +56,7 @@ export default function App() {
                   <Route path="guides/new" element={<NewGuidePage />} />
                   <Route path="guides/new/clarify" element={<ClarifyGoalPage />} />
                   <Route path="guides/:guideId" element={<GuideDetailPage />} />
+                  <Route path="collections/:collectionId" element={<CollectionDetailPage />} />
                   <Route path="topics/:topicId/subtopics/:position" element={<SubtopicDetailPage />} />
                   <Route path="account" element={<AccountPage />} />
                   <Route path="report" element={<AdminReportPage />} />
