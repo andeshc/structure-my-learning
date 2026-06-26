@@ -3,7 +3,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const AppleStrategy = require('passport-apple');
 const FacebookStrategy = require('passport-facebook').Strategy;
-const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+const OAuth2Strategy = require('passport-oauth2');
 const MicrosoftStrategy = require('passport-microsoft').Strategy;
 const config = require('./config');
 const users = require('./db/users');
@@ -20,6 +20,23 @@ function normalizeProfile(provider, profile) {
     email,
     name: profile.displayName || profile.username || email.split('@')[0],
     avatarUrl: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
+  };
+}
+
+// LinkedIn (and other OpenID Connect providers) return standard userinfo
+// claims rather than a Passport-shaped profile, so map them explicitly.
+function normalizeOidcProfile(provider, claims) {
+  const email = claims.email || `${provider}-${claims.sub}@oauth.local`;
+  const name =
+    claims.name ||
+    [claims.given_name, claims.family_name].filter(Boolean).join(' ') ||
+    email.split('@')[0];
+  return {
+    provider,
+    providerUserId: claims.sub,
+    email,
+    name,
+    avatarUrl: claims.picture || null,
   };
 }
 
@@ -108,14 +125,35 @@ if (config.facebook.clientId && config.facebook.clientSecret) {
 }
 
 if (config.linkedin.clientId && config.linkedin.clientSecret) {
-  passport.use(new LinkedInStrategy({
+  // LinkedIn retired the r_liteprofile/r_emailaddress OAuth2 scopes; the current
+  // path is "Sign In with LinkedIn using OpenID Connect" (scopes openid/profile/
+  // email). Built on passport-oauth2 so it stays stateless like the other
+  // strategies (no session-backed state store, unlike passport-openidconnect).
+  const linkedinStrategy = new OAuth2Strategy({
+    authorizationURL: 'https://www.linkedin.com/oauth/v2/authorization',
+    tokenURL: 'https://www.linkedin.com/oauth/v2/accessToken',
     clientID: config.linkedin.clientId,
     clientSecret: config.linkedin.clientSecret,
     callbackURL: config.linkedin.callbackUrl,
-    scope: ['r_emailaddress', 'r_liteprofile'],
-  }, (_accessToken, _refreshToken, profile, done) => {
-    findOrCreateOAuthUser(normalizeProfile('linkedin', profile), done);
-  }));
+    scope: ['openid', 'profile', 'email'],
+  }, (_accessToken, _refreshToken, claims, done) => {
+    findOrCreateOAuthUser(normalizeOidcProfile('linkedin', claims), done);
+  });
+
+  // passport-oauth2 has no built-in profile fetch; pull the OIDC userinfo claims.
+  linkedinStrategy.userProfile = function (accessToken, done) {
+    fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`LinkedIn userinfo failed: ${res.status}`);
+        return res.json();
+      })
+      .then((claims) => done(null, claims))
+      .catch((err) => done(err));
+  };
+
+  passport.use('linkedin', linkedinStrategy);
 }
 
 if (config.microsoft.clientId && config.microsoft.clientSecret) {

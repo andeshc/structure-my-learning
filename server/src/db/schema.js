@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
 CREATE TABLE IF NOT EXISTS oauth_accounts (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
-  provider TEXT NOT NULL CHECK (provider IN ('google', 'github')),
+  provider TEXT NOT NULL CHECK (provider IN ('google', 'github', 'apple', 'facebook', 'linkedin', 'microsoft')),
   provider_user_id TEXT NOT NULL,
   provider_email TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
