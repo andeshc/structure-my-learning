@@ -308,6 +308,10 @@ function SecuritySection({ user, showToast }) {
     password: { label: 'Password', icon: <KeyRound size={12} /> },
     google: { label: 'Google', icon: null },
     github: { label: 'GitHub', icon: null },
+    linkedin: { label: 'LinkedIn', icon: null },
+    apple: { label: 'Apple', icon: null },
+    facebook: { label: 'Facebook', icon: null },
+    microsoft: { label: 'Microsoft', icon: null },
   };
 
   return (
@@ -337,7 +341,7 @@ function SecuritySection({ user, showToast }) {
         {!hasPassword && (
           <p className="text-sm text-charcoal-400">
             You haven't set a password yet. Set one below and you'll be able to log in with your email too.
-            {user?.signupProvider !== 'password' && ` It won't affect your ${{ google: 'Google', github: 'GitHub' }[user?.signupProvider] ?? 'external'} account.`}
+            {user?.signupProvider !== 'password' && ` It won't affect your ${PROVIDER_LABELS[user?.signupProvider]?.label ?? 'external'} account.`}
           </p>
         )}
         {hasPassword && (
