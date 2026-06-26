@@ -39,6 +39,15 @@ async function initDb() {
     `);
   }
 
+  // The oauth_accounts provider constraint originally allowed only google/github;
+  // widen it to every provider wired in passport.js. Idempotent: drop + re-add.
+  const oc = await cols('oauth_accounts');
+  if (oc.length) {
+    await query(`ALTER TABLE oauth_accounts DROP CONSTRAINT IF EXISTS oauth_accounts_provider_check`);
+    await query(`ALTER TABLE oauth_accounts ADD CONSTRAINT oauth_accounts_provider_check
+      CHECK (provider IN ('google', 'github', 'apple', 'facebook', 'linkedin', 'microsoft'))`);
+  }
+
   const gc = await cols('guides');
   if (gc.length && gc.includes('age_level') && !gc.includes('learning_level')) {
     await query(`ALTER TABLE guides RENAME COLUMN age_level TO learning_level`);
