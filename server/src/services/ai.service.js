@@ -596,13 +596,53 @@ Generate 1–3 new guide sections that fulfill the user's request. Each section 
   return object.sections;
 }
 
-async function chatWithTutor({ guide, topic, messages }) {
+// Lightweight HTML subset the tutor may emit in chat. Structural tags are
+// derived from the canonical allow-list in content-config.json (so the chat
+// stays in sync with the lesson pipeline); `a` is appended because links are
+// chat-only and not part of the lesson allow-list.
+const TUTOR_TAG_WHITELIST = ['p', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'h3'];
+const tutorAllowedTags = [
+  ...contentConfig.html_allowed_tags.filter((t) => TUTOR_TAG_WHITELIST.includes(t)),
+  'a',
+];
+
+function buildTutorSystemPrompt({ guide, subtopic, siblingTitles }) {
+  const learnerProfile = buildLearnerProfileBlock(guide.learningLevel, guide.coverage);
+  const lessonBody = subtopic.contentHtml
+    ? subtopic.contentHtml
+    : '(This lesson is still being generated — no body text is available yet.)';
+  const outlineList = siblingTitles.length
+    ? siblingTitles.map((t) => `- ${t}`).join('\n')
+    : '- (outline unavailable)';
+
+  return `You are StructureMyLearning's AI Tutor, helping a student work through the guide "${guide.title}".
+
+${learnerProfile}
+
+The student is currently reading the lesson "${subtopic.title}". Ground your answers in THIS lesson's content below; when helpful, connect ideas to other lessons in the guide by name. Stay focused on the guide's subject.
+
+=== CURRENT LESSON: ${subtopic.title} ===
+${lessonBody}
+=== END CURRENT LESSON ===
+
+Other lessons in this guide (titles only, for cross-references):
+${outlineList}
+
+Response format — IMPORTANT:
+- Reply with an HTML fragment ONLY. Do NOT use Markdown (no \`#\`, \`*\`, \`-\`, or \`\`\` fences).
+- Allowed tags: ${tutorAllowedTags.map((t) => `<${t}>`).join(', ')}. Use no other tags (no images, tables, headings above <h3>, or inline styles).
+- For multi-line code, use <pre><code class="language-XXX">…</code></pre> where XXX is the language (e.g. language-python) so it is syntax-highlighted. Use inline <code> for short snippets.
+- Keep answers concise (aim for under ~150 words) unless the student explicitly asks for more depth.`;
+}
+
+async function chatWithTutor({ guide, subtopic, siblingTitles = [], messages, onFinish }) {
   try {
     return streamText({
       model: getContentModel(),
-      system: `You are StructureMyLearning's AI Tutor. The student is learning "${topic.title}" from the guide "${guide.title}". Answer questions about this topic clearly and concisely. Stay focused on the topic. Keep responses under 150 words unless the student explicitly asks for more depth. Match the learner level: ${guide.learningLevel.replaceAll('_', ' ')}.`,
+      system: buildTutorSystemPrompt({ guide, subtopic, siblingTitles }),
       messages: await convertToModelMessages(messages),
-      maxTokens: 300,
+      maxOutputTokens: 800,
+      onFinish,
     });
   } catch (error) {
     const err = new Error('The AI tutor is unavailable right now. Please try again.');

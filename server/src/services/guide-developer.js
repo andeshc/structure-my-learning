@@ -2,14 +2,7 @@ const subtopicsDb = require('../db/subtopics');
 const guidesDb = require('../db/guides');
 const subtopicAgent = require('./subtopic-agent');
 const { estimateCost } = require('./cost-rates');
-const config = require('../config');
-
-function getContentModelId() {
-  if (config.aiProvider === 'claude') return config.anthropicContentModel;
-  if (config.aiProvider === 'novita') return config.novitaContentModel;
-  if (config.aiProvider === 'together') return config.togetherContentModel;
-  return config.openaiContentModel;
-}
+const { getContentModelId } = require('./llm');
 
 const BATCH_SIZE = parseInt(process.env.SUBTOPIC_BATCH_SIZE, 10) || 4;
 const activeDevelopments = new Set();

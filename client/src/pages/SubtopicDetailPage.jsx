@@ -1,22 +1,17 @@
 import {
   AlertTriangle,
-  Bot,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Circle,
   Clock,
-  Send,
-  X,
 } from 'lucide-react';
-import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { getSubtopic, updateSubtopicProgress } from '../api/guides';
-import { getAccessToken } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import LessonContent from '../components/LessonContent';
+import TutorDrawer from '../components/TutorDrawer';
 
 // Average adult reading speed (words/min). We require ~50% of the resulting
 // estimate as active dwell time before auto-completing — lenient by design.
@@ -31,6 +26,18 @@ function countWords(html) {
   const text = html.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ');
   const matches = text.trim().match(/\S+/g);
   return matches ? matches.length : 0;
+}
+
+// Nearest scrollable ancestor (AppShell scrolls its content div, not the window,
+// on lg+). Returns `window` if none is found.
+function findScrollContainer(el) {
+  let node = el?.parentElement;
+  while (node && node !== document.body) {
+    const { overflowY } = window.getComputedStyle(node);
+    if (overflowY === 'auto' || overflowY === 'scroll') return node;
+    node = node.parentElement;
+  }
+  return window;
 }
 
 function SubtopicStatusPanel({ devStatus }) {
@@ -67,96 +74,6 @@ function SubtopicStatusPanel({ devStatus }) {
   );
 }
 
-// --- AI Tutor widget ---
-
-function AiTutorWidget({ topicId, subtopicTitle, onClose }) {
-  const [input, setInput] = useState('');
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: `/api/topics/${topicId}/chat`,
-      headers: { Authorization: `Bearer ${getAccessToken()}` },
-    }),
-  });
-  const isLoading = status === 'streaming' || status === 'submitted';
-  const bottomRef = useRef(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    sendMessage({ text: input });
-    setInput('');
-  }
-
-  return (
-    <div className="flex flex-col rounded-xl border border-amber-200 bg-[#fffaf0]">
-      <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Bot className="shrink-0 text-amber-600" size={18} />
-          <div>
-            <p className="text-sm font-bold text-slate-950">AI Tutor</p>
-            <p className="text-xs text-slate-500 truncate max-w-[160px]">Ask about {subtopicTitle}</p>
-          </div>
-        </div>
-        {onClose && (
-          <button aria-label="Close AI tutor" className="rounded-md p-1 text-slate-400 hover:text-slate-700" onClick={onClose}>
-            <X size={16} />
-          </button>
-        )}
-      </div>
-
-      {(messages.length > 0 || isLoading) && (
-        <div className="max-h-52 overflow-y-auto space-y-2 p-3">
-          {messages.map((msg) => {
-            const text = msg.parts?.find((p) => p.type === 'text')?.text ?? '';
-            return (
-              <div
-                key={msg.id}
-                className={`rounded-lg px-3 py-2 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'ml-6 bg-blue-50 text-blue-900'
-                    : 'mr-6 border border-slate-100 bg-white text-slate-700'
-                }`}
-              >
-                {text}
-              </div>
-            );
-          })}
-          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-            <div className="mr-6 animate-pulse rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm text-slate-400">
-              Thinking…
-            </div>
-          )}
-          {error && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error.message}</div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-      )}
-
-      <form className="flex items-center gap-2 p-3 pt-2" onSubmit={handleSubmit}>
-        <input
-          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-1 focus:ring-blue-100"
-          placeholder="Ask a question…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button
-          type="submit"
-          aria-label="Send message"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-          disabled={!input.trim() || isLoading}
-        >
-          <Send size={14} />
-        </button>
-      </form>
-    </div>
-  );
-}
-
 function ImportanceBadge() {
   return null;
 }
@@ -174,7 +91,7 @@ export default function SubtopicDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [activeSeconds, setActiveSeconds] = useState(0);
-  const [showMobileAi, setShowMobileAi] = useState(false);
+  const [tutorPushed, setTutorPushed] = useState(false);
   const articleRef = useRef(null);
   const autoCompletedRef = useRef(false);
 
@@ -316,6 +233,26 @@ export default function SubtopicDetailPage() {
       })
       .catch(() => { autoCompletedRef.current = false; });
   }, [contentLoaded, data?.subtopic?.isCompleted, readingProgress, activeSeconds, requiredSeconds]);
+
+  // When the tutor is docked-open at xl, shrink the scroll container itself (not
+  // just the page grid) so its vertical scrollbar stays visible to the LEFT of the
+  // drawer rather than hidden behind it. At lg the drawer overlays (scrim), so no
+  // reservation is made there.
+  useEffect(() => {
+    const container = findScrollContainer(articleRef.current);
+    if (!container || container === window) return undefined;
+    const xl = window.matchMedia('(min-width: 1280px)');
+    const apply = () => {
+      container.style.transition = 'margin-right 300ms ease-in-out';
+      container.style.marginRight = tutorPushed && xl.matches ? '360px' : '';
+    };
+    apply();
+    xl.addEventListener('change', apply);
+    return () => {
+      xl.removeEventListener('change', apply);
+      container.style.marginRight = '';
+    };
+  }, [tutorPushed, data]);
 
   if (error) {
     return <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>;
@@ -467,9 +404,6 @@ export default function SubtopicDetailPage() {
                 ))}
               </nav>
             </div>
-
-            {/* AI Tutor */}
-            <AiTutorWidget key={`${topicId}-${position}`} topicId={topicId} subtopicTitle={item.title} />
           </div>
         </aside>
 
@@ -586,28 +520,15 @@ export default function SubtopicDetailPage() {
         </div>
       </div>
 
-      {/* Mobile AI tutor FAB */}
-      <button
-        aria-label="Open AI tutor"
-        className="fixed bottom-6 right-4 z-50 grid h-14 w-14 place-items-center rounded-full bg-amber-500 text-white shadow-lg transition-transform hover:scale-105 hover:bg-amber-600 xl:hidden"
-        onClick={() => setShowMobileAi(true)}
-      >
-        <Bot size={24} />
-      </button>
-
-      {/* Mobile AI tutor panel */}
-      {showMobileAi && (
-        <div className="fixed inset-x-0 bottom-0 z-[60] xl:hidden">
-          <div className="rounded-t-2xl bg-white shadow-2xl">
-            <AiTutorWidget
-              key={`${topicId}-${position}-mobile`}
-              topicId={topicId}
-              subtopicTitle={item.title}
-              onClose={() => setShowMobileAi(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* AI Tutor — docked drawer (desktop) / bottom sheet (mobile) */}
+      <TutorDrawer
+        key={`${topicId}-${position}`}
+        topicId={topicId}
+        position={position}
+        subtopicTitle={item.title}
+        fullOutline={fullOutline}
+        onDesktopOpenChange={setTutorPushed}
+      />
     </>
   );
 }
