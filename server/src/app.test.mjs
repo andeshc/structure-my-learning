@@ -4,13 +4,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const app = require('./app');
-const { query } = require('./db');
+const { query, assertTestDatabase } = require('./db');
 const { initDb } = require('./db/init');
 const aiService = require('./services/ai.service');
 const config = require('./config');
 const { setAiMocks } = aiService;
 
 async function resetDatabase() {
+  assertTestDatabase(); // refuse to wipe anything but the dedicated test DB
   await initDb();
   await query('DELETE FROM refresh_tokens');
   await query('DELETE FROM oauth_accounts');

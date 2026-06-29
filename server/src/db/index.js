@@ -20,6 +20,18 @@ async function getAll(sql, params = []) {
   return result.rows;
 }
 
+// Hard guard for destructive test helpers (resetDatabase, etc.). Throws unless we
+// are unambiguously running against the dedicated test database, so a misconfigured
+// environment can never wipe real data.
+function assertTestDatabase() {
+  if (config.nodeEnv !== 'test') {
+    throw new Error('Refusing destructive DB reset: NODE_ENV is not "test".');
+  }
+  if (!config.testDatabaseUrl || config.databaseUrl !== config.testDatabaseUrl) {
+    throw new Error('Refusing destructive DB reset: not connected to TEST_DATABASE_URL.');
+  }
+}
+
 async function withTransaction(fn) {
   const client = await pool.connect();
   try {
@@ -35,4 +47,4 @@ async function withTransaction(fn) {
   }
 }
 
-module.exports = { query, getOne, getAll, withTransaction };
+module.exports = { query, getOne, getAll, withTransaction, assertTestDatabase };

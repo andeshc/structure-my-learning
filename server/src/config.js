@@ -1,11 +1,17 @@
 require('dotenv').config();
 
-const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+// The test suite performs destructive resets (DELETE FROM users, guides, …).
+// Force it onto a dedicated database it can safely wipe: in test mode we require
+// TEST_DATABASE_URL and never touch DATABASE_URL. Everywhere else, DATABASE_URL.
+const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+required.push(nodeEnv === 'test' ? 'TEST_DATABASE_URL' : 'DATABASE_URL');
 
 // In production, object storage is mandatory: without it, generated images
 // would silently land on ephemeral container disk and be lost on redeploy.
 // Fail fast at boot rather than degrading quietly. (Region has a default.)
-if ((process.env.NODE_ENV || 'development') === 'production') {
+if (nodeEnv === 'production') {
   required.push('B2_APPLICATION_KEY_ID', 'B2_APPLICATION_KEY', 'B2_BUCKET_NAME', 'CDN_URL');
 }
 
@@ -15,9 +21,19 @@ for (const key of required) {
   }
 }
 
+let databaseUrl = process.env.DATABASE_URL;
+if (nodeEnv === 'test') {
+  // Guard against the classic foot-gun of running tests against the real DB.
+  if (process.env.DATABASE_URL && process.env.TEST_DATABASE_URL === process.env.DATABASE_URL) {
+    throw new Error('TEST_DATABASE_URL must differ from DATABASE_URL — the test suite wipes all tables.');
+  }
+  databaseUrl = process.env.TEST_DATABASE_URL;
+}
+
 module.exports = {
   port: parseInt(process.env.PORT || '3001', 10),
-  databaseUrl: process.env.DATABASE_URL,
+  databaseUrl,
+  testDatabaseUrl: process.env.TEST_DATABASE_URL || '',
   databasePath: process.env.DATABASE_PATH || '',
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
@@ -90,7 +106,7 @@ module.exports = {
   smtpPass: process.env.SMTP_PASS || '',
   contactEmail: process.env.CONTACT_EMAIL || '',
   contactFromEmail: process.env.CONTACT_FROM_EMAIL || '',
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
   aiRateLimitPerHour: parseInt(process.env.AI_RATE_LIMIT_PER_HOUR || '200', 10),
   authRateLimitPer15Min: parseInt(process.env.AUTH_RATE_LIMIT_PER_15_MIN || '300', 10),
   ltdSeatLimit: parseInt(process.env.LTD_SEAT_LIMIT || '200', 10),

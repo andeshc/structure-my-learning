@@ -223,6 +223,7 @@ export default function SubtopicDetailPage() {
   // active time. Fires at most once per subtopic; never un-completes.
   useEffect(() => {
     if (!contentLoaded || autoCompletedRef.current) return;
+    if (data?.guide?.readOnly) return;
     if (data?.subtopic?.isCompleted) return;
     if (readingProgress < SCROLL_COMPLETE_THRESHOLD) return;
     if (activeSeconds < requiredSeconds) return;
@@ -432,17 +433,23 @@ export default function SubtopicDetailPage() {
                 <p className="mt-3 max-w-2xl text-slate-500">{item.overview}</p>
               )}
             </div>
-            <button
-              className={`self-start shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
-                subtopic?.isCompleted
-                  ? 'border border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:text-red-700'
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
-              }`}
-              disabled={isSaving}
-              onClick={toggleComplete}
-            >
-              {subtopic?.isCompleted ? 'Mark incomplete' : 'Mark complete'}
-            </button>
+            {guide.readOnly ? (
+              <span className="self-start shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
+                Read-only · admin view
+              </span>
+            ) : (
+              <button
+                className={`self-start shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                  subtopic?.isCompleted
+                    ? 'border border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:text-red-700'
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                }`}
+                disabled={isSaving}
+                onClick={toggleComplete}
+              >
+                {subtopic?.isCompleted ? 'Mark incomplete' : 'Mark complete'}
+              </button>
+            )}
           </div>
 
           {/* Lesson content */}
@@ -521,14 +528,16 @@ export default function SubtopicDetailPage() {
       </div>
 
       {/* AI Tutor — docked drawer (desktop) / bottom sheet (mobile) */}
-      <TutorDrawer
-        key={`${topicId}-${position}`}
-        topicId={topicId}
-        position={position}
-        subtopicTitle={item.title}
-        fullOutline={fullOutline}
-        onDesktopOpenChange={setTutorPushed}
-      />
+      {!guide.readOnly && (
+        <TutorDrawer
+          key={`${topicId}-${position}`}
+          topicId={topicId}
+          position={position}
+          subtopicTitle={item.title}
+          fullOutline={fullOutline}
+          onDesktopOpenChange={setTutorPushed}
+        />
+      )}
     </>
   );
 }

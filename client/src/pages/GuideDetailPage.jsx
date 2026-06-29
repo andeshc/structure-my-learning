@@ -615,12 +615,19 @@ export default function GuideDetailPage() {
     <section>
       {/* Top bar */}
       <div className="mb-6 flex items-center justify-between">
-        <Link className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-blue-700" to="/">
+        <Link
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-blue-700"
+          to={guide.readOnly ? '/report' : '/'}
+        >
           <ArrowLeft size={15} />
-          Back to Dashboard
+          {guide.readOnly ? 'Back to Admin Report' : 'Back to Dashboard'}
         </Link>
 
-        {confirmDelete ? (
+        {guide.readOnly ? (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+            Read-only · admin view
+          </span>
+        ) : confirmDelete ? (
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-600">{guide.isAdopted ? 'Remove from library?' : 'Delete this guide?'}</span>
             <button
