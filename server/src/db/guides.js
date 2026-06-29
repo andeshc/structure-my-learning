@@ -178,22 +178,32 @@ async function listGuidesForUser(userId) {
   return rows.map(toGuide);
 }
 
-async function findGuideForUser(guideId, userId) {
-  return toGuide(await getOne(
+// When { isAdmin } is set, the ownership/adoption gate is bypassed so an admin can
+// read any guide. `is_adopted` still reflects whether the *viewer* owns it, and the
+// returned `hasAdoption` lets callers tell a real adoption apart from an admin view.
+async function findGuideForUser(guideId, userId, { isAdmin = false } = {}) {
+  const accessClause = isAdmin
+    ? 'TRUE'
+    : `(g.user_id = $2 OR EXISTS (
+         SELECT 1 FROM guide_adoptions WHERE guide_id = $1 AND user_id = $2
+       ))`;
+  const row = await getOne(
     `SELECT g.*, u.name AS owner_name,
        CASE WHEN g.user_id = $2 THEN false ELSE true END AS is_adopted,
+       EXISTS (SELECT 1 FROM guide_adoptions WHERE guide_id = g.id AND user_id = $2) AS has_adoption,
        COUNT(DISTINCT t.id) AS topic_count,
        ${subtopicProgressCount('$2')}
      FROM guides g
      LEFT JOIN users u ON u.id = g.user_id
      LEFT JOIN topics t ON t.guide_id = g.id
      WHERE g.id = $1
-       AND (g.user_id = $2 OR EXISTS (
-         SELECT 1 FROM guide_adoptions WHERE guide_id = $1 AND user_id = $2
-       ))
+       AND ${accessClause}
      GROUP BY g.id, u.name`,
     [guideId, userId]
-  ));
+  );
+  const guide = toGuide(row);
+  if (guide) guide.hasAdoption = Boolean(row.has_adoption);
+  return guide;
 }
 
 async function findOwnedGuideForUser(guideId, userId) {

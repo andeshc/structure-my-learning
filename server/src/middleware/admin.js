@@ -4,12 +4,16 @@ const ADMIN_EMAILS = new Set([
   'andeshc@outlook.com',
 ]);
 
+function isAdmin(email) {
+  return ADMIN_EMAILS.has(email);
+}
+
 function requireAdmin(req, res, next) {
-  if (!ADMIN_EMAILS.has(req.user.email)) {
+  if (!isAdmin(req.user.email)) {
     res.status(403).json({ error: 'Forbidden.' });
     return;
   }
   next();
 }
 
-module.exports = { requireAdmin };
+module.exports = { requireAdmin, isAdmin, ADMIN_EMAILS };

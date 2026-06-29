@@ -12,6 +12,7 @@ const { estimateCost } = require('../services/cost-rates');
 const asyncHandler = require('../utils/asyncHandler');
 const config = require('../config');
 const ids = require('../utils/ids');
+const { isAdmin } = require('../middleware/admin');
 
 function getGuideModelId() {
   if (config.aiProvider === 'claude') return config.anthropicGuideModel;
@@ -211,7 +212,7 @@ router.post('/', asyncHandler(async (req, res, next) => {
 }));
 
 router.get('/:guideId/outline-status', asyncHandler(async (req, res, next) => {
-  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id, { isAdmin: isAdmin(req.user.email) });
   if (!guide) {
     const error = new Error('Guide not found.');
     error.status = 404;
@@ -221,7 +222,7 @@ router.get('/:guideId/outline-status', asyncHandler(async (req, res, next) => {
 }));
 
 router.get('/:guideId', asyncHandler(async (req, res, next) => {
-  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id);
+  const guide = await guides.findGuideForUser(req.params.guideId, req.user.id, { isAdmin: isAdmin(req.user.email) });
 
   if (!guide) {
     const error = new Error('Guide not found.');
@@ -230,9 +231,11 @@ router.get('/:guideId', asyncHandler(async (req, res, next) => {
     return;
   }
 
+  // Admin viewing a guide they neither own nor adopted → read-only.
+  const readOnly = guide.userId !== req.user.id && !guide.hasAdoption;
   const enriched = await guideWithTopics(guide, req.user.id);
   const adoptionCount = enriched.isAdopted ? null : await guides.getAdoptionCount(req.params.guideId);
-  res.json({ guide: { ...enriched, adoptionCount } });
+  res.json({ guide: { ...enriched, adoptionCount, readOnly } });
 }));
 
 router.post('/:guideId/develop', asyncHandler(async (req, res, next) => {

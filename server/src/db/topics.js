@@ -26,17 +26,24 @@ async function listTopicsForGuide(guideId) {
   return rows.map(toTopic);
 }
 
-async function findTopicForUser(topicId, userId) {
+// { isAdmin } bypasses the ownership/adoption gate so an admin can read any topic.
+async function findTopicForUser(topicId, userId, { isAdmin = false } = {}) {
+  const accessClause = isAdmin
+    ? 'TRUE'
+    : `(g.user_id = $2 OR EXISTS (
+         SELECT 1 FROM guide_adoptions WHERE guide_id = g.id AND user_id = $2
+       ))`;
+  // Only bind $2 when the access clause references it — the admin bypass uses TRUE
+  // and would otherwise supply an unused parameter (Postgres rejects this).
+  const params = isAdmin ? [topicId] : [topicId, userId];
   const row = await getOne(
     `SELECT t.*, g.user_id, g.id AS guide_id, g.title AS guide_title,
             g.prompt AS guide_prompt, g.learning_level, g.coverage, g.outline_json
      FROM topics t
      JOIN guides g ON g.id = t.guide_id
      WHERE t.id = $1
-       AND (g.user_id = $2 OR EXISTS (
-         SELECT 1 FROM guide_adoptions WHERE guide_id = g.id AND user_id = $2
-       ))`,
-    [topicId, userId]
+       AND ${accessClause}`,
+    params
   );
   if (!row) return null;
   return {
