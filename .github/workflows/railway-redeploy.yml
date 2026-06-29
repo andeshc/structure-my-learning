@@ -8,8 +8,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  redeploy:
+  # Take a fresh off-platform DB backup BEFORE redeploying. If it fails, the
+  # redeploy job (which needs it) is skipped — we never deploy without a backup.
+  backup:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/db-backup.yml
+    secrets: inherit
+
+  redeploy:
+    needs: backup
     runs-on: ubuntu-latest
 
     steps:

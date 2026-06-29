@@ -40,6 +40,7 @@ on:
   schedule:
     - cron: '0 3 * * *'      # 03:00 UTC daily
   workflow_dispatch:
+  workflow_call:             # let the Railway redeploy workflow take a backup first
 
 concurrency:
   group: db-backup

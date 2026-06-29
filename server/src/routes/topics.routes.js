@@ -9,6 +9,7 @@ const { estimateCost } = require('../services/cost-rates');
 const { getContentModelId } = require('../services/llm');
 const asyncHandler = require('../utils/asyncHandler');
 const { aiRateLimit } = require('../middleware/rateLimit');
+const { isAdmin } = require('../middleware/admin');
 const { transformHtml } = require('../utils/htmlTransformer');
 
 const router = express.Router();
@@ -61,7 +62,8 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     return next(error);
   }
 
-  const found = await topicsDb.findTopicForUser(req.params.topicId, req.user.id);
+  const viewerIsAdmin = isAdmin(req.user.email);
+  const found = await topicsDb.findTopicForUser(req.params.topicId, req.user.id, { isAdmin: viewerIsAdmin });
   if (!found) {
     const error = new Error('Topic not found.');
     error.status = 404;
@@ -139,10 +141,12 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
   });
 
   // Progress percentage for this user+guide
-  const guide = await guides.findGuideForUser(found.guide.id, req.user.id);
+  const guide = await guides.findGuideForUser(found.guide.id, req.user.id, { isAdmin: viewerIsAdmin });
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;
   const completedSubtopics = guide?.completedSubtopicCount ?? 0;
   const subtopicProgressPercentage = totalSubtopics > 0 ? Math.round((completedSubtopics / totalSubtopics) * 100) : 0;
+  // Admin viewing a guide they neither own nor adopted → read-only.
+  const readOnly = found.guide.userId !== req.user.id && !(guide?.hasAdoption);
 
   res.json({
     subtopic: dbSubtopic
@@ -155,7 +159,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     nextTopic,
     fullOutline,
     topic: { id: found.topic.id, title: found.topic.title, description: found.topic.description, position: found.topic.position },
-    guide: { id: found.guide.id, title: found.guide.title, subtopicProgressPercentage },
+    guide: { id: found.guide.id, title: found.guide.title, subtopicProgressPercentage, readOnly },
   });
 }));
 
