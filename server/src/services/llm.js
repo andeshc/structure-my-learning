@@ -36,6 +36,14 @@ function getContentModel() {
   return createOpenAI({ apiKey: config.openaiApiKey })(config.openaiContentModel);
 }
 
+// The bare model-id string (not the SDK model object) — needed for cost estimation.
+function getContentModelId() {
+  if (config.aiProvider === 'claude') return config.anthropicContentModel;
+  if (config.aiProvider === 'novita') return config.novitaContentModel;
+  if (config.aiProvider === 'together') return config.togetherContentModel;
+  return config.openaiContentModel;
+}
+
 const providerMaxTokens = {
   novita: config.novitaMaxTokens,
 };
@@ -51,4 +59,4 @@ function getObjectMode() {
   return 'auto';
 }
 
-module.exports = { getGuideModel, getContentModel, clampTokens, getObjectMode };
+module.exports = { getGuideModel, getContentModel, getContentModelId, clampTokens, getObjectMode };

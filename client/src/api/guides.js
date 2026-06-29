@@ -37,6 +37,14 @@ export function updateSubtopicProgress(topicId, position, isCompleted) {
   });
 }
 
+export function getTutorThread(topicId, position) {
+  return apiRequest(`/api/topics/${topicId}/subtopics/${position}/chat`);
+}
+
+export function clearTutorThread(topicId, position) {
+  return apiRequest(`/api/topics/${topicId}/subtopics/${position}/chat`, { method: 'DELETE' });
+}
+
 export function developGuide(guideId) {
   return apiRequest(`/api/guides/${guideId}/develop`, { method: 'POST' });
 }

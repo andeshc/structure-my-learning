@@ -11,6 +11,7 @@ module.exports = {
   tokenId: () => makeId('tok'),
   oauthId: () => makeId('oau'),
   subtopicId: () => makeId('sub'),
+  tutorMessageId: () => makeId('tms'),
   contactId: () => makeId('con'),
   collectionId: () => makeId('col'),
   shareToken: () => randomBytes(12).toString('hex'),

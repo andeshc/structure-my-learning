@@ -34,6 +34,9 @@ export default function AppShell() {
   const hideSidebar = pathname.startsWith('/topics/') || isShareSubtopic;
   const hideFooter = pathname.startsWith('/topics/') || pathname.startsWith('/guides/') || isShareSubtopic;
   const hideBottomNav = pathname.startsWith('/topics/') || isShareSubtopic;
+  // On mobile the logout control lives only on the Account page; the mobile
+  // header stays minimal elsewhere (desktop keeps its own logout in the sidebar).
+  const showMobileLogout = pathname.startsWith('/account');
 
   async function handleLogout() {
     await auth.signOut();
@@ -95,7 +98,9 @@ export default function AppShell() {
             <Link to="/dashboard">
               <Logo className="h-7 w-auto" />
             </Link>
-            <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>
+            {showMobileLogout && (
+              <button className="rounded-md border border-teal-100 px-3 py-2 text-sm font-semibold text-slate-500" onClick={handleLogout}>Log out</button>
+            )}
           </header>
           <main className={`flex-1 px-5 py-7 sm:px-8 lg:px-16 lg:py-12 ${hideBottomNav ? '' : 'pb-24 lg:pb-12'}`}>
             <Outlet />

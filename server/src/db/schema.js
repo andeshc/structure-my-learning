@@ -124,6 +124,17 @@ CREATE TABLE IF NOT EXISTS subtopic_progress (
   PRIMARY KEY (user_id, subtopic_id)
 );
 
+CREATE TABLE IF NOT EXISTS tutor_messages (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subtopic_id TEXT NOT NULL REFERENCES subtopics(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tutor_messages_user_subtopic ON tutor_messages(user_id, subtopic_id, created_at);
+
 CREATE TABLE IF NOT EXISTS contact_submissions (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,

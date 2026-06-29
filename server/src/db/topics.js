@@ -43,6 +43,7 @@ async function findTopicForUser(topicId, userId) {
     topic: toTopic(row),
     guide: {
       id: row.guide_id,
+      userId: row.user_id,
       title: row.guide_title,
       prompt: row.guide_prompt,
       learningLevel: row.learning_level,
