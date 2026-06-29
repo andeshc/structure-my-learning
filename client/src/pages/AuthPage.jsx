@@ -189,11 +189,14 @@ export default function AuthPage({ mode }) {
             {[
               { key: 'google',    href: '/api/auth/google',    icon: <GoogleIcon />,    label: 'Login with Google'    },
               { key: 'github',    href: '/api/auth/github',    icon: <GitHubIcon />,    label: 'Login with GitHub'    },
-              // Hidden for now — re-enable once Apple/Facebook OAuth apps are configured
+              // Hidden for now — active set is Google/GitHub/LinkedIn.
+              // Apple/Facebook: OAuth apps not configured. Microsoft: works but the
+              // Azure app still shows an "unverified" consent screen (pending publisher
+              // verification). Re-enable each once its setup is complete.
               // { key: 'apple',     href: '/api/auth/apple',     icon: <AppleIcon />,     label: 'Login with Apple'     },
               // { key: 'facebook',  href: '/api/auth/facebook',  icon: <FacebookIcon />,  label: 'Login with Facebook'  },
               { key: 'linkedin',  href: '/api/auth/linkedin',  icon: <LinkedInIcon />,  label: 'Login with LinkedIn'  },
-              { key: 'microsoft', href: '/api/auth/microsoft', icon: <MicrosoftIcon />, label: 'Login with Microsoft' },
+              // { key: 'microsoft', href: '/api/auth/microsoft', icon: <MicrosoftIcon />, label: 'Login with Microsoft' },
             ].map(({ key, href, icon, label }) => (
               <a
                 key={key}
