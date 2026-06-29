@@ -2,8 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Unlayered — beats both @layer base and Tailwind CDN's unlayered utilities */
-html { overflow-x: hidden; }
+/* Unlayered — beats both @layer base and Tailwind CDN's unlayered utilities.
+   Use `clip` (not `hidden`): both prevent horizontal scroll from wide content,
+   but `overflow-x: hidden` on the root makes <html> a scroll container, which on
+   mobile Safari/Chrome breaks `position: fixed` (fixed elements scroll out of the
+   viewport — e.g. the tutor FAB). `clip` prevents the scroll without that side effect. */
+html { overflow-x: clip; }
 
 /* AI-generated lesson content — kept outside @layer to win over Tailwind CDN preflight */
 .lesson-content {
@@ -186,6 +190,18 @@ html { overflow-x: hidden; }
   font-weight: 600;
   color: #1e293b;
 }
+
+/* AI Tutor chat bubbles — reuse .lesson-content typography but more compact.
+   Combined selectors (.tutor-message.lesson-content) outrank the single-class
+   .lesson-content rules (and its responsive overrides) regardless of order. */
+.tutor-message.lesson-content { font-size: 0.875rem; line-height: 1.5rem; }
+.tutor-message.lesson-content > * + * { margin-top: 0.625rem; }
+.tutor-message.lesson-content p { margin-top: 0.5rem; }
+.tutor-message.lesson-content p:first-child { margin-top: 0; }
+.tutor-message.lesson-content ul,
+.tutor-message.lesson-content ol { margin-top: 0.5rem; }
+.tutor-message.lesson-content h3 { font-size: 1rem; margin-top: 0.75rem; margin-bottom: 0.25rem; }
+.tutor-message.lesson-content pre { font-size: 0.78rem; }
 
 /* Illustration images embedded in AI-generated lesson content */
 .lesson-content .lesson-illustration {
