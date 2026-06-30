@@ -204,9 +204,28 @@ The JSON below is canonical; create `content-config.json` from it verbatim. Fiel
       "extra_attrs": {},
       "review_checks": ["steps_ordered: steps are complete and in the correct order", "prereqs_stated: prerequisites are listed before the steps"]
     }
+  },
+
+  "guide_thumbnail": {
+    "style": "flat vector illustration with thin dark slate outlines and soft pastel fills, a small recognizable scene of a few related objects, friendly modern editorial look on a warm cream paper background",
+    "max_elements": 6,
+    "palette": [
+      { "id": "cream-blue",       "background": "warm cream paper", "accent": "soft cornflower blue" },
+      { "id": "cream-green",      "background": "warm cream paper", "accent": "fresh sage green" },
+      { "id": "cream-amber",      "background": "warm cream paper", "accent": "warm amber" },
+      { "id": "cream-teal",       "background": "warm cream paper", "accent": "calm teal" },
+      { "id": "cream-coral",      "background": "warm cream paper", "accent": "muted coral" },
+      { "id": "cream-lavender",   "background": "warm cream paper", "accent": "soft lavender" },
+      { "id": "cream-rose",       "background": "warm cream paper", "accent": "dusty rose" },
+      { "id": "cream-indigo",     "background": "warm cream paper", "accent": "deep indigo" },
+      { "id": "cream-terracotta", "background": "warm cream paper", "accent": "warm terracotta" },
+      { "id": "cream-plum",       "background": "warm cream paper", "accent": "muted plum" }
+    ]
   }
 }
 ```
+
+> **`guide_thumbnail`** drives guide-card cover art (a flat-vector *thumbnail*, not an illustration). The flat-vector / cream-paper style intentionally matches the app's in-lesson house illustrations (thin slate outlines, soft pastel fills) so the dashboard reads as one family. The LLM derives a per-guide `{ metaphor, paletteId }` — `metaphor` here is a concrete, instantly recognizable depiction of the topic (a small scene of a few related objects), not an abstract symbol. `paletteId` must be one of the `palette[].id` values, which the prompt builder resolves to its `background`/`accent` colour words. `max_elements` caps how many shapes the scene may use (kept modest so cards stay uncluttered). The background is a consistent warm cream across all palettes; the `accent` is only a *gentle* lean — concrete scenes are naturally multi-colour (a sun is yellow, water blue), so the subject carries most of the colour and cards stay calm and legible (thin dark outlines survive on cream) against the white guide cards and green footer. Keep new entries on the cream background with a single brand-pastel accent.
 
 > **Adding a content type** is a config-only change: add an entry here with its building blocks, directives, format additions, and review checks — no prompt or code edits. **Mixing types** (e.g. data-science = code + math) is not built yet but is a clean extension: union the two types' `extra_tags`/`extra_attrs` and directives at resolve time.
 
