@@ -195,5 +195,21 @@
       "extra_attrs": {},
       "review_checks": ["steps_ordered: steps are complete and in the correct order", "prereqs_stated: prerequisites are listed before the steps"]
     }
+  },
+  "guide_thumbnail": {
+    "style": "flat vector illustration with thin dark slate outlines and soft pastel fills, a small recognizable scene of a few related objects, friendly modern editorial look on a warm cream paper background",
+    "max_elements": 6,
+    "palette": [
+      { "id": "cream-blue",       "background": "warm cream paper", "accent": "soft cornflower blue" },
+      { "id": "cream-green",      "background": "warm cream paper", "accent": "fresh sage green" },
+      { "id": "cream-amber",      "background": "warm cream paper", "accent": "warm amber" },
+      { "id": "cream-teal",       "background": "warm cream paper", "accent": "calm teal" },
+      { "id": "cream-coral",      "background": "warm cream paper", "accent": "muted coral" },
+      { "id": "cream-lavender",   "background": "warm cream paper", "accent": "soft lavender" },
+      { "id": "cream-rose",       "background": "warm cream paper", "accent": "dusty rose" },
+      { "id": "cream-indigo",     "background": "warm cream paper", "accent": "deep indigo" },
+      { "id": "cream-terracotta", "background": "warm cream paper", "accent": "warm terracotta" },
+      { "id": "cream-plum",       "background": "warm cream paper", "accent": "muted plum" }
+    ]
   }
 }

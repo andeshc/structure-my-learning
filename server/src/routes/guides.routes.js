@@ -142,13 +142,35 @@ async function generateOutlineInBackground({ guideId, prompt, learningLevel, cov
     topicObjects.forEach((t) => { topicsByPosition[t.position] = t.id; });
     await subtopicsDb.initSubtopicsForGuide(outline.sections, topicsByPosition);
 
-    ai.generateGuideIllustration({ guideId, outline, prompt })
-      .then((path) => guides.setGuideIllustration(guideId, path))
-      .catch((err) => { if (config.nodeEnv !== 'test') console.error('Illustration failed:', err.message); });
+    // Cover thumbnail is generated off the guide's critical path — a thumbnail
+    // failure must never fail the guide. But persist it robustly and log per-guide
+    // so a failure is visible (and recoverable) rather than silently lost, which is
+    // easy to miss when two guides are generated at once.
+    generateAndSaveIllustration({ guideId, outline, prompt });
 
   } catch (err) {
     if (config.nodeEnv !== 'test') console.error('[outline-background]', err.message);
     await guides.markGuideFailed(guideId);
+  }
+}
+
+async function generateAndSaveIllustration({ guideId, outline, prompt }) {
+  try {
+    const path = await ai.generateGuideIllustration({ guideId, outline, prompt });
+    if (!path) {
+      if (config.nodeEnv !== 'test') console.error(`[illustration] ${guideId}: generator returned no path`);
+      return;
+    }
+    // Idempotent UPDATE; retry once so a transient DB blip doesn't drop the thumbnail.
+    try {
+      await guides.setGuideIllustration(guideId, path);
+    } catch (dbErr) {
+      if (config.nodeEnv !== 'test') console.warn(`[illustration] ${guideId}: setGuideIllustration retry after ${dbErr.message}`);
+      await guides.setGuideIllustration(guideId, path);
+    }
+    if (config.nodeEnv !== 'test') console.log(`[illustration] ${guideId}: set ${path}`);
+  } catch (err) {
+    if (config.nodeEnv !== 'test') console.error(`[illustration] ${guideId} failed:`, err.message);
   }
 }
 

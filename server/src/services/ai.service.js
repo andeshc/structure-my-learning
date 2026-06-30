@@ -17,6 +17,11 @@ const clarifyingQuestionsPromptTemplate = fs.readFileSync(
   'utf8'
 );
 
+const guideThumbnailPromptTemplate = fs.readFileSync(
+  path.join(__dirname, '../prompts/guide-thumbnail-prompt.md'),
+  'utf8'
+);
+
 function parsePromptSections(markdown) {
   const sections = {};
   const lines = markdown.split('\n');
@@ -39,6 +44,7 @@ function parsePromptSections(markdown) {
 
 const guidePromptSections = parsePromptSections(guidePromptTemplate);
 const clarifyingQuestionsPromptSections = parsePromptSections(clarifyingQuestionsPromptTemplate);
+const guideThumbnailPromptSections = parsePromptSections(guideThumbnailPromptTemplate);
 
 const learningLevelGuidance = {
   early_learner:      'Very young child (ages 3–5); use the simplest words, one idea at a time, no assumed background.',
@@ -122,12 +128,33 @@ const outlineSectionSchema = z.object({
   items: z.array(outlineItemSchema).min(1).max(30),
 });
 
+// Paper-cut guide-card thumbnail spec. The LLM derives one bold visual metaphor plus a
+// palette id; values come from content-config.json so nothing is hardcoded here.
+const thumbnailPaletteIds = contentConfig.guide_thumbnail.palette.map((p) => p.id);
+
+const thumbnailSpecSchema = z.object({
+  metaphor: z.string().min(10).max(280),
+  paletteId: z.enum(thumbnailPaletteIds),
+});
+
+// Shared between the outline system prompt (so new guides emit `thumbnail` in the same
+// call) and the standalone deriveGuideThumbnailSpec used by backfill — kept in one place
+// so the two paths can't drift.
+function thumbnailSpecInstruction() {
+  const ids = thumbnailPaletteIds.join(', ');
+  const max = contentConfig.guide_thumbnail.max_elements;
+  return `Thumbnail cover spec (field "thumbnail"): design a concrete, instantly recognizable cover image for a flat-vector course-card thumbnail.
+- "metaphor": describe a small, literal scene of a few related objects that a viewer would instantly recognize as THIS guide's topic — NOT an abstract symbol or a single clever glyph. Use up to ${max} simple shapes. Be specific to the subject; avoid generic education clichés (lightbulb, stack of books, graduation cap, plain gears) and avoid lazy category stand-ins (a plain padlock for anything security, a leaf for anything nature). No text, no labelled diagrams.
+- "paletteId": pick the palette whose mood best fits the subject, from exactly these ids: ${ids}.`;
+}
+
 const outlineSchema = z.object({
   title: z.string().min(3).max(90),
   overview: z.string().min(20).max(800).nullable(),
   learningOutcomes: z.array(z.string().min(5).max(200)).max(5).nullable(),
   tags: z.array(z.string().min(2).max(28)).min(1).max(3).nullable(),
   sections: z.array(outlineSectionSchema).min(1).max(60),
+  thumbnail: thumbnailSpecSchema.nullable(),
 });
 
 const contentSchema = z.object({
@@ -276,7 +303,9 @@ Additional output rules:
 - Write a one-sentence "overview" (under 400 characters) for every item that states what it is and why it matters at this learner level.
 - Avoid unsupported claims, hype, and filler.
 - For "illustrationPrompts": follow the illustration guidance in the learner profile above. When generating prompts, describe the visual composition, key elements, labels, and layout in full. Generate at most ${maxImages} prompt(s) per subtopic.${subtopicLimitRule ? `\n${subtopicLimitRule}` : ''}
-- If a "Learner clarifications" block is present in the user prompt, treat its content as authoritative refinements of the learning goal — let it shape topic selection, emphasis, and examples.`;
+- If a "Learner clarifications" block is present in the user prompt, treat its content as authoritative refinements of the learning goal — let it shape topic selection, emphasis, and examples.
+
+${thumbnailSpecInstruction()}`;
 
   let userPrompt = guidePromptSections['User Prompt']
     .replace('`{{SUBJECT}}`', `"${prompt}"`)
@@ -338,31 +367,53 @@ async function generateClarifyingQuestions({ prompt, learningLevel, coverage }) 
   return object;
 }
 
-function guideIllustrationPrompt({ outline, prompt }) {
-  const sectionTitles = outline.sections.slice(0, 8).map((section) => section.title).join(', ');
-  const tags = outline.tags && outline.tags.length > 0 ? outline.tags.join(', ') : 'learning, education';
+function resolveThumbnailPalette(paletteId) {
+  const palette = contentConfig.guide_thumbnail.palette;
+  return palette.find((p) => p.id === paletteId) || palette[0];
+}
 
-  return `Create a clean educational illustration for a learning guide card.
-Guide title: ${outline.title}
-Original learner request: ${prompt}
-Major guide sections: ${sectionTitles}
+// Build the flat-vector thumbnail prompt by filling the canonical template
+// (src/prompts/guide-thumbnail-prompt.md) with the derived metaphor + resolved palette.
+function guideThumbnailPrompt({ spec }) {
+  const { background, accent } = resolveThumbnailPalette(spec.paletteId);
+  return guideThumbnailPromptSections['Prompt']
+    .replaceAll('{{METAPHOR}}', spec.metaphor)
+    .replaceAll('{{MAX_ELEMENTS}}', String(contentConfig.guide_thumbnail.max_elements))
+    .replaceAll('{{BACKGROUND}}', background)
+    .replaceAll('{{ACCENT}}', accent);
+}
 
-Scene and style:
-- Warm off-white classroom-paper background.
-- Flat modern app illustration, vector-like, crisp edges.
-- Dark slate outlines with soft blue, green, amber, violet, and rose accents.
-- Centered composition with generous padding.
-- No shadows, no photorealism, no watermark, no logos.
+// Derive a thumbnail spec from a guide's title + outline. New guides get this for free
+// inside the outline call (outline.thumbnail); this standalone path is for backfilling
+// existing guides and as a runtime fallback when an outline lacks a thumbnail.
+async function deriveGuideThumbnailSpec({ title, outline }) {
+  if (testMocks.deriveGuideThumbnailSpec) {
+    return thumbnailSpecSchema.parse(await testMocks.deriveGuideThumbnailSpec({ title, outline }));
+  }
 
-Subject requirements:
-- Make the visual semantically match this exact guide's core theme.
-- For math topics, show mathematical objects such as matrices, grids, graphs, vectors, highlighted rows/columns, or equations.
-- For science topics, show simple scientific theme of the guide. Draw only one subject.
-- For AI/software topics, show model architecture, tokens, nodes, code windows, or system diagrams.
-- For business topics, show plans, targets, workflows, charts, or strategy artifacts.
-- Avoid generic education imagery unless the guide is genuinely broad.
-- Since this is going to be a cover or thumbnail, dont make it too detailed or too crowded, keep it simple.
-- Use only tiny labels, symbols, or single letters when needed. Avoid long readable text.`;
+  const sectionTitles = (outline?.sections || []).slice(0, 10).map((s) => s.title).join(', ');
+  const tags = outline?.tags && outline.tags.length > 0 ? outline.tags.join(', ') : '';
+
+  const system = `You design course-card cover thumbnails for a learning app.\n\n${thumbnailSpecInstruction()}`;
+  const userPrompt = `Guide title: ${title}${tags ? `\nTags: ${tags}` : ''}${sectionTitles ? `\nMajor sections: ${sectionTitles}` : ''}\n\nReturn the thumbnail spec for this guide.`;
+
+  const { object, usage } = await generateObject({
+    model: getGuideModel(),
+    schema: thumbnailSpecSchema,
+    mode: getObjectMode(),
+    system,
+    prompt: userPrompt,
+  });
+
+  try {
+    const { estimateCost } = require('./cost-rates');
+    const { tokensIn, tokensOut, costUsd } = estimateCost(usage, config.anthropicGuideModel || config.openaiGuideModel);
+    console.log(`[cost] thumbnail-spec in=${tokensIn} out=${tokensOut} $${costUsd.toFixed(4)}`);
+  } catch (err) {
+    console.warn('[cost] failed to log thumbnail-spec cost:', err.message);
+  }
+
+  return object;
 }
 
 async function generateGuideIllustration({ guideId, outline, prompt }) {
@@ -371,12 +422,16 @@ async function generateGuideIllustration({ guideId, outline, prompt }) {
   }
 
   try {
+    const spec = outline.thumbnail || await deriveGuideThumbnailSpec({ title: outline.title, outline });
     const url = await imageService.generateImage({
       model: config.guideIllustrationModel,
-      prompt: guideIllustrationPrompt({ outline, prompt }),
-      key: `guide-illustrations/${guideId}.png`,
+      prompt: guideThumbnailPrompt({ spec }),
+      // Versioned key: flat-vector thumbnails replace the old dull illustrations. The new
+      // URL busts CDN/browser caches and leaves the old object in place for rollback.
+      key: `guide-illustrations/${guideId}-v2.png`,
       aspectRatio: '3:2',
-      size: { width: 1200, height: 800 }
+      size: { width: 1200, height: 800 },
+      raw: true,
     });
     return url;
   } catch (error) {
@@ -658,6 +713,8 @@ module.exports = {
   generateAdditionalSections,
   generateClarifyingQuestions,
   generateGuideIllustration,
+  deriveGuideThumbnailSpec,
+  guideThumbnailPrompt,
   refineOutline,
   streamOutline,
   streamSubtopicContent,
