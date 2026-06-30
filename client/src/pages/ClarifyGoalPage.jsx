@@ -92,6 +92,14 @@ export default function ClarifyGoalPage() {
     window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true
   );
 
+  // The on-mount fetch + auto-submit must run exactly once. StrictMode (dev) and any
+  // future concurrent re-mount invoke the effect twice; without this guard the skip
+  // path fires `fetchClarifyingQuestions` twice and schedules two `submitGuide` timers,
+  // creating a DUPLICATE guide. A synchronous ref is the only reliable guard here —
+  // an `isSubmitting` state check is too late (both timers read the stale `false`).
+  const didStartRef = useRef(false);
+  const hasSubmittedRef = useRef(false);
+
   const { prompt, learningLevel, coverage } = state ?? {};
 
   useEffect(() => {
@@ -101,6 +109,9 @@ export default function ClarifyGoalPage() {
     }
 
     const frame = requestAnimationFrame(() => setVisible(true));
+
+    if (didStartRef.current) return () => cancelAnimationFrame(frame);
+    didStartRef.current = true;
 
     fetchClarifyingQuestions({ prompt, learningLevel, coverage })
       .then((data) => {
@@ -117,7 +128,8 @@ export default function ClarifyGoalPage() {
   }, []);
 
   async function submitGuide(clarifications) {
-    if (isSubmitting) return;
+    if (hasSubmittedRef.current) return;
+    hasSubmittedRef.current = true;
     setIsSubmitting(true);
     try {
       const { guideId } = await createGuide({
@@ -129,6 +141,7 @@ export default function ClarifyGoalPage() {
       });
       navigate(`/guides/${guideId}`);
     } catch (err) {
+      hasSubmittedRef.current = false;
       setIsSubmitting(false);
       if (err.code === 'UPGRADE_REQUIRED') {
         setUpgradeOpen(true);

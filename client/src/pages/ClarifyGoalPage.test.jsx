@@ -10,6 +10,15 @@ vi.mock('../api/guides', () => ({
   createGuide: vi.fn(),
 }));
 
+// The page always renders <UpgradeModal>, which pulls from the auth + upgrade
+// contexts. Stub those so the page can mount under the bare MemoryRouter.
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({ user: null, isAuthenticated: false }),
+}));
+vi.mock('../hooks/useUpgrade', () => ({
+  useUpgrade: () => ({ startCheckout: vi.fn(), state: 'idle', reset: vi.fn() }),
+}));
+
 import { fetchClarifyingQuestions, createGuide } from '../api/guides';
 
 const MOCK_QUESTIONS = [
@@ -182,6 +191,28 @@ describe('ClarifyGoalPage', () => {
       () => expect(createGuide).toHaveBeenCalledWith(expect.objectContaining({ clarifications: [] })),
       { timeout: 2000 }
     );
+  });
+
+  it('creates only one guide on skip even when the effect runs twice (StrictMode)', async () => {
+    fetchClarifyingQuestions.mockResolvedValue({ skip: true, reason: 'Already specific.', questions: [] });
+    createGuide.mockResolvedValue({ guideId: 'guide_xyz' });
+
+    await act(async () => {
+      render(
+        <React.StrictMode>
+          <MemoryRouter initialEntries={[{ pathname: '/guides/new/clarify', state: VALID_STATE }]}>
+            <Routes>
+              <Route path="/guides/new/clarify" element={<ClarifyGoalPage />} />
+              <Route path="/guides/new" element={<div data-testid="new-guide-page" />} />
+              <Route path="/guides/:guideId" element={<div data-testid="guide-detail-page" />} />
+            </Routes>
+          </MemoryRouter>
+        </React.StrictMode>
+      );
+    });
+
+    await waitFor(() => expect(createGuide).toHaveBeenCalled(), { timeout: 2000 });
+    expect(createGuide).toHaveBeenCalledTimes(1);
   });
 
   it('shows error state and Generate without questions CTA on fetch failure', async () => {
