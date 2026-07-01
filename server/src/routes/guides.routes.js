@@ -4,6 +4,7 @@ const guides = require('../db/guides');
 const collections = require('../db/collections');
 const topicsDb = require('../db/topics');
 const subtopicsDb = require('../db/subtopics');
+const guideProgressDb = require('../db/guideProgress');
 const usersDb = require('../db/users');
 const ai = require('../services/ai.service');
 const guideDeveloper = require('../services/guide-developer');
@@ -62,6 +63,7 @@ async function guideWithTopics(guide, userId) {
   const topics = await topicsDb.listTopicsForGuide(guide.id);
   const statuses = await subtopicsDb.listSubtopicStatusesForGuide(guide.id);
   const allProgress = await subtopicsDb.listAllSubtopicsForGuide(guide.id, userId);
+  const inProgressSubtopicId = await guideProgressDb.getInProgressSubtopicId(userId, guide.id);
 
   const byTopicPos = {};
   for (const s of statuses) {
@@ -87,6 +89,7 @@ async function guideWithTopics(guide, userId) {
         hasContent: byTopicPos[topicId]?.[pos]?.hasContent ?? false,
         illustrationUrls: byTopicPos[topicId]?.[pos]?.illustrationUrls ?? [],
         isCompleted: progressByTopicPos[topicId]?.[pos]?.isCompleted ?? false,
+        inProgress: Boolean(progressByTopicPos[topicId]?.[pos]?.id) && progressByTopicPos[topicId][pos].id === inProgressSubtopicId,
       })),
     };
   });

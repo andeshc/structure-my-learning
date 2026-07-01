@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { deleteGuide, developGuide, finalizeGuide, getGuide, getGuideOutlineStatus, refineGuide, toggleSharing } from '../api/guides';
 import LoadingPanel from '../components/LoadingPanel';
+import { lessonBadge } from '../utils/lessonStatus';
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -45,18 +46,6 @@ function formatLearningLevel(level) {
 
 function estimatedMinutes(subtopicCount) {
   return Math.max(subtopicCount, 1) * 15;
-}
-
-function statusLabel(topic, isNext) {
-  if (topic?.isCompleted) return 'Done';
-  if (isNext) return 'Next up';
-  return null;
-}
-
-function statusClass(topic, isNext) {
-  if (topic?.isCompleted) return 'bg-emerald-50 text-emerald-700';
-  if (isNext) return 'bg-teal-50 text-teal-700';
-  return '';
 }
 
 // ─── Outline polling view (status === 'pending') ──────────────────────────────
@@ -305,7 +294,23 @@ function SubtopicStatusButton({ item, topicId, subtopicIndex, onRetry }) {
   return <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">Pending</span>;
 }
 
-function ItemGroup({ items, topicId, onRetry, isReviewMode }) {
+const lessonBadgeConfig = {
+  completed: { label: 'Completed', className: 'bg-emerald-50 text-emerald-700' },
+  'in-progress': { label: 'In Progress', className: 'bg-blue-50 text-blue-700' },
+  'next-up': { label: 'Next Up', className: 'bg-teal-50 text-teal-700' },
+};
+
+function LessonBadge({ status }) {
+  const config = lessonBadgeConfig[status];
+  if (!config) return null;
+  return (
+    <span className={`inline-flex h-5 shrink-0 items-center rounded px-1.5 text-[10px] font-semibold ${config.className}`}>
+      {config.label}
+    </span>
+  );
+}
+
+function ItemGroup({ items, topicId, onRetry, isReviewMode, flatItems }) {
   return (
     <ul className="divide-y divide-slate-100">
       {items.map((item, i) => (
@@ -317,7 +322,12 @@ function ItemGroup({ items, topicId, onRetry, isReviewMode }) {
                 <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.overview}</p>
               )}
             </div>
-            {!isReviewMode && topicId && <SubtopicStatusButton item={item} topicId={topicId} subtopicIndex={i} onRetry={onRetry} />}
+            {!isReviewMode && topicId && (
+              <div className="flex shrink-0 items-center gap-2">
+                <LessonBadge status={lessonBadge(flatItems, item)} />
+                <SubtopicStatusButton item={item} topicId={topicId} subtopicIndex={i} onRetry={onRetry} />
+              </div>
+            )}
           </div>
         </li>
       ))}
@@ -325,28 +335,19 @@ function ItemGroup({ items, topicId, onRetry, isReviewMode }) {
   );
 }
 
-function TopicRow({ section, sectionIndex, topic, isNext, isNew, onRetry, isReviewMode }) {
+function TopicRow({ section, sectionIndex, topic, isNew, onRetry, isReviewMode, flatItems }) {
   const hasSubtopics = section.items && section.items.length > 0;
-  const label = statusLabel(topic, isNext);
 
   return (
     <div
       id={`section-${sectionIndex + 1}`}
       className={`scroll-mt-8 -mx-5 sm:mx-0 border-y sm:rounded-xl sm:border transition-all ${
-        isNew ? 'border-blue-300 bg-blue-50/40 shadow-sm'
-        : isNext ? 'border-teal-200 bg-teal-50/40 shadow-sm'
-        : 'border-slate-200 bg-white'
+        isNew ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-slate-200 bg-white'
       }`}
     >
       <div className="flex items-start gap-4 p-4">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
-          topic?.isCompleted
-            ? 'bg-emerald-100 text-emerald-700'
-            : isNext
-            ? 'bg-teal-100 text-teal-700'
-            : isNew
-            ? 'bg-blue-100 text-blue-700'
-            : 'bg-slate-200 text-slate-700'
+          isNew ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'
         }`}>
           {sectionIndex + 1}
         </span>
@@ -359,11 +360,6 @@ function TopicRow({ section, sectionIndex, topic, isNext, isNew, onRetry, isRevi
                 Added
               </span>
             )}
-            {!isNew && label && (
-              <span className={`inline-flex h-5 shrink-0 translate-y-px items-center rounded px-1.5 text-[10px] font-semibold ${statusClass(topic, isNext)}`}>
-                {label}
-              </span>
-            )}
           </div>
           <p className="mt-0.5 text-sm text-slate-500">{section.description}</p>
         </div>
@@ -371,7 +367,7 @@ function TopicRow({ section, sectionIndex, topic, isNext, isNew, onRetry, isRevi
 
       {hasSubtopics && (
         <div className="border-t border-slate-100 px-4 pb-3 pt-0">
-          <ItemGroup items={section.items} topicId={topic?.id} onRetry={onRetry} isReviewMode={isReviewMode} />
+          <ItemGroup items={section.items} topicId={topic?.id} onRetry={onRetry} isReviewMode={isReviewMode} flatItems={flatItems} />
         </div>
       )}
     </div>
@@ -528,6 +524,11 @@ export default function GuideDetailPage() {
       total: guide.topicCount || guide.topics.length,
     };
   }, [guide]);
+
+  const flatItems = useMemo(
+    () => guide?.outline?.sections?.flatMap((s) => s.items || []) ?? [],
+    [guide]
+  );
 
   async function handleDevelop() {
     try {
@@ -890,8 +891,8 @@ export default function GuideDetailPage() {
                 section={section}
                 sectionIndex={sectionIndex}
                 topic={guide.topics[sectionIndex]}
-                isNext={!guide.needsReview && summary && sectionIndex === summary.nextIndex}
                 isNew={guide.needsReview && newSectionIndices.includes(sectionIndex)}
+                flatItems={flatItems}
                 onRetry={handleDevelop}
                 isReviewMode={guide.needsReview}
               />
