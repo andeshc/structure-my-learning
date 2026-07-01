@@ -10,6 +10,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { getSharedSubtopic, adoptGuide } from '../api/share';
 import LessonContent from '../components/LessonContent';
+import GuideOutlineDrawer from '../components/GuideOutlineDrawer';
 
 function SubtopicStatusPanel({ devStatus }) {
   if (devStatus === 'developing') {
@@ -435,6 +436,16 @@ export default function SharedSubtopicPage() {
           </p>
         </div>
       </div>
+
+      {/* Guide outline — FAB + bottom sheet below xl, where the docked sidebar is hidden */}
+      <GuideOutlineDrawer
+        guide={guide}
+        guideHref={`/share/${shareToken}`}
+        topicId={topicId}
+        position={position}
+        fullOutline={fullOutline}
+        buildSubtopicHref={(tId, pos) => (tId ? shareSubtopicLink(tId, pos) : '#')}
+      />
     </>
   );
 }
