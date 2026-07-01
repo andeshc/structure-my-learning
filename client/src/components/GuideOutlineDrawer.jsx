@@ -2,6 +2,7 @@ import { CheckCircle2, ChevronLeft, Circle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import LogoMark from './LogoMark';
+import { lessonBadge } from '../utils/lessonStatus';
 
 // Matches the brand gradient used by the AI Tutor FAB (TutorDrawer.jsx) so the
 // two mobile FABs read as a matched pair.
@@ -14,6 +15,7 @@ const BRAND_GRADIENT = 'linear-gradient(135deg, #0F766E 0%, #0D9488 55%, #2DD4BF
  */
 export default function GuideOutlineDrawer({ guide, guideHref, topicId, position, fullOutline, buildSubtopicHref }) {
   const [open, setOpen] = useState(false);
+  const flatItems = (fullOutline ?? []).flatMap((section) => section.items);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -86,6 +88,7 @@ export default function GuideOutlineDrawer({ guide, guideHref, topicId, position
                   </p>
                   {section.items.map((si) => {
                     const isCurrent = section.topicId === topicId && si.position === position;
+                    const badge = lessonBadge(flatItems, si);
                     return (
                       <Link
                         key={`${section.topicId}-${si.position}`}
@@ -107,13 +110,17 @@ export default function GuideOutlineDrawer({ guide, guideHref, topicId, position
                         <span className="min-w-0">
                           <span className="block truncate font-medium leading-snug">{si.title}</span>
                           <span className="mt-0.5 block text-xs text-slate-400">
-                            {si.isCompleted
+                            {badge === 'completed'
                               ? 'Done'
-                              : si.hasContent
-                                ? 'Ready'
-                                : si.devStatus === 'developing'
-                                  ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
-                                  : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
+                              : badge === 'in-progress'
+                                ? 'In Progress'
+                                : badge === 'next-up'
+                                  ? 'Next Up'
+                                  : si.hasContent
+                                    ? 'Ready'
+                                    : si.devStatus === 'developing'
+                                      ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
+                                      : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
                           </span>
                         </span>
                       </Link>

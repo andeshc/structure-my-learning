@@ -3,6 +3,7 @@ const { z } = require('zod');
 const guides = require('../db/guides');
 const topicsDb = require('../db/topics');
 const subtopicsDb = require('../db/subtopics');
+const guideProgressDb = require('../db/guideProgress');
 const tutorMessages = require('../db/tutorMessages');
 const ai = require('../services/ai.service');
 const { estimateCost } = require('../services/cost-rates');
@@ -90,6 +91,12 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     ? await subtopicsDb.getSubtopicProgressForUser(req.user.id, dbSubtopic.id)
     : { isCompleted: false, completedAt: null };
 
+  // Opening a lesson makes it the guide's single "in progress" lesson for this user.
+  if (dbSubtopic) {
+    await guideProgressDb.setInProgressSubtopic(req.user.id, found.guide.id, dbSubtopic.id);
+  }
+  const inProgressSubtopicId = await guideProgressDb.getInProgressSubtopicId(req.user.id, found.guide.id);
+
   // Per-user section items
   const allSubtopicsForSection = await subtopicsDb.listAllSubtopicsForGuide(found.guide.id, req.user.id);
   const subtopicsByTopicPos = {};
@@ -104,6 +111,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
     title: si.title,
     importance: si.importance,
     isCompleted: topicSubs[i]?.isCompleted ?? false,
+    inProgress: Boolean(topicSubs[i]?.id) && topicSubs[i].id === inProgressSubtopicId,
     hasContent: dbByPosition[i]?.hasContent ?? false,
     devStatus: dbByPosition[i]?.devStatus ?? 'pending',
   }));
@@ -134,6 +142,7 @@ router.get('/:topicId/subtopics/:position', asyncHandler(async (req, res, next) 
         position: pos,
         title: si.title,
         isCompleted: tSubs[pos]?.isCompleted ?? false,
+        inProgress: Boolean(tSubs[pos]?.id) && tSubs[pos].id === inProgressSubtopicId,
         hasContent: tSubs[pos]?.hasContent ?? false,
         devStatus: tSubs[pos]?.devStatus ?? 'pending',
       })),
@@ -193,6 +202,13 @@ router.patch('/:topicId/subtopics/:position/progress', asyncHandler(async (req, 
 
   const subtopic = await subtopicsDb.findOrCreateSubtopic(req.params.topicId, position, item.title);
   await subtopicsDb.updateSubtopicProgress(req.user.id, subtopic.id, isCompleted);
+
+  if (isCompleted) {
+    const inProgressSubtopicId = await guideProgressDb.getInProgressSubtopicId(req.user.id, found.guide.id);
+    if (inProgressSubtopicId === subtopic.id) {
+      await guideProgressDb.clearInProgressSubtopic(req.user.id, found.guide.id);
+    }
+  }
 
   const guide = await guides.findGuideForUser(found.guide.id, req.user.id);
   const totalSubtopics = outline?.sections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0;

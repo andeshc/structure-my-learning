@@ -199,7 +199,7 @@ async function getGuidesWithPendingWork() {
 
 async function listAllSubtopicsForGuide(guideId, userId) {
   const rows = await getAll(
-    `SELECT s.topic_id, s.position, s.dev_status,
+    `SELECT s.id AS subtopic_id, s.topic_id, s.position, s.dev_status,
             COALESCE(sp.is_completed, false) AS is_completed,
             CASE WHEN s.content_html IS NOT NULL AND s.content_html != '' THEN 1 ELSE 0 END AS has_content
      FROM subtopics s
@@ -209,6 +209,7 @@ async function listAllSubtopicsForGuide(guideId, userId) {
     [guideId, userId]
   );
   return rows.map((r) => ({
+    id: r.subtopic_id,
     topicId: r.topic_id,
     position: r.position,
     devStatus: r.dev_status ?? 'pending',

@@ -13,6 +13,7 @@ import { useToast } from '../context/ToastContext';
 import LessonContent from '../components/LessonContent';
 import TutorDrawer from '../components/TutorDrawer';
 import GuideOutlineDrawer from '../components/GuideOutlineDrawer';
+import { lessonBadge } from '../utils/lessonStatus';
 
 // Average adult reading speed (words/min). We require ~50% of the resulting
 // estimate as active dwell time before auto-completing — lenient by design.
@@ -330,6 +331,7 @@ export default function SubtopicDetailPage() {
 
   const { subtopic, item, sectionItems, prevItem, nextItem, nextTopic, fullOutline, topic, guide } = data;
   const displayedHtml = subtopic?.contentHtml;
+  const flatItems = (fullOutline ?? []).flatMap((section) => section.items);
   const lessonNumber = position + 1;
   const totalLessons = sectionItems.length;
 
@@ -376,6 +378,7 @@ export default function SubtopicDetailPage() {
                     </p>
                     {section.items.map((si) => {
                       const isCurrent = section.topicId === topicId && si.position === position;
+                      const badge = lessonBadge(flatItems, si);
                       return (
                         <Link
                           key={`${section.topicId}-${si.position}`}
@@ -396,7 +399,17 @@ export default function SubtopicDetailPage() {
                           <span className="min-w-0">
                             <span className="block truncate font-medium leading-snug">{si.title}</span>
                             <span className="mt-0.5 block text-xs text-slate-400">
-                              {si.isCompleted ? 'Done' : si.hasContent ? 'Ready' : si.devStatus === 'developing' ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" /> : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
+                              {badge === 'completed'
+                                ? 'Done'
+                                : badge === 'in-progress'
+                                  ? 'In Progress'
+                                  : badge === 'next-up'
+                                    ? 'Next Up'
+                                    : si.hasContent
+                                      ? 'Ready'
+                                      : si.devStatus === 'developing'
+                                        ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
+                                        : si.devStatus === 'failed' ? 'Failed' : 'Pending'}
                             </span>
                           </span>
                         </Link>

@@ -124,6 +124,14 @@ CREATE TABLE IF NOT EXISTS subtopic_progress (
   PRIMARY KEY (user_id, subtopic_id)
 );
 
+CREATE TABLE IF NOT EXISTS guide_reading_progress (
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  guide_id    TEXT NOT NULL REFERENCES guides(id) ON DELETE CASCADE,
+  in_progress_subtopic_id TEXT REFERENCES subtopics(id) ON DELETE SET NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, guide_id)
+);
+
 CREATE TABLE IF NOT EXISTS tutor_messages (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
