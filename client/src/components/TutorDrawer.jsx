@@ -1,4 +1,4 @@
-import { BookOpen, Send, Square, Trash2, X } from 'lucide-react';
+import { BookOpen, MessageCircle, Send, Square, Trash2, X } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -297,17 +297,19 @@ export default function TutorDrawer({ topicId, position, subtopicTitle, fullOutl
   }
 
   // Mobile — FAB + bottom sheet. dvh + safe-area insets keep the FAB and sheet
-  // clear of the browser's dynamic bottom chrome / gesture bar.
+  // clear of the browser's dynamic bottom chrome / gesture bar. Stacked above
+  // the guide outline FAB (GuideOutlineDrawer.jsx), which sits at the position
+  // this button used to occupy.
   return (
     <>
       {!mobileOpen && (
         <button
           aria-label="Open AI tutor"
           className="fixed right-4 z-50 grid h-14 w-14 place-items-center rounded-full text-white shadow-lg transition-transform hover:scale-105"
-          style={{ bottom: 'calc(1.25rem + env(safe-area-inset-bottom))', background: BRAND_GRADIENT }}
+          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))', background: BRAND_GRADIENT }}
           onClick={() => setMobileOpen(true)}
         >
-          <LogoMark className="h-6 w-auto" fill="white" />
+          <MessageCircle className="h-6 w-6" />
         </button>
       )}
       {mobileOpen && (

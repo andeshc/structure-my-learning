@@ -12,6 +12,7 @@ import { getSubtopic, updateSubtopicProgress } from '../api/guides';
 import { useToast } from '../context/ToastContext';
 import LessonContent from '../components/LessonContent';
 import TutorDrawer from '../components/TutorDrawer';
+import GuideOutlineDrawer from '../components/GuideOutlineDrawer';
 
 // Average adult reading speed (words/min). We require ~50% of the resulting
 // estimate as active dwell time before auto-completing — lenient by design.
@@ -526,6 +527,16 @@ export default function SubtopicDetailPage() {
           </p>
         </div>
       </div>
+
+      {/* Guide outline — FAB + bottom sheet below xl, where the docked sidebar is hidden */}
+      <GuideOutlineDrawer
+        guide={guide}
+        guideHref={`/guides/${guide.id}`}
+        topicId={topicId}
+        position={position}
+        fullOutline={fullOutline}
+        buildSubtopicHref={(tId, pos) => `/topics/${tId}/subtopics/${pos}`}
+      />
 
       {/* AI Tutor — docked drawer (desktop) / bottom sheet (mobile) */}
       {!guide.readOnly && (
