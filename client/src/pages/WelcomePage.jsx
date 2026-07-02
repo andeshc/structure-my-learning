@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import * as accountApi from '../api/account';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
@@ -8,9 +8,16 @@ const INPUT = 'mt-2 w-full rounded-md border border-charcoal/15 px-3 py-2 outlin
 
 const PROVIDER_NAMES = { google: 'Google', github: 'GitHub' };
 
+// Only follow relative in-app paths — never an absolute/protocol-relative URL.
+function safeNextPath(value) {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return null;
+  return value;
+}
+
 export default function WelcomePage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const providerName = PROVIDER_NAMES[auth.user?.signupProvider] ?? 'external';
 
   const [form, setForm] = useState({
@@ -49,7 +56,7 @@ export default function WelcomePage() {
       };
       const data = await accountApi.setup(payload);
       auth.updateUser(data.user);
-      navigate('/', { replace: true });
+      navigate(safeNextPath(searchParams.get('next')) || '/', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

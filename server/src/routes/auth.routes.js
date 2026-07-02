@@ -46,6 +46,38 @@ function oauthUnavailable(_req, res) {
   res.status(503).json({ error: 'OAuth provider is not configured.' });
 }
 
+// Only allow relative in-app paths through the OAuth round trip — never an
+// absolute/protocol-relative URL, which would turn this into an open redirect.
+function safeNextPath(value) {
+  if (typeof value !== 'string' || !value) return null;
+  if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return null;
+  return value;
+}
+
+// Threads `?next=` through the OAuth provider round trip via the standard
+// `state` param, since passport.authenticate's options are otherwise fixed
+// at route-registration time and can't see the per-request query string.
+function oauthStart(provider, options) {
+  return (req, res, next) => {
+    const state = safeNextPath(req.query.next) || undefined;
+    passport.authenticate(provider, { ...options, session: false, state })(req, res, next);
+  };
+}
+
+function oauthCallback(provider) {
+  return (req, res, next) => {
+    passport.authenticate(provider, { failureRedirect: `${config.appUrl}/login`, session: false })(req, res, next);
+  };
+}
+
+function redirectAfterOAuth(req, res) {
+  // Apple posts the callback as form-encoded (state lands in the body); every
+  // other provider redirects with a GET and puts it in the query string.
+  const nextPath = safeNextPath(req.query.state || req.body?.state);
+  const suffix = nextPath ? `&next=${encodeURIComponent(nextPath)}` : '';
+  res.redirect(`${config.appUrl}/auth/callback?status=success${suffix}`);
+}
+
 router.post('/register', asyncHandler(async (req, res) => {
   const input = registerSchema.parse(req.body);
   const existing = await users.findUserByEmail(input.email);
@@ -165,98 +197,98 @@ router.post('/resend-verification', asyncHandler(async (req, res) => {
 
 router.get('/google',
   config.google.clientId && config.google.clientSecret
-    ? passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+    ? oauthStart('google', { scope: ['profile', 'email'] })
     : oauthUnavailable
 );
 
 router.get('/google/callback',
   config.google.clientId && config.google.clientSecret
-    ? passport.authenticate('google', { failureRedirect: `${config.appUrl}/login`, session: false })
+    ? oauthCallback('google')
     : oauthUnavailable,
   async (req, res) => {
     await tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+    redirectAfterOAuth(req, res);
   }
 );
 
 router.get('/github',
   config.github.clientId && config.github.clientSecret
-    ? passport.authenticate('github', { scope: ['user:email'], session: false })
+    ? oauthStart('github', { scope: ['user:email'] })
     : oauthUnavailable
 );
 
 router.get('/github/callback',
   config.github.clientId && config.github.clientSecret
-    ? passport.authenticate('github', { failureRedirect: `${config.appUrl}/login`, session: false })
+    ? oauthCallback('github')
     : oauthUnavailable,
   async (req, res) => {
     await tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+    redirectAfterOAuth(req, res);
   }
 );
 
 router.get('/apple',
   config.apple.clientId
-    ? passport.authenticate('apple', { session: false })
+    ? oauthStart('apple', {})
     : oauthUnavailable
 );
 
 // Apple sends the callback as a POST with form-encoded body
 router.post('/apple/callback',
   config.apple.clientId
-    ? passport.authenticate('apple', { failureRedirect: `${config.appUrl}/login`, session: false })
+    ? oauthCallback('apple')
     : oauthUnavailable,
   async (req, res) => {
     await tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+    redirectAfterOAuth(req, res);
   }
 );
 
 router.get('/facebook',
   config.facebook.clientId && config.facebook.clientSecret
-    ? passport.authenticate('facebook', { scope: ['email'], session: false })
+    ? oauthStart('facebook', { scope: ['email'] })
     : oauthUnavailable
 );
 
 router.get('/facebook/callback',
   config.facebook.clientId && config.facebook.clientSecret
-    ? passport.authenticate('facebook', { failureRedirect: `${config.appUrl}/login`, session: false })
+    ? oauthCallback('facebook')
     : oauthUnavailable,
   async (req, res) => {
     await tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+    redirectAfterOAuth(req, res);
   }
 );
 
 router.get('/linkedin',
   config.linkedin.clientId && config.linkedin.clientSecret
-    ? passport.authenticate('linkedin', { session: false })
+    ? oauthStart('linkedin', {})
     : oauthUnavailable
 );
 
 router.get('/linkedin/callback',
   config.linkedin.clientId && config.linkedin.clientSecret
-    ? passport.authenticate('linkedin', { failureRedirect: `${config.appUrl}/login`, session: false })
+    ? oauthCallback('linkedin')
     : oauthUnavailable,
   async (req, res) => {
     await tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+    redirectAfterOAuth(req, res);
   }
 );
 
 router.get('/microsoft',
   config.microsoft.clientId && config.microsoft.clientSecret
-    ? passport.authenticate('microsoft', { session: false })
+    ? oauthStart('microsoft', {})
     : oauthUnavailable
 );
 
 router.get('/microsoft/callback',
   config.microsoft.clientId && config.microsoft.clientSecret
-    ? passport.authenticate('microsoft', { failureRedirect: `${config.appUrl}/login`, session: false })
+    ? oauthCallback('microsoft')
     : oauthUnavailable,
   async (req, res) => {
     await tokenService.issueAuth(res, req.user);
-    res.redirect(`${config.appUrl}/auth/callback?status=success`);
+    redirectAfterOAuth(req, res);
   }
 );
 

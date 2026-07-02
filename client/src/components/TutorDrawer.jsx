@@ -258,9 +258,14 @@ export default function TutorDrawer({ topicId, position, subtopicTitle, fullOutl
   // scrolls that start outside the thread, e.g. on the header/composer).
   useEffect(() => {
     if (isDesktop || !mobileOpen) return undefined;
-    const previous = document.body.style.overflow;
+    const previousBody = document.body.style.overflow;
+    const previousHtml = document.documentElement.style.overflowY;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previous; };
+    document.documentElement.style.overflowY = 'hidden';
+    return () => {
+      document.body.style.overflow = previousBody;
+      document.documentElement.style.overflowY = previousHtml;
+    };
   }, [isDesktop, mobileOpen]);
 
   const panelKey = `${topicId}-${position}`;

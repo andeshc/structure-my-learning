@@ -19,9 +19,14 @@ export default function GuideOutlineDrawer({ guide, guideHref, topicId, position
 
   useEffect(() => {
     if (!open) return undefined;
-    const previous = document.body.style.overflow;
+    const previousBody = document.body.style.overflow;
+    const previousHtml = document.documentElement.style.overflowY;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previous; };
+    document.documentElement.style.overflowY = 'hidden';
+    return () => {
+      document.body.style.overflow = previousBody;
+      document.documentElement.style.overflowY = previousHtml;
+    };
   }, [open]);
 
   return (
@@ -78,7 +83,7 @@ export default function GuideOutlineDrawer({ guide, guideHref, topicId, position
               )}
             </div>
 
-            <nav className="mt-3 min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <nav className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               {(fullOutline ?? []).map((section) => (
                 <div key={section.topicId} className="mb-4 last:mb-0">
                   <p className={`mb-1 px-3 text-[11px] font-bold uppercase tracking-wider truncate ${
